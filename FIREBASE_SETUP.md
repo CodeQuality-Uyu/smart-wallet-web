@@ -1,4 +1,4 @@
-# 🔥 Guía de configuración Firebase — Verde App
+# 🔥 Guía de configuración Firebase — SmartWallet App
 
 Esta guía explica paso a paso cómo configurar Firebase para conectar la aplicación.
 Incluye material teórico de cada servicio para que entiendas qué estás haciendo y por qué.
@@ -27,7 +27,7 @@ Un proyecto es el contenedor raíz de todos los servicios. Todo lo que configure
 
 1. Ir a [https://console.firebase.google.com](https://console.firebase.google.com)
 2. Hacer click en **"Agregar proyecto"** (o "Create a project")
-3. Elegir un nombre, por ejemplo: `verde-app`
+3. Elegir un nombre, por ejemplo: `smart-wallet-app`
 4. En la pantalla de Google Analytics → podés deshabilitarlo, no es necesario para esta app
 5. Click en **"Crear proyecto"**
 
@@ -43,7 +43,7 @@ Firebase puede tener múltiples clientes conectados al mismo proyecto (iOS, Andr
 ### Pasos
 
 1. En la pantalla principal del proyecto, hacer click en el ícono **`</>`** (Web)
-2. Asignar un apodo a la app, por ejemplo: `verde-web`
+2. Asignar un apodo a la app, por ejemplo: `smart-wallet-web`
 3. **No** tildar "Firebase Hosting" (no lo vamos a usar por ahora)
 4. Click en **"Registrar app"**
 5. Firebase muestra un bloque de código como este:
@@ -51,9 +51,9 @@ Firebase puede tener múltiples clientes conectados al mismo proyecto (iOS, Andr
 ```js
 const firebaseConfig = {
   apiKey: "AIzaSy...",
-  authDomain: "verde-app.firebaseapp.com",
-  projectId: "verde-app",
-  storageBucket: "verde-app.appspot.com",
+  authDomain: "smart-wallet-app.firebaseapp.com",
+  projectId: "smart-wallet-app",
+  storageBucket: "smart-wallet-app.appspot.com",
   appId: "1:123456789:web:abc123"
 };
 ```
@@ -174,9 +174,9 @@ VITE_APP_ENV=development
 VITE_BACKEND=firestore
 
 VITE_FIREBASE_API_KEY=AIzaSy...
-VITE_FIREBASE_AUTH_DOMAIN=verde-app.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=verde-app
-VITE_FIREBASE_STORAGE_BUCKET=verde-app.appspot.com
+VITE_FIREBASE_AUTH_DOMAIN=smart-wallet-app.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=smart-wallet-app
+VITE_FIREBASE_STORAGE_BUCKET=smart-wallet-app.appspot.com
 VITE_FIREBASE_APP_ID=1:123456789:web:abc123
 ```
 
@@ -200,7 +200,7 @@ VITE_FIREBASE_APP_ID=1:123456789:web:abc123
 
 1. Abrir la app → debería ir a `/login`
 2. Registrarse con un email real al que tengas acceso
-3. Revisar la bandeja de entrada — llega un email de `noreply@verde-app.firebaseapp.com`
+3. Revisar la bandeja de entrada — llega un email de `noreply@smart-wallet-app.firebaseapp.com`
 4. Hacer click en el enlace → la app te redirige a `/verify-code` y procesa el login automáticamente
 5. En la consola de Firebase → **Authentication → Users** → el usuario debería aparecer listado
 6. Ir a **Sueldos** → agregar un sueldo

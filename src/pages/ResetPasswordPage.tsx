@@ -63,7 +63,7 @@ export default function ResetPasswordPage(): React.ReactElement {
           <div className={styles.orb2} />
           <div className={styles.logo}>
             <div className={styles.logoMark}>🌿</div>
-            <span className={styles.logoName}>verde</span>
+            <span className={styles.logoName}>SmartWallet</span>
           </div>
           <div className={styles.heroText}>
             <h1 className={styles.title}>Link<br /><em className={styles.em}>inválido</em></h1>
@@ -87,7 +87,7 @@ export default function ResetPasswordPage(): React.ReactElement {
         <div className={styles.orb2} />
         <div className={styles.logo}>
           <div className={styles.logoMark}>🌿</div>
-          <span className={styles.logoName}>verde</span>
+          <span className={styles.logoName}>SmartWallet</span>
         </div>
         <div className={styles.heroText}>
           <h1 className={styles.title}>Nueva<br /><em className={styles.em}>contraseña</em></h1>

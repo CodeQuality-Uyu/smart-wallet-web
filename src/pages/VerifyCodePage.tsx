@@ -46,7 +46,7 @@ export default function VerifyCodePage(): React.ReactElement {
         <div className={styles.orb2} />
         <div className={styles.logo}>
           <div className={styles.logoMark}>🌿</div>
-          <span className={styles.logoName}>verde</span>
+          <span className={styles.logoName}>SmartWallet</span>
         </div>
         <div className={styles.heroText}>
           <h1 className={styles.title}>Verificá<br />tu <em className={styles.em}>email</em></h1>

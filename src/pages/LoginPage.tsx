@@ -103,7 +103,7 @@ export default function LoginPage(): React.ReactElement {
         <div className={styles.dollar} aria-hidden>$</div>
         <div className={styles.logo}>
           <div className={styles.logoMark}>🌿</div>
-          <span className={styles.logoName}>verde</span>
+          <span className={styles.logoName}>SmartWallet</span>
         </div>
         <div className={styles.heroText}>
           <h1 className={styles.title}>

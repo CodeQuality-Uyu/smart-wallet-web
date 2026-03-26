@@ -6,7 +6,7 @@
 
 ## 📋 Resumen funcional
 
-Verde permite registrar y analizar gastos personales con soporte para gastos recurrentes, tarjetas, categorías y lugares.
+SmartWallet permite registrar y analizar gastos personales con soporte para gastos recurrentes, tarjetas, categorías y lugares.
 
 ### Módulos
 
@@ -208,7 +208,7 @@ npm run build
 ### Pasos
 
 1. **S3 Bucket**
-   - Crear bucket: `verde-app-frontend`
+   - Crear bucket: `smart-wallet-app-frontend`
    - Habilitar "Static website hosting"
    - Deshabilitar "Block all public access"
    - Subir todo el contenido de `dist/` manteniendo la estructura
@@ -244,7 +244,7 @@ npm run build
        VITE_ENABLE_MSW: false
 
    - name: Deploy to S3
-     run: aws s3 sync dist/ s3://verde-app-frontend --delete
+     run: aws s3 sync dist/ s3://smart-wallet-app-frontend --delete
 
    - name: Invalidate CloudFront
      run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CF_DIST_ID }} --paths "/*"

@@ -24,7 +24,7 @@ export const handlers = [
       return HttpResponse.json({ message: 'Ingresá un email válido.' }, { status: 400 })
     }
     return HttpResponse.json({
-      token: 'mock-token-verde-123',
+      token: 'mock-token-smart-wallet-123',
       user: { id: 'user-1', email, name: email.split('@')[0] },
     })
   }),
@@ -56,7 +56,7 @@ export const handlers = [
     }
     pendingRegistrations.delete(email)
     return HttpResponse.json({
-      token: 'mock-token-verde-123',
+      token: 'mock-token-smart-wallet-123',
       user: { id: 'user-1', email, name: pending.name },
     })
   }),
