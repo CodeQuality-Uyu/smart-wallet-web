@@ -1,0 +1,113 @@
+/* src/pages/HomePage.module.css */
+
+.page { display: flex; flex-direction: column; }
+
+/* header */
+.header {
+  background: linear-gradient(155deg, var(--g800), var(--g600));
+  padding: 18px 20px 26px;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.header::before {
+  content: '';
+  position: absolute;
+  width: 300px; height: 300px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(76,217,106,.13) 0%, transparent 70%);
+  top: -110px; right: -80px;
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  position: relative;
+  z-index: 1;
+}
+
+.greeting { font-size: 12px; color: var(--g200); }
+.name {
+  font-family: var(--font-head);
+  font-size: 17px; font-weight: 700; color: #fff;
+  margin-top: 1px;
+}
+
+.avatar {
+  width: 40px; height: 40px;
+  background: linear-gradient(135deg, var(--g400), var(--g300));
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-head);
+  font-size: 14px; font-weight: 800;
+  color: var(--g900);
+}
+
+.metrics {
+  display: flex;
+  gap: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+.metricCard {
+  flex: 1;
+  background: rgba(255,255,255,.1);
+  border-radius: 14px;
+  padding: 14px;
+  border: 1px solid rgba(255,255,255,.14);
+}
+
+.metricFlag { font-size: 14px; margin-bottom: 5px; }
+.metricLabel {
+  font-size: 10px; color: var(--g200);
+  text-transform: uppercase; letter-spacing: .06em;
+}
+.metricAmount {
+  font-family: var(--font-num);
+  font-size: 22px; font-weight: 700; color: #fff;
+  letter-spacing: -.03em; margin-top: 3px;
+}
+.metricSub { font-size: 10px; color: var(--g200); }
+.metricDelta {
+  display: inline-block;
+  font-family: var(--font-num);
+  font-size: 11px; font-weight: 700;
+  padding: 2px 8px; border-radius: 20px;
+  margin-top: 5px;
+}
+.up { background: var(--rose-lt); color: var(--rose); }
+.down { background: var(--g50); color: var(--g600); }
+
+/* section */
+.section { flex: 1; }
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px 8px;
+}
+
+.sectionTitle {
+  font-family: var(--font-head);
+  font-size: 14px; font-weight: 700; color: var(--ink);
+}
+
+.seeAll {
+  font-size: 12px; color: var(--g500); font-weight: 600;
+  background: none; border: none;
+}
+
+.dateHeader {
+  padding: 7px 20px 3px;
+  font-size: 10px; font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  background: var(--cream);
+}
+
+.empty { padding: 20px; font-size: 13px; color: var(--muted); text-align: center; }

@@ -1,0 +1,6 @@
+export { expensesService } from './expensesService'
+export { recurringService } from './recurringService'
+export { categoriesService } from './categoriesService'
+export { placesService } from './placesService'
+export { cardsService } from './cardsService'
+export { metricsService } from './metricsService'

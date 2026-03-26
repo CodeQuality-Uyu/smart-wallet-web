@@ -1,0 +1,19 @@
+/* src/components/ui/LoadingSpinner.module.css */
+
+.spinner {
+  border-radius: 50%;
+  border: 3px solid var(--border);
+  border-top-color: var(--g500);
+  animation: spin .7s linear infinite;
+}
+
+.sm  { width: 16px; height: 16px; border-width: 2px; }
+.md  { width: 32px; height: 32px; }
+.lg  { width: 48px; height: 48px; border-width: 4px; }
+
+.fullPage {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100dvh;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }

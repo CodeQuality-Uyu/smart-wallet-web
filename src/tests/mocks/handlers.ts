@@ -1,0 +1,235 @@
+// src/tests/mocks/handlers.ts
+
+import { http, HttpResponse } from 'msw'
+import { mockExpenses } from './data/expenses'
+import { mockCategories } from './data/categories'
+import { mockPlaces } from './data/places'
+import { mockCards } from './data/cards'
+import { mockRecurring } from './data/recurring'
+import { mockMetrics } from './data/metrics'
+import { mockSalaries } from './data/salaries'
+
+const BASE = '/api'
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const DEMO_CODE = '123456'
+const pendingRegistrations = new Map<string, { name: string; email: string }>()
+
+export const handlers = [
+  // ─── Auth ────────────────────────────────────────────────
+  http.post(`${BASE}/auth/login`, async ({ request }) => {
+    const body = await request.json() as { email?: string; password?: string }
+    const email = body.email?.trim() ?? ''
+    if (!email || !EMAIL_RE.test(email)) {
+      return HttpResponse.json({ message: 'Ingresá un email válido.' }, { status: 400 })
+    }
+    return HttpResponse.json({
+      token: 'mock-token-verde-123',
+      user: { id: 'user-1', email, name: email.split('@')[0] },
+    })
+  }),
+
+  http.post(`${BASE}/auth/register`, async ({ request }) => {
+    const body = await request.json() as { name?: string; email?: string; password?: string }
+    const name = body.name?.trim() ?? ''
+    const email = body.email?.trim() ?? ''
+    if (!name) {
+      return HttpResponse.json({ message: 'El nombre es requerido.' }, { status: 400 })
+    }
+    if (!email || !EMAIL_RE.test(email)) {
+      return HttpResponse.json({ message: 'Ingresá un email válido.' }, { status: 400 })
+    }
+    // Store pending registration for verification
+    pendingRegistrations.set(email, { name, email })
+    return HttpResponse.json({
+      message: 'Te enviamos un código de verificación. En modo demo usá: 123456',
+    }, { status: 200 })
+  }),
+
+  http.post(`${BASE}/auth/verify`, async ({ request }) => {
+    const body = await request.json() as { email?: string; code?: string }
+    const email = body.email?.trim() ?? ''
+    const code = body.code?.trim() ?? ''
+    const pending = pendingRegistrations.get(email)
+    if (!pending || code !== DEMO_CODE) {
+      return HttpResponse.json({ message: 'Código inválido.' }, { status: 400 })
+    }
+    pendingRegistrations.delete(email)
+    return HttpResponse.json({
+      token: 'mock-token-verde-123',
+      user: { id: 'user-1', email, name: pending.name },
+    })
+  }),
+
+  // ─── Expenses ───────────────────────────────────────────
+  http.get(`${BASE}/expenses`, () => HttpResponse.json({
+    data: mockExpenses,
+    total: mockExpenses.length,
+    page: 1,
+    pageSize: 20,
+  })),
+
+  http.get(`${BASE}/expenses/:id`, ({ params }) => {
+    const expense = mockExpenses.find((e) => e.id === params['id'])
+    if (!expense) return new HttpResponse(null, { status: 404 })
+    return HttpResponse.json(expense)
+  }),
+
+  http.post(`${BASE}/expenses`, async ({ request }) => {
+    const body = await request.json() as Record<string, unknown>
+    const created = { ...body, id: crypto.randomUUID(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), ticketLines: [] }
+    return HttpResponse.json(created, { status: 201 })
+  }),
+
+  http.patch(`${BASE}/expenses/:id`, async ({ params, request }) => {
+    const expense = mockExpenses.find((e) => e.id === params['id'])
+    if (!expense) return new HttpResponse(null, { status: 404 })
+    const body = await request.json() as Record<string, unknown>
+    return HttpResponse.json({ ...expense, ...body, updatedAt: new Date().toISOString() })
+  }),
+
+  http.delete(`${BASE}/expenses/:id`, () => new HttpResponse(null, { status: 204 })),
+
+  http.post(`${BASE}/expenses/:id/ticket-lines`, async ({ request }) => {
+    const body = await request.json() as Record<string, unknown>
+    return HttpResponse.json({ ...body, id: crypto.randomUUID() }, { status: 201 })
+  }),
+
+  http.delete(`${BASE}/expenses/:id/ticket-lines/:lineId`, () =>
+    new HttpResponse(null, { status: 204 })
+  ),
+
+  // ─── Categories ─────────────────────────────────────────
+  http.get(`${BASE}/categories`, () => HttpResponse.json(mockCategories)),
+
+  http.post(`${BASE}/categories`, async ({ request }) => {
+    const body = await request.json() as Record<string, unknown>
+    return HttpResponse.json({
+      ...body,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }, { status: 201 })
+  }),
+
+  http.patch(`${BASE}/categories/:id`, async ({ params, request }) => {
+    const cat = mockCategories.find((c) => c.id === params['id'])
+    if (!cat) return new HttpResponse(null, { status: 404 })
+    const body = await request.json() as Record<string, unknown>
+    return HttpResponse.json({ ...cat, ...body })
+  }),
+
+  http.delete(`${BASE}/categories/:id`, () => new HttpResponse(null, { status: 204 })),
+
+  // ─── Places ─────────────────────────────────────────────
+  http.get(`${BASE}/places`, () => HttpResponse.json(mockPlaces)),
+
+  http.post(`${BASE}/places`, async ({ request }) => {
+    const body = await request.json() as Record<string, unknown>
+    return HttpResponse.json({
+      ...body,
+      id: crypto.randomUUID(),
+      visitCount: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }, { status: 201 })
+  }),
+
+  http.patch(`${BASE}/places/:id`, async ({ params, request }) => {
+    const place = mockPlaces.find((p) => p.id === params['id'])
+    if (!place) return new HttpResponse(null, { status: 404 })
+    const body = await request.json() as Record<string, unknown>
+    return HttpResponse.json({ ...place, ...body })
+  }),
+
+  http.delete(`${BASE}/places/:id`, () => new HttpResponse(null, { status: 204 })),
+
+  // ─── Cards ──────────────────────────────────────────────
+  http.get(`${BASE}/cards`, () => HttpResponse.json(mockCards)),
+
+  http.post(`${BASE}/cards`, async ({ request }) => {
+    const body = await request.json() as Record<string, unknown>
+    return HttpResponse.json({
+      ...body,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }, { status: 201 })
+  }),
+
+  http.patch(`${BASE}/cards/:id`, async ({ params, request }) => {
+    const card = mockCards.find((c) => c.id === params['id'])
+    if (!card) return new HttpResponse(null, { status: 404 })
+    const body = await request.json() as Record<string, unknown>
+    return HttpResponse.json({ ...card, ...body })
+  }),
+
+  http.delete(`${BASE}/cards/:id`, () => new HttpResponse(null, { status: 204 })),
+
+  // ─── Recurring ──────────────────────────────────────────
+  http.get(`${BASE}/recurring`, () => HttpResponse.json(mockRecurring)),
+
+  http.get(`${BASE}/recurring/:id`, ({ params }) => {
+    const rec = mockRecurring.find((r) => r.id === params['id'])
+    if (!rec) return new HttpResponse(null, { status: 404 })
+    return HttpResponse.json(rec)
+  }),
+
+  http.post(`${BASE}/recurring`, async ({ request }) => {
+    const body = await request.json() as Record<string, unknown>
+    return HttpResponse.json({
+      ...body,
+      id: crypto.randomUUID(),
+      paymentHistory: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }, { status: 201 })
+  }),
+
+  http.patch(`${BASE}/recurring/:id`, async ({ params, request }) => {
+    const rec = mockRecurring.find((r) => r.id === params['id'])
+    if (!rec) return new HttpResponse(null, { status: 404 })
+    const body = await request.json() as Record<string, unknown>
+    return HttpResponse.json({ ...rec, ...body })
+  }),
+
+  http.patch(`${BASE}/recurring/:id/status`, async ({ params, request }) => {
+    const rec = mockRecurring.find((r) => r.id === params['id'])
+    if (!rec) return new HttpResponse(null, { status: 404 })
+    const body = await request.json() as { status: string }
+    return HttpResponse.json({ ...rec, status: body.status })
+  }),
+
+  http.delete(`${BASE}/recurring/:id`, () => new HttpResponse(null, { status: 204 })),
+
+  http.post(`${BASE}/recurring/:id/confirm-payment`, () =>
+    HttpResponse.json({
+      id: crypto.randomUUID(),
+      month: new Date().getMonth() + 1,
+      year: new Date().getFullYear(),
+      amount: 890,
+      currency: 'UYU',
+      paidAt: new Date().toISOString(),
+      status: 'paid',
+    }, { status: 201 })
+  ),
+
+  // ─── Metrics ────────────────────────────────────────────
+  http.get(`${BASE}/metrics`, () => HttpResponse.json(mockMetrics)),
+
+  // ─── Salaries ────────────────────────────────────────────
+  http.get(`${BASE}/salaries`, () => HttpResponse.json(mockSalaries)),
+
+  http.post(`${BASE}/salaries`, async ({ request }) => {
+    const body = await request.json() as Record<string, unknown>
+    const created = { ...body, id: crypto.randomUUID(), createdAt: new Date().toISOString() }
+    mockSalaries.unshift(created as typeof mockSalaries[0])
+    return HttpResponse.json(created, { status: 201 })
+  }),
+
+  http.delete(`${BASE}/salaries/:id`, ({ params }) => {
+    const idx = mockSalaries.findIndex((s) => s.id === params['id'])
+    if (idx !== -1) mockSalaries.splice(idx, 1)
+    return new HttpResponse(null, { status: 204 })
+  }),
+]

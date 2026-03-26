@@ -1,0 +1,33 @@
+/* src/components/ui/Button.module.css */
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  border: none; border-radius: var(--radius-sm);
+  font-family: 'Syne', sans-serif; font-weight: 700; letter-spacing: .01em;
+  cursor: pointer; transition: opacity .15s, transform .1s;
+  white-space: nowrap;
+}
+.btn:active:not(:disabled) { transform: scale(.98); }
+.btn:disabled { opacity: .55; cursor: not-allowed; }
+
+.fullWidth { width: 100%; }
+
+/* variants */
+.primary { background: linear-gradient(135deg,var(--g600),var(--g400)); color:#fff; box-shadow:0 4px 18px rgba(34,139,53,.35); }
+.secondary { background: linear-gradient(135deg,#4338ca,var(--ind)); color:#fff; box-shadow:0 4px 18px rgba(79,70,229,.35); }
+.ghost { background: transparent; color: var(--muted); border: 1.5px solid var(--border); }
+.danger { background: linear-gradient(135deg,#be123c,var(--rose)); color:#fff; box-shadow:0 4px 14px rgba(225,29,72,.3); }
+
+/* sizes */
+.sm { padding: 8px 14px; font-size: 12px; }
+.md { padding: 13px 20px; font-size: 14px; }
+.lg { padding: 16px 24px; font-size: 15px; }
+
+/* loading spinner */
+.spinner {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.35);
+  border-top-color: #fff;
+  animation: spin .6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }

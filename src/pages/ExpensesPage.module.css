@@ -1,0 +1,56 @@
+/* src/pages/ExpensesPage.module.css */
+
+.page { display: flex; flex-direction: column; }
+
+.tabs {
+  display: flex;
+  gap: 5px;
+  padding: 12px 20px 0;
+  background: var(--g800);
+  padding-bottom: 14px;
+}
+
+.tab {
+  padding: 6px 13px;
+  border-radius: 20px;
+  font-size: 12px; font-weight: 600;
+  color: var(--g200);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.tabActive {
+  background: rgba(255,255,255,.16);
+  color: #fff;
+  border-color: rgba(255,255,255,.22);
+}
+
+.totals {
+  display: flex;
+  gap: 10px;
+  padding: 13px 20px 9px;
+}
+
+.totalChip {
+  flex: 1;
+  background: #fff;
+  border-radius: 13px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--border);
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+
+.totalLabel { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.totalAmt { font-family: var(--font-num); font-size: 17px; font-weight: 700; color: var(--ink); margin-top: 2px; }
+
+.dateHeader {
+  padding: 7px 20px 3px;
+  font-size: 10px; font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  background: var(--cream);
+}
+
+.empty { padding: 40px 20px; font-size: 13px; color: var(--muted); text-align: center; }

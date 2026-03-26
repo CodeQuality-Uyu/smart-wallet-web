@@ -1,0 +1,45 @@
+/* src/index.css */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --g900: #071a0a; --g800: #0d2e14; --g700: #134d1e; --g600: #1a6b28;
+  --g500: #228b35; --g400: #2db347; --g300: #4cd96a; --g200: #8eeaa0;
+  --g50: #edfaf0;
+  --ind: #4f46e5; --ind-md: #6366f1; --ind-lt: #eef2ff;
+  --amb: #d97706; --amb-lt: #fffbeb;
+  --rose: #e11d48; --rose-lt: #fff1f2;
+  --sky: #0284c7; --sky-lt: #f0f9ff;
+  --cream: #f6f5f1; --ink: #0d1a0f; --muted: #64748b;
+  --border: #e2e8f0;
+  --radius: 16px; --radius-sm: 10px;
+  --shadow: 0 4px 20px rgba(0,0,0,.08);
+  --font-head: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-num: 'JetBrains Mono', monospace;
+}
+
+html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--cream);
+  color: var(--ink);
+  min-height: 100dvh;
+}
+
+#root { min-height: 100dvh; display: flex; flex-direction: column; }
+
+a { color: inherit; text-decoration: none; }
+
+button { cursor: pointer; font-family: inherit; }
+
+input, select, textarea {
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0,0,0,0); white-space: nowrap; border-width: 0;
+}

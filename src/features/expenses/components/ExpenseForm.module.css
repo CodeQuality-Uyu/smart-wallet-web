@@ -1,0 +1,97 @@
+/* src/features/expenses/components/ExpenseForm.module.css */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+/* ── Amount hero section ── */
+.amountSection {
+  background: linear-gradient(155deg, var(--g800), var(--g600));
+  padding: 18px 20px 22px;
+  flex-shrink: 0;
+}
+
+.amountLabel {
+  font-size: 11px;
+  color: var(--g200);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.amountRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.amountInput {
+  font-family: var(--font-num) !important;
+  font-size: 32px !important;
+  font-weight: 700 !important;
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 2px solid rgba(255,255,255,.3) !important;
+  border-radius: 0 !important;
+  color: #fff !important;
+  padding: 4px 0 !important;
+  width: 100%;
+  box-shadow: none !important;
+}
+
+.amountInput::placeholder { color: rgba(255,255,255,.4); }
+
+.currencyToggle {
+  display: flex;
+  background: rgba(255,255,255,.12);
+  border-radius: 22px;
+  padding: 3px;
+  flex-shrink: 0;
+}
+
+.currencyBtn {
+  padding: 5px 14px;
+  border-radius: 19px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--g200);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-num);
+  transition: background .15s, color .15s;
+}
+
+.currencyBtnActive {
+  background: #fff;
+  color: var(--g700);
+}
+
+/* ── Fields ── */
+.fields {
+  padding: 16px 20px;
+  flex: 1;
+}
+
+.createHint {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 5px;
+  padding-left: 2px;
+}
+
+.createLink {
+  color: var(--ind);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* ── Actions ── */
+.actions {
+  padding: 14px 20px calc(14px + env(safe-area-inset-bottom));
+  background: var(--cream);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}

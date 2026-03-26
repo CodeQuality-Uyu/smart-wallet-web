@@ -1,0 +1,123 @@
+/* src/pages/RecurringPage.module.css */
+
+.addBtn {
+  width: 100%; padding: 13px;
+  border: 2px dashed var(--border); border-radius: var(--radius);
+  background: #fff; color: var(--muted);
+  font-size: 13px; font-weight: 600; margin-bottom: 12px;
+  font-family: inherit; cursor: pointer;
+}
+
+.form {
+  background: #fff; border-radius: var(--radius);
+  padding: 16px; border: 1.5px solid var(--border-g);
+  margin-bottom: 12px;
+}
+
+.formTitle {
+  font-family: var(--font-head);
+  font-size: 13px; font-weight: 700; color: var(--ink);
+  margin-bottom: 14px;
+}
+
+.formRow { display: flex; gap: 10px; align-items: flex-start; }
+
+.fieldGroup { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+
+.fieldLabel {
+  font-size: 11px; font-weight: 600; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .09em;
+}
+
+.fieldInput {
+  width: 100%; background: #fff; border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); padding: 9px 11px;
+  font-size: 14px; color: var(--ink); outline: none;
+  font-family: inherit;
+}
+.fieldInput:focus { border-color: var(--g400); box-shadow: 0 0 0 3px rgba(76,217,106,.12); }
+
+.iconPicker {
+  display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;
+}
+
+.icoBtn {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: #fff; border: 1.5px solid var(--border);
+  font-size: 17px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+
+.icoBtnActive {
+  border-color: var(--ind);
+  background: var(--ind-lt);
+  box-shadow: 0 0 0 2px rgba(79,70,229,.18);
+}
+
+.modeSelector { display: flex; gap: 8px; margin-bottom: 10px; }
+
+.modeOpt {
+  flex: 1; padding: 10px 6px; border-radius: 10px;
+  border: 1.5px solid var(--border); text-align: center;
+  cursor: pointer; font-size: 12px; font-weight: 600; color: var(--muted);
+  font-family: inherit;
+}
+
+.modeOptActive {
+  border-color: var(--ind); background: var(--ind-lt); color: var(--ind);
+}
+
+.formActions {
+  display: flex; gap: 8px; justify-content: space-between; margin-top: 4px;
+}
+
+.groupLabel {
+  font-size: 10px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .1em;
+  margin: 10px 0 7px;
+}
+
+.item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 0; border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.item:last-child { border-bottom: none; }
+.item:hover { opacity: .85; }
+
+.itemPending {
+  background: var(--amb-lt);
+  margin: 0 -20px; padding: 11px 20px;
+  border-radius: var(--radius-sm); border-bottom: none; margin-bottom: 6px;
+}
+
+.itemIcon {
+  width: 36px; height: 36px; border-radius: 11px;
+  background: #fdf4ff;
+  display: flex; align-items: center; justify-content: center; font-size: 17px;
+  flex-shrink: 0;
+}
+
+.itemInfo { flex: 1; min-width: 0; }
+.itemTop { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+.itemName { font-size: 13px; font-weight: 600; color: var(--ink); }
+
+.modeBadge {
+  display: inline-block; border-radius: 5px; padding: 2px 7px;
+  font-size: 9px; font-weight: 700; text-transform: uppercase;
+}
+.auto { background: #e0f2fe; color: #0369a1; }
+.manual { background: var(--amb-lt); color: var(--amb); }
+.pausedBadge { background: #f1f5f9; color: var(--muted); font-size: 9px; font-weight: 700; border-radius: 5px; padding: 2px 7px; }
+
+.itemSub { display: flex; align-items: center; gap: 5px; }
+.paymentState {
+  font-size: 10px; font-weight: 700; border-radius: 5px; padding: 1px 7px;
+}
+.paid { background: var(--g50); color: var(--g600); }
+.pending { background: var(--amb-lt); color: var(--amb); }
+
+.itemRight { text-align: right; flex-shrink: 0; }
+.itemAmt { font-family: var(--font-num); font-size: 13px; font-weight: 700; color: var(--ink); }
+.itemCurr { font-size: 10px; font-weight: 400; color: var(--muted); }
