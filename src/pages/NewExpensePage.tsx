@@ -17,7 +17,7 @@ export default function NewExpensePage(): React.ReactElement {
       description: values.description,
       amount: values.amount,
       currency: values.currency,
-      paymentType: values.paymentType,
+      cardId: values.cardId,
       categoryIds: values.categoryIds,
       placeId: values.placeId || undefined,
       date: values.date,

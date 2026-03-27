@@ -2,7 +2,7 @@
 
 import { describe, it, expect } from 'vitest'
 import { expensesService } from '@/services/expensesService'
-import { Currency, PaymentType } from '@/types/enums'
+import { Currency } from '@/types/enums'
 
 describe('expensesService', () => {
   it('lists expenses', async () => {
@@ -28,7 +28,7 @@ describe('expensesService', () => {
       description: 'Test gasto',
       amount: 99,
       currency: Currency.UYU,
-      paymentType: PaymentType.Transfer,
+      cardId: 'card-1',
       categoryIds: ['cat-1'],
       date: '2026-03-23',
     }

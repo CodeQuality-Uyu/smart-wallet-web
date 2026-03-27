@@ -48,7 +48,7 @@ export function ExpenseListItem({
 
       <div className={styles.amount}>
         <p className={styles.value}>
-          −{formatCurrency(expense.amount, expense.currency)}
+          {formatCurrency(expense.amount, expense.currency)}
         </p>
         <p className={styles.currency}>{expense.currency}</p>
       </div>

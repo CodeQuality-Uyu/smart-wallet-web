@@ -2,7 +2,7 @@
 // Cards backend implemented via the MSW-intercepted HTTP adapter
 
 import { httpClient } from '@/api/httpClient'
-import type { ICardsBackend, Card, CreateCardPayload, UpdateCardPayload } from '../types'
+import type { ICardsBackend, Card, CreateCardPayload } from '../types'
 
 export const mswCardsBackend: ICardsBackend = {
   async list(): Promise<Card[]> {
@@ -12,11 +12,6 @@ export const mswCardsBackend: ICardsBackend = {
 
   async create(payload: CreateCardPayload): Promise<Card> {
     const { data } = await httpClient.post<Card>('/cards', payload)
-    return data
-  },
-
-  async update(id: string, payload: UpdateCardPayload): Promise<Card> {
-    const { data } = await httpClient.patch<Card>(`/cards/${id}`, payload)
     return data
   },
 

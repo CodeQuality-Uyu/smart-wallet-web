@@ -1,9 +1,29 @@
 // src/backend/types.ts
 // Shared interfaces for all backend implementations (msw, firestore, aws)
 
-import type { Card, CreateCardPayload, UpdateCardPayload } from '@/types/models'
+import type {
+  Card, CreateCardPayload,
+  Category, CreateCategoryPayload, UpdateCategoryPayload,
+  Place, CreatePlacePayload, UpdatePlacePayload,
+  RecurringExpense, CreateRecurringPayload, UpdateRecurringPayload,
+  ConfirmRecurringPaymentPayload, RecurringPaymentHistory,
+  Expense, CreateExpensePayload, UpdateExpensePayload,
+  TicketLine, PaginatedResponse, ExpenseFilters,
+  MetricsSummary,
+} from '@/types/models'
+import type { MetricsPeriod, RecurringStatus } from '@/types/enums'
 
-export type { Card, CreateCardPayload, UpdateCardPayload }
+export type {
+  Card, CreateCardPayload,
+  Category, CreateCategoryPayload, UpdateCategoryPayload,
+  Place, CreatePlacePayload, UpdatePlacePayload,
+  RecurringExpense, CreateRecurringPayload, UpdateRecurringPayload,
+  ConfirmRecurringPaymentPayload, RecurringPaymentHistory,
+  RecurringStatus,
+  Expense, CreateExpensePayload, UpdateExpensePayload,
+  TicketLine, PaginatedResponse, ExpenseFilters,
+  MetricsSummary, MetricsPeriod,
+}
 
 // ─── Auth ──────────────────────────────────────────────────
 
@@ -39,8 +59,56 @@ export interface IAuthBackend {
 export interface ICardsBackend {
   list(): Promise<Card[]>
   create(payload: CreateCardPayload): Promise<Card>
-  update(id: string, payload: UpdateCardPayload): Promise<Card>
   remove(id: string): Promise<void>
+}
+
+// ─── Categories ───────────────────────────────────────────
+
+export interface ICategoriesBackend {
+  list(): Promise<Category[]>
+  create(payload: CreateCategoryPayload): Promise<Category>
+  update(id: string, payload: UpdateCategoryPayload): Promise<Category>
+  remove(id: string): Promise<void>
+}
+
+// ─── Places / Locales ─────────────────────────────────────
+
+export interface IPlacesBackend {
+  list(): Promise<Place[]>
+  create(payload: CreatePlacePayload): Promise<Place>
+  update(id: string, payload: UpdatePlacePayload): Promise<Place>
+  remove(id: string): Promise<void>
+}
+
+// ─── Recurring expenses ───────────────────────────────────
+
+export interface IRecurringBackend {
+  list(): Promise<RecurringExpense[]>
+  getById(id: string): Promise<RecurringExpense>
+  create(payload: CreateRecurringPayload): Promise<RecurringExpense>
+  update(id: string, payload: UpdateRecurringPayload): Promise<RecurringExpense>
+  remove(id: string): Promise<void>
+  setStatus(id: string, status: RecurringStatus): Promise<RecurringExpense>
+  confirmPayment(id: string, payload: ConfirmRecurringPaymentPayload): Promise<RecurringPaymentHistory>
+}
+
+// ─── Expenses ─────────────────────────────────────────────
+
+export interface IExpensesBackend {
+  list(filters?: ExpenseFilters): Promise<PaginatedResponse<Expense>>
+  getById(id: string): Promise<Expense>
+  create(payload: CreateExpensePayload): Promise<Expense>
+  update(id: string, payload: UpdateExpensePayload): Promise<Expense>
+  remove(id: string): Promise<void>
+  uploadReceipt(id: string, file: File): Promise<{ receiptUrl: string }>
+  addTicketLine(expenseId: string, line: Omit<TicketLine, 'id'>): Promise<TicketLine>
+  removeTicketLine(expenseId: string, lineId: string): Promise<void>
+}
+
+// ─── Metrics ──────────────────────────────────────────────
+
+export interface IMetricsBackend {
+  getSummary(period: MetricsPeriod): Promise<MetricsSummary>
 }
 
 // ─── Salaries ─────────────────────────────────────────────

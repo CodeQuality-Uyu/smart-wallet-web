@@ -1,7 +1,7 @@
 // src/tests/mocks/data/expenses.ts
 
 import type { Expense } from '@/types/models'
-import { Currency, PaymentType } from '@/types/enums'
+import { Currency } from '@/types/enums'
 
 export const mockExpenses: Expense[] = [
   {
@@ -9,7 +9,7 @@ export const mockExpenses: Expense[] = [
     description: 'Almuerzo McDonald\'s',
     amount: 12.9,
     currency: Currency.USD,
-    paymentType: PaymentType.CreditItau,
+    cardId: 'card-2',
     categoryIds: ['cat-1', 'cat-2'],
     placeId: 'place-1',
     date: '2026-03-23',
@@ -27,7 +27,7 @@ export const mockExpenses: Expense[] = [
     description: 'STM bus',
     amount: 45,
     currency: Currency.UYU,
-    paymentType: PaymentType.DebitItau,
+    cardId: 'card-3',
     categoryIds: ['cat-3'],
     placeId: undefined,
     date: '2026-03-23',
@@ -41,7 +41,7 @@ export const mockExpenses: Expense[] = [
     description: 'Farmacia Cruz Verde',
     amount: 230,
     currency: Currency.UYU,
-    paymentType: PaymentType.CreditSantander,
+    cardId: 'card-4',
     categoryIds: ['cat-4'],
     placeId: 'place-3',
     date: '2026-03-22',

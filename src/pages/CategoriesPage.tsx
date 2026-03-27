@@ -23,14 +23,22 @@ export default function CategoriesPage(): React.ReactElement {
 
   if (isLoading) return <LoadingSpinner fullPage />
 
-  async function handleSubmit(values: CategoryFormValues): Promise<void> {
-    if (editing) {
-      await updateCat(values)
-    } else {
-      await createCat(values)
+  async function handleSubmit(
+    values: CategoryFormValues,
+    { setStatus }: { setStatus: (status: string) => void },
+  ): Promise<void> {
+    try {
+      if (editing) {
+        await updateCat(values)
+      } else {
+        await createCat(values)
+      }
+      setShowForm(false)
+      setEditing(null)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : (err as { message?: string })?.message ?? 'Error al guardar'
+      setStatus(msg)
     }
-    setShowForm(false)
-    setEditing(null)
   }
 
   function startEdit(cat: Category): void {
@@ -68,7 +76,7 @@ export default function CategoriesPage(): React.ReactElement {
               onSubmit={handleSubmit}
               enableReinitialize
             >
-              {({ isSubmitting, values, setFieldValue }) => (
+              {({ isSubmitting, values, setFieldValue, status }) => (
                 <Form>
                   <div className={styles.formRow}>
                     <div style={{ width: 60 }}>
@@ -101,6 +109,10 @@ export default function CategoriesPage(): React.ReactElement {
                       </button>
                     ))}
                   </div>
+
+                  {status && (
+                    <p className={styles.formError}>{status}</p>
+                  )}
 
                   <div className={styles.formActions}>
                     {editing && (

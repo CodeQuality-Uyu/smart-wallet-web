@@ -228,6 +228,41 @@ VITE_FIREBASE_APP_ID=1:123456789:web:abc123
 
 ---
 
+## 🔒 Reglas de seguridad de Firestore
+
+### Por qué son importantes
+
+Por defecto, Firestore creado en modo producción **deniega todo acceso**. Sin reglas explícitas, ninguna operación desde la app funcionará.
+
+Más importante: las reglas son la única barrera que impide que un usuario autenticado lea o modifique los datos de otro usuario. Sin ellas, cualquier persona con una cuenta podría consultar `users/{cualquier_uid}/cards` y ver tarjetas ajenas.
+
+Las reglas se evalúan **en los servidores de Google**, antes de ejecutar cualquier lectura o escritura, independientemente de lo que haga el código del cliente.
+
+### Desplegar las reglas
+
+Las reglas están versionadas en el repositorio en [firestore.rules](../firestore.rules). Para publicarlas:
+
+```bash
+# Instalar Firebase CLI (solo la primera vez)
+npm install -g firebase-tools
+
+# Login y seleccionar proyecto (solo la primera vez)
+firebase login
+firebase use smart-wallet-e99f2
+
+# Publicar reglas
+firebase deploy --only firestore:rules
+```
+
+> Cada vez que modifiques `firestore.rules` tenés que volver a ejecutar el deploy para que los cambios tengan efecto.
+
+### Qué cubren las reglas actuales
+
+- Solo el usuario dueño (`request.auth.uid == uid`) puede leer y escribir su perfil y todas sus subcolecciones (tarjetas, categorías, sueldos).
+- Cualquier otra colección o documento queda denegado por defecto.
+
+---
+
 ## 🔄 Cambiar entre backends
 
 Para volver a MSW (datos mock, sin Firebase):

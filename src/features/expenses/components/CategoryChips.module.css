@@ -8,6 +8,14 @@
 }
 .scroll::-webkit-scrollbar { display: none; }
 
+/* Show scrollbar on desktop (mouse users can't touch-scroll) */
+@media (hover: hover) and (pointer: fine) {
+  .scroll::-webkit-scrollbar { display: block; height: 4px; }
+  .scroll::-webkit-scrollbar-track { background: transparent; }
+  .scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .scroll { padding-bottom: 8px; }
+}
+
 .chip {
   padding: 7px 13px;
   border-radius: 20px;

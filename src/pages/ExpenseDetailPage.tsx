@@ -2,8 +2,9 @@
 
 import React from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useExpense, useDeleteExpense, useAddTicketLine, useRemoveTicketLine } from '@/features/expenses/hooks/useExpenses'
+import { useExpense, useDeleteExpense, useAddTicketLine, useRemoveTicketLine, useUploadExpenseReceipt } from '@/features/expenses/hooks/useExpenses'
 import { useCategories } from '@/features/categories/hooks/useCategories'
+import { useCards } from '@/features/cards/hooks/useCards'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { Button } from '@/components/ui/Button'
@@ -15,17 +16,21 @@ export default function ExpenseDetailPage(): React.ReactElement {
   const navigate = useNavigate()
   const { data: expense, isLoading, error } = useExpense(id ?? '')
   const { data: categories = [] } = useCategories()
+  const { data: cards = [] } = useCards()
   const { mutateAsync: deleteExpense } = useDeleteExpense()
   const { mutateAsync: addLine } = useAddTicketLine(id ?? '')
   const { mutateAsync: removeLine } = useRemoveTicketLine(id ?? '')
+  const { mutateAsync: uploadReceipt, isPending: uploadingReceipt } = useUploadExpenseReceipt(id ?? '')
 
   const [newLineName, setNewLineName] = React.useState('')
   const [newLineAmount, setNewLineAmount] = React.useState('')
+  const receiptInputRef = React.useRef<HTMLInputElement>(null)
 
   if (isLoading) return <LoadingSpinner fullPage />
   if (error || !expense) return <ErrorMessage message="No se pudo cargar el gasto." />
 
   const expenseCategories = categories.filter((c) => expense.categoryIds.includes(c.id))
+  const card = cards.find((c) => c.id === expense.cardId)
   const firstIcon = expenseCategories[0]?.icon ?? '💸'
   const ticketTotal = expense.ticketLines.reduce((s, l) => s + l.amount, 0)
 
@@ -56,7 +61,11 @@ export default function ExpenseDetailPage(): React.ReactElement {
           <span className={styles.amount}>{expense.amount}</span>
           <span className={styles.currency}>{expense.currency}</span>
         </div>
-        <span className={styles.paymentBadge}>{expense.paymentType}</span>
+        {card && (
+          <span className={styles.paymentBadge}>
+            {card.lastFour ? `${card.bank} ···· ${card.lastFour}` : card.name}
+          </span>
+        )}
       </header>
 
       {/* Detail rows */}
@@ -73,17 +82,55 @@ export default function ExpenseDetailPage(): React.ReactElement {
             ))}
           </div>
         </div>
-        <div className={styles.row}>
-          <span className={styles.rowLabel}>💱 Moneda</span>
-          <span className={styles.rowValue}>{expense.currency}</span>
-        </div>
-        <div className={styles.row}>
-          <span className={styles.rowLabel}>🧮 Total ítems</span>
-          <span className={styles.rowValue} style={{ color: 'var(--g600)', fontWeight: 700 }}>
-            {formatCurrency(ticketTotal, expense.currency)}
-          </span>
-        </div>
+
+        {expense.ticketLines.length > 0 && (
+          <div className={styles.row}>
+            <span className={styles.rowLabel}>🧮 Total ítems</span>
+            <span className={styles.rowValue} style={{ color: 'var(--g600)', fontWeight: 700 }}>
+              {formatCurrency(ticketTotal, expense.currency)}
+            </span>
+          </div>
+        )}
       </div>
+
+      {/* Receipt */}
+      <section className={styles.receiptSection}>
+        <h2 className={styles.ticketTitle}>🧾 Comprobante</h2>
+        <input
+          ref={receiptInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,application/pdf"
+          style={{ display: 'none' }}
+          onChange={(e) => {
+            const file = e.target.files?.[0]
+            if (file) void uploadReceipt(file)
+          }}
+        />
+        {expense.receiptUrl ? (
+          <div className={styles.receiptPreview}>
+            <a href={expense.receiptUrl} target="_blank" rel="noopener noreferrer" className={styles.receiptLink}>
+              📄 Ver comprobante
+            </a>
+            <button
+              className={styles.receiptChange}
+              onClick={() => receiptInputRef.current?.click()}
+              disabled={uploadingReceipt}
+            >
+              {uploadingReceipt ? 'Subiendo...' : 'Cambiar'}
+            </button>
+          </div>
+        ) : (
+          <div
+            className={styles.uploadArea}
+            onClick={() => receiptInputRef.current?.click()}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === 'Enter' && receiptInputRef.current?.click()}
+          >
+            {uploadingReceipt ? '⏳ Subiendo...' : '📄 Subir comprobante'}
+          </div>
+        )}
+      </section>
 
       {/* Ticket lines */}
       <section className={styles.ticketSection}>

@@ -25,6 +25,11 @@ export enum RecurringMode {
   Manual = 'manual',
 }
 
+export enum RecurringFrequency {
+  Monthly = 'monthly',
+  Annual = 'annual',
+}
+
 export enum RecurringStatus {
   Active = 'active',
   Paused = 'paused',

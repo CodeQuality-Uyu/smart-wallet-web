@@ -5,7 +5,7 @@ import { useMetrics } from '@/hooks/useMetrics'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { formatAmount, formatCurrency } from '@/utils/formatCurrency'
-import { MetricsPeriod, Currency } from '@/types/enums'
+import { MetricsPeriod, Currency, RecurringFrequency } from '@/types/enums'
 import styles from './MetricsPage.module.css'
 
 const PERIODS = [
@@ -106,18 +106,21 @@ export default function MetricsPage(): React.ReactElement {
             </div>
           ))}
           <div className={styles.fixedDivider} />
-          {[Currency.UYU, Currency.USD].map((cur) => {
-            const total = metrics.fixedBreakdown
-              .filter((i) => i.currency === cur)
-              .reduce((s, i) => s + i.amount, 0)
-            if (total === 0) return null
-            return (
-              <div key={cur} className={styles.fixedRow} style={{ fontWeight: 700 }}>
-                <span className={styles.fixedName} style={{ color: '#6b21a8' }}>Total {cur}</span>
-                <span className={styles.fixedAmt} style={{ color: '#6b21a8' }}>{formatCurrency(total, cur)}</span>
-              </div>
-            )
-          })}
+          {[Currency.UYU, Currency.USD].flatMap((cur) =>
+            [RecurringFrequency.Monthly, RecurringFrequency.Annual].map((freq) => {
+              const total = metrics.fixedBreakdown
+                .filter((i) => i.currency === cur && i.frequency === freq)
+                .reduce((s, i) => s + i.amount, 0)
+              if (total === 0) return null
+              const freqLabel = freq === RecurringFrequency.Monthly ? 'mensual' : 'anual'
+              return (
+                <div key={`${cur}-${freq}`} className={styles.fixedRow} style={{ fontWeight: 700 }}>
+                  <span className={styles.fixedName} style={{ color: '#6b21a8' }}>Total {cur} {freqLabel}</span>
+                  <span className={styles.fixedAmt} style={{ color: '#6b21a8' }}>{formatCurrency(total, cur)}</span>
+                </div>
+              )
+            })
+          )}
         </div>
 
         {/* Monthly bar chart */}

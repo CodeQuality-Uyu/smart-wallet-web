@@ -11,13 +11,17 @@ import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { groupExpensesByDate } from '@/utils/groupByDate'
 import { formatAmount } from '@/utils/formatCurrency'
 import { MetricsPeriod, Currency } from '@/types/enums'
+import { useAuth } from '@/app/providers/AuthContext'
 import styles from './HomePage.module.css'
 
 export default function HomePage(): React.ReactElement {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { data: expensesPage, isLoading: loadingExpenses, error: expError, refetch } = useExpenses()
-  const { data: metrics } = useMetrics(MetricsPeriod.Month)
-  const { data: categories = [] } = useCategories()
+  const { data: metrics, isLoading: loadingMetrics } = useMetrics(MetricsPeriod.Month)
+  const { data: categories = [], isLoading: loadingCategories } = useCategories()
+
+  if (loadingExpenses || loadingMetrics || loadingCategories) return <LoadingSpinner fullPage />
 
   const expenses = expensesPage?.data ?? []
   const groups = groupExpensesByDate(expenses)
@@ -29,9 +33,11 @@ export default function HomePage(): React.ReactElement {
         <div className={styles.topBar}>
           <div>
             <p className={styles.greeting}>Buenos días,</p>
-            <p className={styles.name}>Martina García 👋</p>
+            <p className={styles.name}>{user?.name ?? 'Usuario'} 👋</p>
           </div>
-          <div className={styles.avatar} aria-hidden>MG</div>
+          <div className={styles.avatar} aria-hidden>
+            {user?.name?.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase() ?? '??'}
+          </div>
         </div>
 
         <div className={styles.metrics}>
@@ -72,7 +78,6 @@ export default function HomePage(): React.ReactElement {
           </button>
         </div>
 
-        {loadingExpenses && <LoadingSpinner />}
         {expError && (
           <ErrorMessage
             message="No se pudieron cargar los gastos."
@@ -80,7 +85,7 @@ export default function HomePage(): React.ReactElement {
           />
         )}
 
-        {!loadingExpenses && !expError && groups.length === 0 && (
+        {!expError && groups.length === 0 && (
           <p className={styles.empty}>No hay gastos registrados aún.</p>
         )}
 

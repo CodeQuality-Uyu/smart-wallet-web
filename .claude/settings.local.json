@@ -4,7 +4,10 @@
       "Bash(npx msw:*)",
       "Bash(npm install:*)",
       "Bash(node -e \"require\\(''./node_modules/firebase/package.json''\\).version\")",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(ls c:UsersOdinDocumentsGitHubCodeQualitysmart-wallet*.md)",
+      "Bash(grep -l \"yup\\\\|Yup\" c:/Users/Odin/Documents/GitHub/CodeQuality/smart-wallet/src/features/*/schemas/*.ts)",
+      "Bash(xargs grep:*)"
     ]
   }
 }

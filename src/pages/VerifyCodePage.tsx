@@ -1,43 +1,26 @@
 // src/pages/VerifyCodePage.tsx
 
-import React, { useState } from 'react'
+import React from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { Formik, Form, Field, ErrorMessage } from 'formik'
+import * as Yup from 'yup'
 import { useAuth } from '@/app/providers/AuthContext'
 import { appConfig } from '@/app/config'
 import styles from './VerifyCodePage.module.css'
 
 const isFirestore = appConfig.backend === 'firestore'
 
+const codeSchema = Yup.object({
+  code: Yup.string()
+    .matches(/^\d{6}$/, 'El código debe tener 6 dígitos.')
+    .required('El código es requerido.'),
+})
+
 export default function VerifyCodePage(): React.ReactElement {
   const { verifyCode } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const email = (location.state as { email?: string } | null)?.email ?? ''
-
-  const [code, setCode] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
-    e.preventDefault()
-    if (code.trim().length !== 6) {
-      setError('El código debe tener 6 dígitos.')
-      return
-    }
-    setError('')
-    setLoading(true)
-    try {
-      await verifyCode(email, code.trim())
-      void navigate('/home', { replace: true })
-    } catch (err) {
-      const message = err && typeof err === 'object' && 'message' in err
-        ? String((err as { message: string }).message)
-        : 'Verificación fallida. Intentá de nuevo.'
-      setError(message)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   return (
     <div className={styles.page}>
@@ -84,28 +67,45 @@ export default function VerifyCodePage(): React.ReactElement {
             {email && (
               <p className={styles.emailHint}>Enviado a <strong>{email}</strong></p>
             )}
-            <form onSubmit={(e) => { void handleSubmit(e) }} noValidate>
-              <div className={styles.field}>
-                <label className={styles.label} htmlFor="code">Código de verificación</label>
-                <input
-                  id="code"
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={6}
-                  className={[styles.input, error ? styles.inputError : ''].join(' ')}
-                  placeholder="123456"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                  autoComplete="one-time-code"
-                  autoFocus
-                />
-                {error && <p className={styles.error}>{error}</p>}
-              </div>
-              <p className={styles.demoHint}>Modo demo: usá <strong>123456</strong></p>
-              <button type="submit" className={styles.submitBtn} disabled={loading}>
-                {loading ? 'Verificando…' : 'Verificar →'}
-              </button>
-            </form>
+            <Formik
+              initialValues={{ code: '' }}
+              validationSchema={codeSchema}
+              onSubmit={async (values, { setFieldError }) => {
+                try {
+                  await verifyCode(email, values.code.trim())
+                  void navigate('/home', { replace: true })
+                } catch (err) {
+                  const message = err && typeof err === 'object' && 'message' in err
+                    ? String((err as { message: string }).message)
+                    : 'Verificación fallida. Intentá de nuevo.'
+                  setFieldError('code', message)
+                }
+              }}
+            >
+              {({ isSubmitting, errors, touched }) => (
+                <Form noValidate>
+                  <div className={styles.field}>
+                    <label className={styles.label} htmlFor="code">Código de verificación</label>
+                    <Field
+                      id="code"
+                      name="code"
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      className={[styles.input, errors.code && touched.code ? styles.inputError : ''].join(' ')}
+                      placeholder="123456"
+                      autoComplete="one-time-code"
+                      autoFocus
+                    />
+                    <ErrorMessage name="code" component="p" className={styles.error} />
+                  </div>
+                  <p className={styles.demoHint}>Modo demo: usá <strong>123456</strong></p>
+                  <button type="submit" className={styles.submitBtn} disabled={isSubmitting}>
+                    {isSubmitting ? 'Verificando…' : 'Verificar →'}
+                  </button>
+                </Form>
+              )}
+            </Formik>
           </>
         )}
 

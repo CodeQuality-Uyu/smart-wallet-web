@@ -1,0 +1,46 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // User profile
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+
+      // Cards subcollection
+      match /cards/{cardId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+
+      // Categories subcollection
+      match /categories/{categoryId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+
+      // Places subcollection
+      match /places/{placeId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+
+      // Expenses subcollection
+      match /expenses/{expenseId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+
+      // Recurring expenses subcollection
+      match /recurring/{recurringId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+
+      // Salaries subcollection
+      match /salaries/{salaryId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+    }
+
+    // Deny everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { cardsService } from '@/services/cardsService'
-import type { CreateCardPayload, UpdateCardPayload } from '@/types/models'
+import type { Card, CreateCardPayload } from '@/types/models'
 
 export const CARD_KEYS = {
   all: ['cards'] as const,
@@ -25,18 +25,15 @@ export function useCreateCard() {
   })
 }
 
-export function useUpdateCard(id: string) {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (payload: UpdateCardPayload) => cardsService.update(id, payload),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: CARD_KEYS.all }),
-  })
-}
-
 export function useDeleteCard() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => cardsService.remove(id),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: CARD_KEYS.all }),
+    onSuccess: (_data, id) => {
+      qc.setQueryData<Card[]>(CARD_KEYS.list(), (prev) =>
+        prev?.filter((c) => c.id !== id) ?? []
+      )
+      void qc.invalidateQueries({ queryKey: CARD_KEYS.all })
+    },
   })
 }

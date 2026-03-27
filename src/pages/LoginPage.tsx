@@ -1,16 +1,29 @@
 import React, { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Formik, Form, Field, ErrorMessage } from 'formik'
+import * as Yup from 'yup'
 import styles from './LoginPage.module.css'
 import { useAuth } from '@/app/providers/AuthContext'
 
 type Mode = 'login' | 'register' | 'forgot'
 
-interface FieldErrors {
-  name?: string
-  lastName?: string
-  email?: string
-  password?: string
-}
+const loginSchema = Yup.object({
+  email: Yup.string().email('Ingresá un email válido.').required('El email es requerido.'),
+  password: Yup.string().required('La contraseña es requerida.'),
+})
+
+const registerSchema = Yup.object({
+  name: Yup.string().trim().required('El nombre es requerido.'),
+  lastName: Yup.string().trim().required('El apellido es requerido.'),
+  email: Yup.string().email('Ingresá un email válido.').required('El email es requerido.'),
+  password: Yup.string().min(6, 'Mínimo 6 caracteres.').required('La contraseña es requerida.'),
+})
+
+const forgotSchema = Yup.object({
+  email: Yup.string().email('Ingresá un email válido.').required('El email es requerido.'),
+})
+
+const INITIAL_VALUES = { name: '', lastName: '', email: '', password: '' }
 
 export default function LoginPage(): React.ReactElement {
   const { login, register, resetPassword } = useAuth()
@@ -20,80 +33,21 @@ export default function LoginPage(): React.ReactElement {
   const justReset = searchParams.get('reset') === 'true'
 
   const [mode, setMode] = useState<Mode>('login')
-  const [name, setName] = useState('')
-  const [lastName, setLastName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [errors, setErrors] = useState<FieldErrors>({})
-  const [loading, setLoading] = useState(false)
   const [successMsg, setSuccessMsg] = useState(
     justVerified ? '¡Email verificado! Ya podés ingresar.' :
     justReset ? '¡Contraseña restablecida! Ya podés ingresar.' : ''
   )
 
-  function validate(): FieldErrors {
-    const errs: FieldErrors = {}
-    if (mode === 'register') {
-      if (!name.trim()) errs.name = 'El nombre es requerido.'
-      if (!lastName.trim()) errs.lastName = 'El apellido es requerido.'
-    }
-    if (!email.trim()) {
-      errs.email = 'El email es requerido.'
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      errs.email = 'Ingresá un email válido.'
-    }
-    if (mode !== 'forgot') {
-      if (!password) errs.password = 'La contraseña es requerida.'
-      else if (mode === 'register' && password.length < 6) errs.password = 'Mínimo 6 caracteres.'
-    }
-    return errs
-  }
-
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
-    e.preventDefault()
-    const errs = validate()
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs)
-      return
-    }
-    setErrors({})
-    setSuccessMsg('')
-    setLoading(true)
-    try {
-      if (mode === 'login') {
-        await login(email.trim(), password)
-        void navigate('/home')
-      } else if (mode === 'register') {
-        await register(`${name.trim()} ${lastName.trim()}`, email.trim(), password)
-        void navigate('/verify-code', { state: { email: email.trim() } })
-      } else {
-        await resetPassword(email.trim())
-        setSuccessMsg('Te enviamos un email para restablecer tu contraseña.')
-        setMode('login')
-      }
-    } catch (err) {
-      const message = err && typeof err === 'object' && 'message' in err
-        ? String((err as { message: string }).message)
-        : 'Algo salió mal. Intentá de nuevo.'
-      setErrors({ email: message })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  function switchMode(next: Mode): void {
-    setMode(next)
-    setErrors({})
-    setSuccessMsg('')
-    setName('')
-    setLastName('')
-    setEmail('')
-    setPassword('')
-  }
-
   const isLogin = mode === 'login'
   const isRegister = mode === 'register'
   const isForgot = mode === 'forgot'
+
+  const schema = isLogin ? loginSchema : isRegister ? registerSchema : forgotSchema
+
+  function switchMode(next: Mode): void {
+    setMode(next)
+    setSuccessMsg('')
+  }
 
   return (
     <div className={styles.page}>
@@ -114,7 +68,11 @@ export default function LoginPage(): React.ReactElement {
                 : <>Recuperá<br />tu <em className={styles.em}>cuenta</em></>}
           </h1>
           <p className={styles.subtitle}>
-            {isLogin ? 'Tu dinero te está esperando' : isRegister ? 'Creá tu cuenta y empezá a trackear' : 'Te mandamos un link para crear una nueva contraseña'}
+            {isLogin
+              ? 'Tu dinero te está esperando'
+              : isRegister
+                ? 'Creá tu cuenta y empezá a trackear'
+                : 'Te mandamos un link para crear una nueva contraseña'}
           </p>
         </div>
       </div>
@@ -126,87 +84,116 @@ export default function LoginPage(): React.ReactElement {
 
         {successMsg && <p className={styles.success}>{successMsg}</p>}
 
-        <form onSubmit={(e) => { void handleSubmit(e) }} noValidate>
-          {isRegister && (
-            <>
-              <div className={styles.field}>
-                <label className={styles.label} htmlFor="name">Nombre</label>
-                <input
-                  id="name"
-                  type="text"
-                  className={[styles.input, errors.name ? styles.inputError : ''].join(' ')}
-                  placeholder="Tu nombre"
-                  autoComplete="given-name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-                {errors.name && <p className={styles.error}>{errors.name}</p>}
-              </div>
+        <Formik
+          key={mode}
+          initialValues={INITIAL_VALUES}
+          validationSchema={schema}
+          onSubmit={async (values, { setFieldError }) => {
+            setSuccessMsg('')
+            try {
+              if (isLogin) {
+                await login(values.email.trim(), values.password)
+                void navigate('/home')
+              } else if (isRegister) {
+                await register(
+                  `${values.name.trim()} ${values.lastName.trim()}`,
+                  values.email.trim(),
+                  values.password,
+                )
+                void navigate('/verify-code', { state: { email: values.email.trim() } })
+              } else {
+                await resetPassword(values.email.trim())
+                setSuccessMsg('Te enviamos un email para restablecer tu contraseña.')
+                switchMode('login')
+              }
+            } catch (err) {
+              const message = err && typeof err === 'object' && 'message' in err
+                ? String((err as { message: string }).message)
+                : 'Algo salió mal. Intentá de nuevo.'
+              setFieldError('email', message)
+            }
+          }}
+        >
+          {({ isSubmitting, errors, touched }) => (
+            <Form noValidate>
+              {isRegister && (
+                <>
+                  <div className={styles.field}>
+                    <label className={styles.label} htmlFor="name">Nombre</label>
+                    <Field
+                      id="name"
+                      name="name"
+                      type="text"
+                      className={[styles.input, errors.name && touched.name ? styles.inputError : ''].join(' ')}
+                      placeholder="Tu nombre"
+                      autoComplete="given-name"
+                    />
+                    <ErrorMessage name="name" component="p" className={styles.error} />
+                  </div>
+
+                  <div className={styles.field}>
+                    <label className={styles.label} htmlFor="lastName">Apellido</label>
+                    <Field
+                      id="lastName"
+                      name="lastName"
+                      type="text"
+                      className={[styles.input, errors.lastName && touched.lastName ? styles.inputError : ''].join(' ')}
+                      placeholder="Tu apellido"
+                      autoComplete="family-name"
+                    />
+                    <ErrorMessage name="lastName" component="p" className={styles.error} />
+                  </div>
+                </>
+              )}
 
               <div className={styles.field}>
-                <label className={styles.label} htmlFor="lastName">Apellido</label>
-                <input
-                  id="lastName"
-                  type="text"
-                  className={[styles.input, errors.lastName ? styles.inputError : ''].join(' ')}
-                  placeholder="Tu apellido"
-                  autoComplete="family-name"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
+                <label className={styles.label} htmlFor="email">Email</label>
+                <Field
+                  id="email"
+                  name="email"
+                  type="email"
+                  className={[styles.input, errors.email && touched.email ? styles.inputError : ''].join(' ')}
+                  placeholder="hola@ejemplo.com"
+                  autoComplete="email"
                 />
-                {errors.lastName && <p className={styles.error}>{errors.lastName}</p>}
+                <ErrorMessage name="email" component="p" className={styles.error} />
               </div>
-            </>
-          )}
 
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor="email">Email</label>
-            <input
-              id="email"
-              type="email"
-              className={[styles.input, errors.email ? styles.inputError : ''].join(' ')}
-              placeholder="hola@ejemplo.com"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-            {errors.email && <p className={styles.error}>{errors.email}</p>}
-          </div>
+              {!isForgot && (
+                <div className={styles.field}>
+                  <label className={styles.label} htmlFor="password">Contraseña</label>
+                  <Field
+                    id="password"
+                    name="password"
+                    type="password"
+                    className={[styles.input, errors.password && touched.password ? styles.inputError : ''].join(' ')}
+                    placeholder={isRegister ? 'Mínimo 6 caracteres' : '••••••••'}
+                    autoComplete={isRegister ? 'new-password' : 'current-password'}
+                  />
+                  <ErrorMessage name="password" component="p" className={styles.error} />
+                </div>
+              )}
 
-          {!isForgot && (
-            <div className={styles.field}>
-              <label className={styles.label} htmlFor="password">Contraseña</label>
-              <input
-                id="password"
-                type="password"
-                className={[styles.input, errors.password ? styles.inputError : ''].join(' ')}
-                placeholder={isRegister ? 'Mínimo 6 caracteres' : '••••••••'}
-                autoComplete={isRegister ? 'new-password' : 'current-password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-              {errors.password && <p className={styles.error}>{errors.password}</p>}
-            </div>
-          )}
+              {isLogin && (
+                <p className={styles.hint} style={{ marginBottom: 4, textAlign: 'right' }}>
+                  <button type="button" className={styles.link} onClick={() => switchMode('forgot')}>
+                    ¿Olvidaste tu contraseña?
+                  </button>
+                </p>
+              )}
 
-          {isLogin && (
-            <p className={styles.hint} style={{ marginBottom: 4, textAlign: 'right' }}>
-              <button type="button" className={styles.link} onClick={() => switchMode('forgot')}>
-                ¿Olvidaste tu contraseña?
+              <button type="submit" className={styles.submitBtn} disabled={isSubmitting}>
+                {isSubmitting
+                  ? 'Cargando…'
+                  : isLogin
+                    ? 'Ingresar →'
+                    : isRegister
+                      ? 'Crear cuenta →'
+                      : 'Enviar link →'}
               </button>
-            </p>
+            </Form>
           )}
-
-          <button type="submit" className={styles.submitBtn} disabled={loading}>
-            {loading
-              ? 'Cargando…'
-              : isLogin
-                ? 'Ingresar →'
-                : isRegister
-                  ? 'Crear cuenta →'
-                  : 'Enviar link →'}
-          </button>
-        </form>
+        </Formik>
 
         <p className={styles.hint}>
           {isLogin ? (
@@ -216,11 +203,9 @@ export default function LoginPage(): React.ReactElement {
               </button>
             </>
           ) : (
-            <>
-              <button type="button" className={styles.link} onClick={() => switchMode('login')}>
-                ← Volver al inicio
-              </button>
-            </>
+            <button type="button" className={styles.link} onClick={() => switchMode('login')}>
+              ← Volver al inicio
+            </button>
           )}
         </p>
       </div>

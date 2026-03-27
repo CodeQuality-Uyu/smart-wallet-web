@@ -1,6 +1,6 @@
 // src/services/expensesService.ts
 
-import { httpClient } from '@/api/httpClient'
+import { getExpensesBackend } from '@/backend'
 import type {
   Expense,
   CreateExpensePayload,
@@ -10,55 +10,36 @@ import type {
   ExpenseFilters,
 } from '@/types/models'
 
-const BASE = '/expenses'
-
 export const expensesService = {
   async list(filters?: ExpenseFilters): Promise<PaginatedResponse<Expense>> {
-    const { data } = await httpClient.get<PaginatedResponse<Expense>>(BASE, {
-      params: filters,
-    })
-    return data
+    return (await getExpensesBackend()).list(filters)
   },
 
   async getById(id: string): Promise<Expense> {
-    const { data } = await httpClient.get<Expense>(`${BASE}/${id}`)
-    return data
+    return (await getExpensesBackend()).getById(id)
   },
 
   async create(payload: CreateExpensePayload): Promise<Expense> {
-    const { data } = await httpClient.post<Expense>(BASE, payload)
-    return data
+    return (await getExpensesBackend()).create(payload)
   },
 
   async update(id: string, payload: UpdateExpensePayload): Promise<Expense> {
-    const { data } = await httpClient.patch<Expense>(`${BASE}/${id}`, payload)
-    return data
+    return (await getExpensesBackend()).update(id, payload)
   },
 
   async remove(id: string): Promise<void> {
-    await httpClient.delete(`${BASE}/${id}`)
+    return (await getExpensesBackend()).remove(id)
   },
 
   async uploadReceipt(id: string, file: File): Promise<{ receiptUrl: string }> {
-    const form = new FormData()
-    form.append('receipt', file)
-    const { data } = await httpClient.post<{ receiptUrl: string }>(
-      `${BASE}/${id}/receipt`,
-      form,
-      { headers: { 'Content-Type': 'multipart/form-data' } }
-    )
-    return data
+    return (await getExpensesBackend()).uploadReceipt(id, file)
   },
 
   async addTicketLine(expenseId: string, line: Omit<TicketLine, 'id'>): Promise<TicketLine> {
-    const { data } = await httpClient.post<TicketLine>(
-      `${BASE}/${expenseId}/ticket-lines`,
-      line
-    )
-    return data
+    return (await getExpensesBackend()).addTicketLine(expenseId, line)
   },
 
   async removeTicketLine(expenseId: string, lineId: string): Promise<void> {
-    await httpClient.delete(`${BASE}/${expenseId}/ticket-lines/${lineId}`)
+    return (await getExpensesBackend()).removeTicketLine(expenseId, lineId)
   },
 }

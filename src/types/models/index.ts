@@ -2,9 +2,9 @@
 
 import {
   Currency,
-  PaymentType,
   CardType,
   RecurringMode,
+  RecurringFrequency,
   RecurringStatus,
   RecurringPaymentStatus,
 } from '@/types/enums'
@@ -30,6 +30,7 @@ export interface Category extends Timestamps {
   name: string
   icon: string
   color?: string
+  active: boolean
 }
 
 export type CreateCategoryPayload = Omit<Category, 'id' | 'createdAt' | 'updatedAt'>
@@ -42,6 +43,7 @@ export interface Place extends Timestamps {
   name: string
   address?: string
   visitCount: number
+  active: boolean
 }
 
 export type CreatePlacePayload = Pick<Place, 'name' | 'address'>
@@ -73,7 +75,7 @@ export interface Expense extends Timestamps {
   description: string
   amount: number
   currency: Currency
-  paymentType: PaymentType
+  cardId: string
   categoryIds: string[]
   placeId?: string
   date: string
@@ -108,11 +110,13 @@ export interface RecurringExpense extends Timestamps {
   id: string
   name: string
   icon: string
+  description?: string
   amount: number
   currency: Currency
   categoryId: string
   cardId: string
   mode: RecurringMode
+  frequency: RecurringFrequency
   status: RecurringStatus
   dueDayOfMonth?: number // only for manual
   paymentHistory: RecurringPaymentHistory[]
@@ -154,6 +158,7 @@ export interface FixedExpenseBreakdown {
   icon: string
   amount: number
   currency: Currency
+  frequency: RecurringFrequency
 }
 
 export interface MetricsSummary {

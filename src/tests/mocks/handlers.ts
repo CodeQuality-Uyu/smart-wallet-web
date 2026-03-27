@@ -100,7 +100,9 @@ export const handlers = [
   ),
 
   // ─── Categories ─────────────────────────────────────────
-  http.get(`${BASE}/categories`, () => HttpResponse.json(mockCategories)),
+  http.get(`${BASE}/categories`, () =>
+    HttpResponse.json(mockCategories.filter((c) => c.active !== false))
+  ),
 
   http.post(`${BASE}/categories`, async ({ request }) => {
     const body = await request.json() as Record<string, unknown>
@@ -119,10 +121,18 @@ export const handlers = [
     return HttpResponse.json({ ...cat, ...body })
   }),
 
-  http.delete(`${BASE}/categories/:id`, () => new HttpResponse(null, { status: 204 })),
+  http.delete(`${BASE}/categories/:id`, ({ params }) => {
+    const cat = mockCategories.find((c) => c.id === params['id'])
+    if (!cat) return new HttpResponse(null, { status: 404 })
+    cat.active = false
+    cat.updatedAt = new Date().toISOString()
+    return new HttpResponse(null, { status: 204 })
+  }),
 
   // ─── Places ─────────────────────────────────────────────
-  http.get(`${BASE}/places`, () => HttpResponse.json(mockPlaces)),
+  http.get(`${BASE}/places`, () =>
+    HttpResponse.json(mockPlaces.filter((p) => p.active !== false))
+  ),
 
   http.post(`${BASE}/places`, async ({ request }) => {
     const body = await request.json() as Record<string, unknown>
@@ -142,29 +152,40 @@ export const handlers = [
     return HttpResponse.json({ ...place, ...body })
   }),
 
-  http.delete(`${BASE}/places/:id`, () => new HttpResponse(null, { status: 204 })),
+  http.delete(`${BASE}/places/:id`, ({ params }) => {
+    const place = mockPlaces.find((p) => p.id === params['id'])
+    if (!place) return new HttpResponse(null, { status: 404 })
+    place.active = false
+    place.updatedAt = new Date().toISOString()
+    return new HttpResponse(null, { status: 204 })
+  }),
 
   // ─── Cards ──────────────────────────────────────────────
-  http.get(`${BASE}/cards`, () => HttpResponse.json(mockCards)),
+  http.get(`${BASE}/cards`, () =>
+    HttpResponse.json(mockCards.filter((c) => c.active !== false))
+  ),
 
   http.post(`${BASE}/cards`, async ({ request }) => {
     const body = await request.json() as Record<string, unknown>
-    return HttpResponse.json({
+    const created = {
       ...body,
+      active: true,
       id: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-    }, { status: 201 })
+    }
+    mockCards.unshift(created as typeof mockCards[0])
+    return HttpResponse.json(created, { status: 201 })
   }),
 
-  http.patch(`${BASE}/cards/:id`, async ({ params, request }) => {
+  http.delete(`${BASE}/cards/:id`, ({ params }) => {
     const card = mockCards.find((c) => c.id === params['id'])
     if (!card) return new HttpResponse(null, { status: 404 })
-    const body = await request.json() as Record<string, unknown>
-    return HttpResponse.json({ ...card, ...body })
+    // Soft delete — preserves references from expenses and recurring payments
+    card.active = false
+    card.updatedAt = new Date().toISOString()
+    return new HttpResponse(null, { status: 204 })
   }),
-
-  http.delete(`${BASE}/cards/:id`, () => new HttpResponse(null, { status: 204 })),
 
   // ─── Recurring ──────────────────────────────────────────
   http.get(`${BASE}/recurring`, () => HttpResponse.json(mockRecurring)),

@@ -27,7 +27,7 @@ export default function EditExpensePage(): React.ReactElement {
     description: expense.description,
     amount: expense.amount,
     currency: expense.currency,
-    paymentType: expense.paymentType,
+    cardId: expense.cardId,
     categoryIds: expense.categoryIds,
     placeId: expense.placeId ?? '',
     date: expense.date,

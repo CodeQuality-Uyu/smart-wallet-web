@@ -1,59 +1,28 @@
 // src/pages/ResetPasswordPage.tsx
 
-import React, { useState } from 'react'
+import React from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Formik, Form, Field, ErrorMessage } from 'formik'
+import * as Yup from 'yup'
 import { appConfig } from '@/app/config'
 import styles from './ResetPasswordPage.module.css'
+
+const resetSchema = Yup.object({
+  password: Yup.string()
+    .min(6, 'Mínimo 6 caracteres.')
+    .required('La contraseña es requerida.'),
+  confirm: Yup.string()
+    .oneOf([Yup.ref('password')], 'Las contraseñas no coinciden.')
+    .required('Confirmá tu contraseña.'),
+})
+
+// Only relevant for Firestore — MSW doesn't use this page
+const isFirestore = appConfig.backend === 'firestore'
 
 export default function ResetPasswordPage(): React.ReactElement {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const oobCode = searchParams.get('oobCode') ?? ''
-
-  const [password, setPassword] = useState('')
-  const [confirm, setConfirm] = useState('')
-  const [errors, setErrors] = useState<{ password?: string; confirm?: string }>({})
-  const [loading, setLoading] = useState(false)
-  const [globalError, setGlobalError] = useState('')
-
-  // Only relevant for Firestore — MSW doesn't use this page
-  const isFirestore = appConfig.backend === 'firestore'
-
-  function validate(): { password?: string; confirm?: string } {
-    const errs: { password?: string; confirm?: string } = {}
-    if (!password) errs.password = 'La contraseña es requerida.'
-    else if (password.length < 6) errs.password = 'Mínimo 6 caracteres.'
-    if (!confirm) errs.confirm = 'Confirmá tu contraseña.'
-    else if (confirm !== password) errs.confirm = 'Las contraseñas no coinciden.'
-    return errs
-  }
-
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
-    e.preventDefault()
-    const errs = validate()
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs)
-      return
-    }
-    setErrors({})
-    setGlobalError('')
-    setLoading(true)
-    try {
-      const [{ confirmPasswordReset }, { firebaseAuth }] = await Promise.all([
-        import('firebase/auth'),
-        import('@/backend/firestore/config'),
-      ])
-      await confirmPasswordReset(firebaseAuth, oobCode, password)
-      void navigate('/login?reset=true', { replace: true })
-    } catch (err) {
-      const message = err && typeof err === 'object' && 'message' in err
-        ? String((err as { message: string }).message)
-        : 'No se pudo restablecer la contraseña. El link puede haber expirado.'
-      setGlobalError(message)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   if (!isFirestore || !oobCode) {
     return (
@@ -98,42 +67,60 @@ export default function ResetPasswordPage(): React.ReactElement {
       <div className={styles.form}>
         <h2 className={styles.formTitle}>Restablecer contraseña</h2>
 
-        {globalError && <p className={styles.error} style={{ marginBottom: 12 }}>{globalError}</p>}
+        <Formik
+          initialValues={{ password: '', confirm: '' }}
+          validationSchema={resetSchema}
+          onSubmit={async (values, { setFieldError }) => {
+            try {
+              const [{ confirmPasswordReset }, { firebaseAuth }] = await Promise.all([
+                import('firebase/auth'),
+                import('@/backend/firestore/config'),
+              ])
+              await confirmPasswordReset(firebaseAuth, oobCode, values.password)
+              void navigate('/login?reset=true', { replace: true })
+            } catch (err) {
+              const message = err && typeof err === 'object' && 'message' in err
+                ? String((err as { message: string }).message)
+                : 'No se pudo restablecer la contraseña. El link puede haber expirado.'
+              setFieldError('confirm', message)
+            }
+          }}
+        >
+          {({ isSubmitting, errors, touched }) => (
+            <Form noValidate>
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="password">Nueva contraseña</label>
+                <Field
+                  id="password"
+                  name="password"
+                  type="password"
+                  className={[styles.input, errors.password && touched.password ? styles.inputError : ''].join(' ')}
+                  placeholder="Mínimo 6 caracteres"
+                  autoComplete="new-password"
+                  autoFocus
+                />
+                <ErrorMessage name="password" component="p" className={styles.error} />
+              </div>
 
-        <form onSubmit={(e) => { void handleSubmit(e) }} noValidate>
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor="password">Nueva contraseña</label>
-            <input
-              id="password"
-              type="password"
-              className={[styles.input, errors.password ? styles.inputError : ''].join(' ')}
-              placeholder="Mínimo 6 caracteres"
-              autoComplete="new-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoFocus
-            />
-            {errors.password && <p className={styles.error}>{errors.password}</p>}
-          </div>
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="confirm">Confirmar contraseña</label>
+                <Field
+                  id="confirm"
+                  name="confirm"
+                  type="password"
+                  className={[styles.input, errors.confirm && touched.confirm ? styles.inputError : ''].join(' ')}
+                  placeholder="Repetí la contraseña"
+                  autoComplete="new-password"
+                />
+                <ErrorMessage name="confirm" component="p" className={styles.error} />
+              </div>
 
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor="confirm">Confirmar contraseña</label>
-            <input
-              id="confirm"
-              type="password"
-              className={[styles.input, errors.confirm ? styles.inputError : ''].join(' ')}
-              placeholder="Repetí la contraseña"
-              autoComplete="new-password"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-            />
-            {errors.confirm && <p className={styles.error}>{errors.confirm}</p>}
-          </div>
-
-          <button type="submit" className={styles.submitBtn} disabled={loading}>
-            {loading ? 'Guardando…' : 'Guardar contraseña →'}
-          </button>
-        </form>
+              <button type="submit" className={styles.submitBtn} disabled={isSubmitting}>
+                {isSubmitting ? 'Guardando…' : 'Guardar contraseña →'}
+              </button>
+            </Form>
+          )}
+        </Formik>
 
         <p className={styles.hint}>
           <button type="button" className={styles.link} onClick={() => void navigate('/login')}>

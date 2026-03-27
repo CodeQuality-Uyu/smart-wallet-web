@@ -2,42 +2,28 @@
 
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Formik, Form } from 'formik'
+import type { FormikHelpers } from 'formik'
 import { useRecurringList, useCreateRecurring } from '@/features/recurring/hooks/useRecurring'
 import { useCategories } from '@/features/categories/hooks/useCategories'
 import { useCards } from '@/features/cards/hooks/useCards'
 import { CategoryChips } from '@/features/expenses/components/CategoryChips'
+import { recurringSchema, type RecurringFormValues } from '@/features/recurring/schemas/recurringSchema'
+import { FormField, TextInput, SelectInput } from '@/components/ui/FormField'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { formatCurrency } from '@/utils/formatCurrency'
-import { RecurringMode, RecurringPaymentStatus, RecurringStatus, Currency } from '@/types/enums'
+import { RecurringMode, RecurringFrequency, RecurringPaymentStatus, RecurringStatus, Currency, CardType } from '@/types/enums'
 import styles from './RecurringPage.module.css'
 
 const ICON_OPTIONS = ['📺', '🎵', '☁️', '💡', '🌊', '📱', '🎮', '🏠', '💊', '🔒', '📰', '🚗']
-const CURRENCIES = [Currency.UYU, Currency.USD]
 
-interface RecurringForm {
-  name: string
-  icon: string
-  amount: string
-  currency: Currency
-  categoryIds: string[]
-  cardId: string
-  mode: RecurringMode
-  dueDayOfMonth: string
-}
-
-const EMPTY_FORM: RecurringForm = {
-  name: '',
-  icon: '',
-  amount: '',
-  currency: Currency.UYU,
-  categoryIds: [],
-  cardId: '',
-  mode: RecurringMode.Auto,
-  dueDayOfMonth: '',
-}
+const CURRENCY_OPTIONS = [
+  { value: Currency.UYU, label: 'UYU' },
+  { value: Currency.USD, label: 'USD' },
+]
 
 export default function RecurringPage(): React.ReactElement {
   const navigate = useNavigate()
@@ -45,52 +31,44 @@ export default function RecurringPage(): React.ReactElement {
   const { data: categories = [] } = useCategories()
   const { data: cards = [] } = useCards()
   const { mutateAsync: createRecurring } = useCreateRecurring()
-
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState<RecurringForm>(EMPTY_FORM)
-  const [formError, setFormError] = useState('')
-  const [saving, setSaving] = useState(false)
 
-  const subscriptions = recurring.filter((r) => r.categoryId === 'cat-7')
-  const services = recurring.filter((r) => r.categoryId !== 'cat-7')
+  const cardOptions = cards.map((c) => ({
+    value: c.id,
+    label: `${c.bank} · ${c.type === CardType.Credit ? 'Crédito' : c.type === CardType.Debit ? 'Débito' : 'Transferencia'} ···· ${c.lastFour ?? '----'}`,
+  }))
+
+  // Group recurring items by categoryId
+  const grouped = recurring.reduce<Record<string, typeof recurring>>((acc, item) => {
+    ;(acc[item.categoryId] ??= []).push(item)
+    return acc
+  }, {})
 
   if (isLoading) return <LoadingSpinner fullPage />
   if (error) return <ErrorMessage onRetry={() => void refetch()} />
 
-  type StringField = { [K in keyof RecurringForm]: RecurringForm[K] extends string ? K : never }[keyof RecurringForm]
-  function setField(key: StringField, value: string): void {
-    setForm((prev) => ({ ...prev, [key]: value }))
-  }
-
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
-    e.preventDefault()
-    if (!form.name.trim()) { setFormError('El nombre es requerido.'); return }
-    if (!form.icon) { setFormError('Seleccioná un ícono.'); return }
-    if (!form.amount || Number(form.amount) <= 0) { setFormError('El monto debe ser mayor a 0.'); return }
-    if (form.categoryIds.length === 0) { setFormError('Seleccioná al menos una categoría.'); return }
-    if (!form.cardId) { setFormError('Seleccioná un medio de pago.'); return }
-    if (form.mode === RecurringMode.Manual && !form.dueDayOfMonth) {
-      setFormError('Ingresá el día de vencimiento.')
-      return
-    }
-    setFormError('')
-    setSaving(true)
+  async function handleSubmit(
+    values: RecurringFormValues,
+    { setStatus }: FormikHelpers<RecurringFormValues>,
+  ): Promise<void> {
     try {
       await createRecurring({
-        name: form.name.trim(),
-        icon: form.icon,
-        amount: Number(form.amount),
-        currency: form.currency,
-        categoryId: form.categoryIds[0] ?? '',
-        cardId: form.cardId,
-        mode: form.mode,
+        name: values.name,
+        icon: values.icon,
+        description: values.description || undefined,
+        amount: values.amount,
+        currency: values.currency,
+        categoryId: values.categoryId,
+        cardId: values.cardId,
+        mode: values.mode,
+        frequency: values.frequency,
         status: RecurringStatus.Active,
-        dueDayOfMonth: form.mode === RecurringMode.Manual ? Number(form.dueDayOfMonth) : undefined,
+        dueDayOfMonth: values.mode === RecurringMode.Manual ? values.dueDayOfMonth : undefined,
       })
       setShowForm(false)
-      setForm(EMPTY_FORM)
-    } finally {
-      setSaving(false)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : (err as { message?: string })?.message ?? 'Error al guardar'
+      setStatus(msg)
     }
   }
 
@@ -132,7 +110,9 @@ export default function RecurringPage(): React.ReactElement {
         <div className={styles.itemRight}>
           <p className={styles.itemAmt}>
             {formatCurrency(item.amount, item.currency)}{' '}
-            <span className={styles.itemCurr}>{item.currency}</span>
+            <span className={styles.itemCurr}>
+              {item.currency}/{item.frequency === RecurringFrequency.Annual ? 'año' : 'mes'}
+            </span>
           </p>
         </div>
       </article>
@@ -149,146 +129,152 @@ export default function RecurringPage(): React.ReactElement {
         </button>
 
         {showForm && (
-          <form className={styles.form} onSubmit={(e) => { void handleSubmit(e) }} noValidate>
-            <h2 className={styles.formTitle}>Nuevo recurrente</h2>
+          <Formik<RecurringFormValues>
+            key={cards[0]?.id ?? 'no-cards'}
+            initialValues={{
+              name: '',
+              icon: '',
+              description: '',
+              amount: '' as unknown as number,
+              currency: Currency.UYU,
+              categoryId: '',
+              cardId: cards[0]?.id ?? '',
+              mode: RecurringMode.Auto,
+              frequency: RecurringFrequency.Monthly,
+              status: RecurringStatus.Active,
+              dueDayOfMonth: undefined,
+            }}
+            validationSchema={recurringSchema}
+            onSubmit={handleSubmit}
+          >
+            {({ isSubmitting, values, setFieldValue, status }) => (
+              <Form className={styles.form} noValidate>
+                <h2 className={styles.formTitle}>Nuevo recurrente</h2>
 
-            <div className={styles.formRow}>
-              <div className={styles.fieldGroup} style={{ flex: 1 }}>
-                <label className={styles.fieldLabel} htmlFor="rec-name">Nombre</label>
-                <input
-                  id="rec-name"
-                  type="text"
-                  className={styles.fieldInput}
-                  placeholder="ej. Netflix"
-                  value={form.name}
-                  onChange={(e) => setField('name', e.target.value)}
-                />
-              </div>
-            </div>
+                <FormField name="name" label="Nombre">
+                  <TextInput name="name" placeholder="ej. Netflix" />
+                </FormField>
 
-            <div className={styles.fieldGroup}>
-              <span className={styles.fieldLabel}>Ícono</span>
-              <div className={styles.iconPicker} role="group">
-                {ICON_OPTIONS.map((ico) => (
-                  <button
-                    key={ico}
-                    type="button"
-                    className={[styles.icoBtn, form.icon === ico ? styles.icoBtnActive : ''].join(' ')}
-                    onClick={() => setField('icon', ico)}
-                    aria-pressed={form.icon === ico}
-                  >
-                    {ico}
-                  </button>
-                ))}
-              </div>
-            </div>
+                <FormField name="icon" label="Ícono">
+                  <div className={styles.iconPicker}>
+                    {ICON_OPTIONS.map((ico) => (
+                      <button
+                        key={ico}
+                        type="button"
+                        className={[styles.icoBtn, values.icon === ico ? styles.icoBtnActive : ''].join(' ')}
+                        onClick={() => void setFieldValue('icon', ico)}
+                        aria-pressed={values.icon === ico}
+                      >
+                        {ico}
+                      </button>
+                    ))}
+                  </div>
+                </FormField>
 
-            <div className={styles.formRow}>
-              <div className={styles.fieldGroup} style={{ flex: 1 }}>
-                <label className={styles.fieldLabel} htmlFor="rec-amount">Monto</label>
-                <input
-                  id="rec-amount"
-                  type="number"
-                  min="0"
-                  step="any"
-                  className={styles.fieldInput}
-                  placeholder="0"
-                  value={form.amount}
-                  onChange={(e) => setField('amount', e.target.value)}
-                />
-              </div>
-              <div className={styles.fieldGroup} style={{ width: 90 }}>
-                <label className={styles.fieldLabel} htmlFor="rec-currency">Moneda</label>
-                <select
-                  id="rec-currency"
-                  className={styles.fieldInput}
-                  value={form.currency}
-                  onChange={(e) => setField('currency', e.target.value)}
-                >
-                  {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-            </div>
+                <FormField name="description" label="Descripción (opcional)">
+                  <TextInput name="description" placeholder="ej. Plan familiar" maxLength={100} />
+                </FormField>
 
-            <div className={styles.fieldGroup}>
-              <span className={styles.fieldLabel}>Categoría</span>
-              <CategoryChips
-                categories={categories}
-                selected={form.categoryIds}
-                onChange={(ids) => setForm((prev) => ({ ...prev, categoryIds: ids }))}
-              />
-            </div>
+                <div className={styles.formRow}>
+                  <div style={{ flex: 1 }}>
+                    <FormField name="amount" label="Monto">
+                      <TextInput name="amount" type="number" min="0" step="any" placeholder="0" />
+                    </FormField>
+                  </div>
+                  <div style={{ width: 100 }}>
+                    <FormField name="currency" label="Moneda">
+                      <SelectInput name="currency" options={CURRENCY_OPTIONS} />
+                    </FormField>
+                  </div>
+                </div>
 
-            <div className={styles.fieldGroup}>
-              <label className={styles.fieldLabel} htmlFor="rec-card">Medio de pago</label>
-              <select
-                id="rec-card"
-                className={styles.fieldInput}
-                value={form.cardId}
-                onChange={(e) => setField('cardId', e.target.value)}
-              >
-                <option value="">Seleccioná...</option>
-                {cards.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-            </div>
+                <FormField name="categoryId" label="Categoría">
+                  <CategoryChips
+                    categories={categories}
+                    selected={values.categoryId ? [values.categoryId] : []}
+                    onChange={(ids) => {
+                      const newId = ids.find((id) => id !== values.categoryId) ?? ''
+                      void setFieldValue('categoryId', newId)
+                    }}
+                  />
+                  <p className={styles.createHint}>
+                    ¿No encontrás la categoría?{' '}
+                    <a href="/settings/categories" className={styles.createLink}>Crear nueva →</a>
+                  </p>
+                </FormField>
 
-            <div className={styles.fieldGroup}>
-              <span className={styles.fieldLabel}>Modo de pago</span>
-              <div className={styles.modeSelector}>
-                {([RecurringMode.Auto, RecurringMode.Manual] as const).map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    className={[styles.modeOpt, form.mode === m ? styles.modeOptActive : ''].join(' ')}
-                    onClick={() => setField('mode', m)}
-                  >
-                    {m === RecurringMode.Auto ? '⚡ Automático' : '✋ Manual'}
-                  </button>
-                ))}
-              </div>
-            </div>
+                <FormField name="cardId" label="Medio de pago">
+                  <SelectInput name="cardId" options={cardOptions} placeholder={cardOptions.length === 0 ? 'Sin tarjetas' : undefined} />
+                </FormField>
 
-            {form.mode === RecurringMode.Manual && (
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel} htmlFor="rec-dueday">Día de vencimiento</label>
-                <input
-                  id="rec-dueday"
-                  type="number"
-                  min="1"
-                  max="31"
-                  className={styles.fieldInput}
-                  placeholder="ej. 15"
-                  value={form.dueDayOfMonth}
-                  onChange={(e) => setField('dueDayOfMonth', e.target.value)}
-                />
-              </div>
+                <FormField name="mode" label="Modo de pago">
+                  <div className={styles.modeSelector}>
+                    {([RecurringMode.Auto, RecurringMode.Manual] as const).map((m) => (
+                      <button
+                        key={m}
+                        type="button"
+                        className={[styles.modeOpt, values.mode === m ? styles.modeOptActive : ''].join(' ')}
+                        onClick={() => void setFieldValue('mode', m)}
+                      >
+                        {m === RecurringMode.Auto ? '⚡ Automático' : '✋ Manual'}
+                      </button>
+                    ))}
+                  </div>
+                </FormField>
+
+                <FormField name="frequency" label="Frecuencia">
+                  <div className={styles.modeSelector}>
+                    {([RecurringFrequency.Monthly, RecurringFrequency.Annual] as const).map((f) => (
+                      <button
+                        key={f}
+                        type="button"
+                        className={[styles.modeOpt, values.frequency === f ? styles.modeOptActive : ''].join(' ')}
+                        onClick={() => void setFieldValue('frequency', f)}
+                      >
+                        {f === RecurringFrequency.Monthly ? '📅 Mensual' : '📆 Anual'}
+                      </button>
+                    ))}
+                  </div>
+                </FormField>
+
+                {values.mode === RecurringMode.Manual && (
+                  <FormField name="dueDayOfMonth" label="Día de vencimiento">
+                    <TextInput name="dueDayOfMonth" type="number" min="1" max="31" placeholder="ej. 15" />
+                  </FormField>
+                )}
+
+                {status && <p className={styles.formError}>{status}</p>}
+
+                <div className={styles.formActions}>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setShowForm(false)}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit" variant="secondary" size="sm" loading={isSubmitting}>
+                    Guardar
+                  </Button>
+                </div>
+              </Form>
             )}
-
-            {formError && <p style={{ fontSize: 12, color: 'var(--rose)', marginBottom: 8 }}>{formError}</p>}
-
-            <div className={styles.formActions}>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => { setShowForm(false); setForm(EMPTY_FORM); setFormError('') }}
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" variant="secondary" size="sm" loading={saving}>
-                Guardar
-              </Button>
-            </div>
-          </form>
+          </Formik>
         )}
 
-        <p className={styles.groupLabel}>Suscripciones</p>
-        {subscriptions.map(renderItem)}
+        {Object.entries(grouped).map(([catId, items]) => {
+          const cat = categories.find((c) => c.id === catId)
+          return (
+            <React.Fragment key={catId}>
+              <p className={styles.groupLabel}>
+                {cat ? `${cat.icon} ${cat.name}` : 'Sin categoría'}
+              </p>
+              {items.map(renderItem)}
+            </React.Fragment>
+          )
+        })}
 
-        <p className={styles.groupLabel}>Servicios del hogar</p>
-        {services.map(renderItem)}
+        {recurring.length === 0 && (
+          <p style={{ color: 'var(--muted)', fontSize: 13, textAlign: 'center', marginTop: 32 }}>
+            No hay pagos recurrentes.
+          </p>
+        )}
       </div>
     </div>
   )

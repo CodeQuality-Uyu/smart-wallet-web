@@ -1,6 +1,6 @@
 // src/services/recurringService.ts
 
-import { httpClient } from '@/api/httpClient'
+import { getRecurringBackend } from '@/backend'
 import type {
   RecurringExpense,
   CreateRecurringPayload,
@@ -10,54 +10,35 @@ import type {
 } from '@/types/models'
 import { RecurringStatus } from '@/types/enums'
 
-const BASE = '/recurring'
-
 export const recurringService = {
   async list(): Promise<RecurringExpense[]> {
-    const { data } = await httpClient.get<RecurringExpense[]>(BASE)
-    return data
+    return (await getRecurringBackend()).list()
   },
 
   async getById(id: string): Promise<RecurringExpense> {
-    const { data } = await httpClient.get<RecurringExpense>(`${BASE}/${id}`)
-    return data
+    return (await getRecurringBackend()).getById(id)
   },
 
   async create(payload: CreateRecurringPayload): Promise<RecurringExpense> {
-    const { data } = await httpClient.post<RecurringExpense>(BASE, payload)
-    return data
+    return (await getRecurringBackend()).create(payload)
   },
 
   async update(id: string, payload: UpdateRecurringPayload): Promise<RecurringExpense> {
-    const { data } = await httpClient.patch<RecurringExpense>(`${BASE}/${id}`, payload)
-    return data
+    return (await getRecurringBackend()).update(id, payload)
   },
 
   async remove(id: string): Promise<void> {
-    await httpClient.delete(`${BASE}/${id}`)
+    return (await getRecurringBackend()).remove(id)
   },
 
   async setStatus(id: string, status: RecurringStatus): Promise<RecurringExpense> {
-    const { data } = await httpClient.patch<RecurringExpense>(`${BASE}/${id}/status`, {
-      status,
-    })
-    return data
+    return (await getRecurringBackend()).setStatus(id, status)
   },
 
   async confirmPayment(
     id: string,
-    payload: ConfirmRecurringPaymentPayload
+    payload: ConfirmRecurringPaymentPayload,
   ): Promise<RecurringPaymentHistory> {
-    const form = new FormData()
-    form.append('amount', String(payload.amount))
-    if (payload.receiptFile) {
-      form.append('receipt', payload.receiptFile)
-    }
-    const { data } = await httpClient.post<RecurringPaymentHistory>(
-      `${BASE}/${id}/confirm-payment`,
-      form,
-      { headers: { 'Content-Type': 'multipart/form-data' } }
-    )
-    return data
+    return (await getRecurringBackend()).confirmPayment(id, payload)
   },
 }

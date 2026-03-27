@@ -80,3 +80,13 @@ export function useRemoveTicketLine(expenseId: string) {
     },
   })
 }
+
+export function useUploadExpenseReceipt(expenseId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (file: File) => expensesService.uploadReceipt(expenseId, file),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: EXPENSE_KEYS.detail(expenseId) })
+    },
+  })
+}

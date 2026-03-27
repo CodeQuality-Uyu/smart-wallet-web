@@ -1,7 +1,7 @@
 // src/backend/index.ts
 // Factory: returns the correct backend implementation based on VITE_BACKEND
 
-import type { IAuthBackend, ICardsBackend, ISalariesBackend } from './types'
+import type { IAuthBackend, ICardsBackend, ICategoriesBackend, IExpensesBackend, IMetricsBackend, IPlacesBackend, IRecurringBackend, ISalariesBackend } from './types'
 
 type BackendType = 'msw' | 'firestore' | 'aws'
 
@@ -10,6 +10,11 @@ const backend = (import.meta.env.VITE_BACKEND ?? 'msw') as BackendType
 // Lazy singletons — imported on first call to avoid bundling unused backends
 let _authBackend: IAuthBackend | null = null
 let _cardsBackend: ICardsBackend | null = null
+let _categoriesBackend: ICategoriesBackend | null = null
+let _expensesBackend: IExpensesBackend | null = null
+let _metricsBackend: IMetricsBackend | null = null
+let _placesBackend: IPlacesBackend | null = null
+let _recurringBackend: IRecurringBackend | null = null
 let _salariesBackend: ISalariesBackend | null = null
 
 export async function getAuthBackend(): Promise<IAuthBackend> {
@@ -35,6 +40,66 @@ export async function getCardsBackend(): Promise<ICardsBackend> {
     _cardsBackend = mswCardsBackend
   }
   return _cardsBackend
+}
+
+export async function getCategoriesBackend(): Promise<ICategoriesBackend> {
+  if (_categoriesBackend) return _categoriesBackend
+  if (backend === 'firestore') {
+    const { firestoreCategoriesBackend } = await import('./firestore/categories')
+    _categoriesBackend = firestoreCategoriesBackend
+  } else {
+    const { mswCategoriesBackend } = await import('./msw/categories')
+    _categoriesBackend = mswCategoriesBackend
+  }
+  return _categoriesBackend
+}
+
+export async function getExpensesBackend(): Promise<IExpensesBackend> {
+  if (_expensesBackend) return _expensesBackend
+  if (backend === 'firestore') {
+    const { firestoreExpensesBackend } = await import('./firestore/expenses')
+    _expensesBackend = firestoreExpensesBackend
+  } else {
+    const { mswExpensesBackend } = await import('./msw/expenses')
+    _expensesBackend = mswExpensesBackend
+  }
+  return _expensesBackend
+}
+
+export async function getMetricsBackend(): Promise<IMetricsBackend> {
+  if (_metricsBackend) return _metricsBackend
+  if (backend === 'firestore') {
+    const { firestoreMetricsBackend } = await import('./firestore/metrics')
+    _metricsBackend = firestoreMetricsBackend
+  } else {
+    const { mswMetricsBackend } = await import('./msw/metrics')
+    _metricsBackend = mswMetricsBackend
+  }
+  return _metricsBackend
+}
+
+export async function getPlacesBackend(): Promise<IPlacesBackend> {
+  if (_placesBackend) return _placesBackend
+  if (backend === 'firestore') {
+    const { firestorePlacesBackend } = await import('./firestore/places')
+    _placesBackend = firestorePlacesBackend
+  } else {
+    const { mswPlacesBackend } = await import('./msw/places')
+    _placesBackend = mswPlacesBackend
+  }
+  return _placesBackend
+}
+
+export async function getRecurringBackend(): Promise<IRecurringBackend> {
+  if (_recurringBackend) return _recurringBackend
+  if (backend === 'firestore') {
+    const { firestoreRecurringBackend } = await import('./firestore/recurring')
+    _recurringBackend = firestoreRecurringBackend
+  } else {
+    const { mswRecurringBackend } = await import('./msw/recurring')
+    _recurringBackend = mswRecurringBackend
+  }
+  return _recurringBackend
 }
 
 export async function getSalariesBackend(): Promise<ISalariesBackend> {

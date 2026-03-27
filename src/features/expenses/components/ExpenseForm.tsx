@@ -9,8 +9,7 @@ import { CategoryChips } from './CategoryChips'
 import { useCategories } from '@/features/categories/hooks/useCategories'
 import { useCards } from '@/features/cards/hooks/useCards'
 import { usePlaces } from '@/features/places/hooks/usePlaces'
-import { Currency } from '@/types/enums'
-import type { Expense } from '@/types/models'
+import { CardType, Currency } from '@/types/enums'
 import styles from './ExpenseForm.module.css'
 
 interface ExpenseFormProps {
@@ -19,11 +18,17 @@ interface ExpenseFormProps {
   submitLabel?: string
 }
 
+const CARD_TYPE_LABEL: Record<CardType, string> = {
+  [CardType.Credit]: 'Crédito',
+  [CardType.Debit]: 'Débito',
+  [CardType.Transfer]: 'Transferencia',
+}
+
 const DEFAULT_VALUES: ExpenseFormValues = {
   description: '',
   amount: 0,
   currency: Currency.UYU,
-  paymentType: '' as ExpenseFormValues['paymentType'],
+  cardId: '',
   categoryIds: [],
   placeId: '',
   date: new Date().toISOString().split('T')[0] ?? '',
@@ -40,22 +45,28 @@ export function ExpenseForm({
 
   const cardOptions = cards.map((c) => ({
     value: c.id,
-    label: c.lastFour ? `${c.name} •••• ${c.lastFour}` : c.name,
+    label: c.lastFour
+      ? `${c.bank} · ${CARD_TYPE_LABEL[c.type] ?? c.type} ···· ${c.lastFour}`
+      : `${c.bank} · ${CARD_TYPE_LABEL[c.type] ?? c.type}`,
   }))
 
-  const placeOptions = [
-    ...places.map((p) => ({ value: p.id, label: p.name })),
-    { value: '__new__', label: '＋ Nuevo lugar…' },
-  ]
+  const placeOptions = places.map((p) => ({ value: p.id, label: p.name }))
 
   const currencyOptions = [
     { value: Currency.UYU, label: 'Pesos (UYU)' },
     { value: Currency.USD, label: 'Dólares (USD)' },
   ]
 
+  const firstCardId = cards[0]?.id ?? ''
+
   return (
     <Formik
-      initialValues={{ ...DEFAULT_VALUES, ...initialValues }}
+      key={firstCardId}
+      initialValues={{
+        ...DEFAULT_VALUES,
+        cardId: firstCardId || DEFAULT_VALUES.cardId,
+        ...initialValues,
+      }}
       validationSchema={expenseSchema}
       onSubmit={onSubmit}
       enableReinitialize
@@ -100,9 +111,9 @@ export function ExpenseForm({
               <TextInput name="description" placeholder="¿Qué compraste?" />
             </FormField>
 
-            <FormField name="paymentType" label="Tarjeta / pago">
+            <FormField name="cardId" label="Tarjeta / pago">
               <SelectInput
-                name="paymentType"
+                name="cardId"
                 options={cardOptions}
                 placeholder="Seleccioná una tarjeta"
                 icon="💳"

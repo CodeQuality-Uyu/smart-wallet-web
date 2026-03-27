@@ -24,6 +24,8 @@ export default function ExpensesPage(): React.ReactElement {
   const { data: page, isLoading, error, refetch } = useExpenses({ period })
   const { data: categories = [] } = useCategories()
 
+  if (isLoading) return <LoadingSpinner fullPage />
+
   const expenses = page?.data ?? []
   const groups = groupExpensesByDate(expenses)
 
@@ -66,10 +68,9 @@ export default function ExpensesPage(): React.ReactElement {
         </div>
       </div>
 
-      {isLoading && <LoadingSpinner />}
       {error && <ErrorMessage onRetry={() => void refetch()} />}
 
-      {!isLoading && !error && groups.length === 0 && (
+      {!error && groups.length === 0 && (
         <p className={styles.empty}>No hay gastos en este período.</p>
       )}
 

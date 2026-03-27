@@ -13,7 +13,7 @@ export const PLACE_KEYS = {
 export function usePlaces(period?: LocaleFilterPeriod) {
   return useQuery({
     queryKey: PLACE_KEYS.list(period),
-    queryFn: () => placesService.list(period),
+    queryFn: () => placesService.list(),
   })
 }
 

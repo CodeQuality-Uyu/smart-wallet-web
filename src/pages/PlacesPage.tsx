@@ -26,9 +26,17 @@ export default function PlacesPage(): React.ReactElement {
 
   if (isLoading) return <LoadingSpinner fullPage />
 
-  async function handleSubmit(values: PlaceFormValues): Promise<void> {
-    await createPlace(values)
-    setShowForm(false)
+  async function handleSubmit(
+    values: PlaceFormValues,
+    { setStatus }: { setStatus: (status: string) => void },
+  ): Promise<void> {
+    try {
+      await createPlace(values)
+      setShowForm(false)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : (err as { message?: string })?.message ?? 'Error al guardar'
+      setStatus(msg)
+    }
   }
 
   return (
@@ -59,7 +67,7 @@ export default function PlacesPage(): React.ReactElement {
               validationSchema={placeSchema}
               onSubmit={handleSubmit}
             >
-              {({ isSubmitting }) => (
+              {({ isSubmitting, status }) => (
                 <Form>
                   <FormField name="name" label="Nombre">
                     <TextInput name="name" placeholder="ej. Disco Pocitos" icon="🏪" />
@@ -67,6 +75,10 @@ export default function PlacesPage(): React.ReactElement {
                   <FormField name="address" label="Dirección (opcional)">
                     <TextInput name="address" placeholder="ej. Av. Brasil, Pocitos" icon="📍" />
                   </FormField>
+                  {status && (
+                    <p className={styles.formError}>{status}</p>
+                  )}
+
                   <div className={styles.formActions}>
                     <Button type="button" variant="ghost" size="sm" onClick={() => setShowForm(false)}>
                       Cancelar

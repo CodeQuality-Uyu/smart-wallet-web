@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { Formik, Form } from 'formik'
-import { useCards, useCreateCard } from '@/features/cards/hooks/useCards'
+import { useCards, useCreateCard, useDeleteCard } from '@/features/cards/hooks/useCards'
 import { cardSchema, type CardFormValues } from '@/features/cards/schemas/cardSchema'
 import { FormField, TextInput, SelectInput } from '@/components/ui/FormField'
 import { Button } from '@/components/ui/Button'
@@ -41,7 +41,9 @@ function cardGradient(type: CardType, bank: string): string {
 export default function CardsPage(): React.ReactElement {
   const { data: cards = [], isLoading } = useCards()
   const { mutateAsync: createCard } = useCreateCard()
+  const { mutateAsync: deleteCard } = useDeleteCard()
   const [showForm, setShowForm] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   if (isLoading) return <LoadingSpinner fullPage />
 
@@ -139,7 +141,17 @@ export default function CardsPage(): React.ReactElement {
                 {card.type === CardType.Transfer ? 'Transferencia' : card.type === CardType.Credit ? 'Crédito' : 'Débito'} · {card.bank}
               </p>
             </div>
-            <button className={styles.cardEdit}>✏</button>
+            <button
+              className={styles.cardDelete}
+              onClick={() => {
+                setDeletingId(card.id)
+                void deleteCard(card.id).finally(() => setDeletingId(null))
+              }}
+              disabled={deletingId === card.id}
+              aria-label="Eliminar tarjeta"
+            >
+              {deletingId === card.id ? '…' : '✕'}
+            </button>
           </div>
         ))}
 

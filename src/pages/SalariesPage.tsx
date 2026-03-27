@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Formik, Form, Field, ErrorMessage } from 'formik'
+import * as Yup from 'yup'
 import { salariesService, type Salary } from '@/services/salariesService'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { Button } from '@/components/ui/Button'
@@ -12,40 +14,38 @@ import styles from './SalariesPage.module.css'
 const CURRENCIES = ['UYU', 'USD']
 const TODAY = new Date().toISOString().split('T')[0]
 
-interface FormState {
-  name: string
-  amount: string
-  currency: string
-}
+const salarySchema = Yup.object({
+  name: Yup.string().trim().required('El nombre es requerido.'),
+  amount: Yup.number()
+    .typeError('Ingresá un número válido.')
+    .positive('El monto debe ser mayor a 0.')
+    .required('El monto es requerido.'),
+  currency: Yup.string().oneOf(CURRENCIES).required(),
+})
 
-const EMPTY_FORM: FormState = {
-  name: '',
-  amount: '',
-  currency: 'UYU',
-}
+type SalaryFormValues = Yup.InferType<typeof salarySchema>
+
+const INITIAL_VALUES: SalaryFormValues = { name: '', amount: 0, currency: 'UYU' }
 
 export default function SalariesPage(): React.ReactElement {
   const queryClient = useQueryClient()
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState<FormState>(EMPTY_FORM)
-  const [formError, setFormError] = useState('')
 
   const { data: salaries = [], isLoading } = useQuery({
     queryKey: ['salaries'],
     queryFn: () => salariesService.list(),
   })
 
-  const { mutateAsync: createSalary, isPending: creating } = useMutation({
-    mutationFn: () => salariesService.create({
-      amount: Number(form.amount),
-      currency: form.currency,
+  const { mutateAsync: createSalary } = useMutation({
+    mutationFn: (values: SalaryFormValues) => salariesService.create({
+      amount: values.amount,
+      currency: values.currency,
       date: TODAY,
-      notes: form.name,
+      notes: values.name,
     }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['salaries'] })
       setShowForm(false)
-      setForm(EMPTY_FORM)
     },
   })
 
@@ -58,27 +58,9 @@ export default function SalariesPage(): React.ReactElement {
 
   if (isLoading) return <LoadingSpinner fullPage />
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
-    e.preventDefault()
-    if (!form.name.trim()) {
-      setFormError('El nombre es requerido.')
-      return
-    }
-    if (!form.amount || Number(form.amount) <= 0) {
-      setFormError('El monto debe ser mayor a 0.')
-      return
-    }
-    setFormError('')
-    await createSalary()
-  }
-
   async function handleDelete(salary: Salary): Promise<void> {
     if (!window.confirm(`¿Eliminar sueldo de ${formatCurrency(salary.amount, salary.currency)} ${salary.currency}?`)) return
     await deleteSalary(salary.id)
-  }
-
-  function setField(key: keyof FormState, value: string): void {
-    setForm((prev) => ({ ...prev, [key]: value }))
   }
 
   return (
@@ -87,64 +69,72 @@ export default function SalariesPage(): React.ReactElement {
 
       <div className={styles.body}>
         {showForm && (
-          <form className={styles.form} onSubmit={(e) => { void handleSubmit(e) }} noValidate>
-            <h2 className={styles.formTitle}>Nuevo ingreso</h2>
+          <Formik
+            initialValues={INITIAL_VALUES}
+            validationSchema={salarySchema}
+            onSubmit={async (values) => {
+              await createSalary(values)
+            }}
+          >
+            {({ isSubmitting, errors, touched }) => (
+              <Form className={styles.form} noValidate>
+                <h2 className={styles.formTitle}>Nuevo ingreso</h2>
 
-            <div className={styles.fieldGroup}>
-              <label className={styles.label} htmlFor="sal-name">Nombre</label>
-              <input
-                id="sal-name"
-                type="text"
-                className={styles.input}
-                placeholder="ej. Sueldo marzo"
-                value={form.name}
-                onChange={(e) => setField('name', e.target.value)}
-              />
-            </div>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.label} htmlFor="sal-name">Nombre</label>
+                  <Field
+                    id="sal-name"
+                    name="name"
+                    type="text"
+                    className={styles.input}
+                    placeholder="ej. Sueldo marzo"
+                  />
+                  <ErrorMessage name="name" component="p" className={styles.error} />
+                </div>
 
-            <div className={styles.row}>
-              <div className={styles.fieldGroup} style={{ flex: 1 }}>
-                <label className={styles.label} htmlFor="sal-amount">Monto</label>
-                <input
-                  id="sal-amount"
-                  type="number"
-                  min="0"
-                  step="any"
-                  className={styles.input}
-                  placeholder="0"
-                  value={form.amount}
-                  onChange={(e) => setField('amount', e.target.value)}
-                />
-              </div>
-              <div className={styles.fieldGroup} style={{ width: 90 }}>
-                <label className={styles.label} htmlFor="sal-currency">Moneda</label>
-                <select
-                  id="sal-currency"
-                  className={styles.input}
-                  value={form.currency}
-                  onChange={(e) => setField('currency', e.target.value)}
-                >
-                  {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-            </div>
+                <div className={styles.row}>
+                  <div className={styles.fieldGroup} style={{ flex: 1 }}>
+                    <label className={styles.label} htmlFor="sal-amount">Monto</label>
+                    <Field
+                      id="sal-amount"
+                      name="amount"
+                      type="number"
+                      min="0"
+                      step="any"
+                      className={[styles.input, errors.amount && touched.amount ? styles.inputError : ''].join(' ')}
+                      placeholder="0"
+                    />
+                    <ErrorMessage name="amount" component="p" className={styles.error} />
+                  </div>
+                  <div className={styles.fieldGroup} style={{ width: 90 }}>
+                    <label className={styles.label} htmlFor="sal-currency">Moneda</label>
+                    <Field
+                      id="sal-currency"
+                      name="currency"
+                      as="select"
+                      className={styles.input}
+                    >
+                      {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                    </Field>
+                  </div>
+                </div>
 
-            {formError && <p className={styles.error}>{formError}</p>}
-
-            <div className={styles.actions}>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => { setShowForm(false); setForm(EMPTY_FORM); setFormError('') }}
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" variant="secondary" size="sm" loading={creating}>
-                Guardar
-              </Button>
-            </div>
-          </form>
+                <div className={styles.actions}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowForm(false)}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button type="submit" variant="secondary" size="sm" loading={isSubmitting}>
+                    Guardar
+                  </Button>
+                </div>
+              </Form>
+            )}
+          </Formik>
         )}
 
         {!showForm && (

@@ -1,27 +1,34 @@
 // src/features/recurring/schemas/recurringSchema.ts
 import * as Yup from 'yup'
-import { Currency, RecurringMode } from '@/types/enums'
+import { Currency, RecurringFrequency, RecurringMode } from '@/types/enums'
 
 export const recurringSchema = Yup.object({
-  name: Yup.string().trim().min(2).max(80).required('Name is required'),
-  icon: Yup.string().trim().min(1, 'Select an icon').required(),
-  amount: Yup.number().positive().required('Amount is required'),
+  name: Yup.string().trim().min(2, 'Mínimo 2 caracteres').max(80).required('El nombre es requerido'),
+  icon: Yup.string().trim().min(1, 'Seleccioná un ícono').required('Seleccioná un ícono'),
+  description: Yup.string().trim().max(100, 'Máximo 100 caracteres').optional(),
+  amount: Yup.number()
+    .typeError('Ingresá un monto válido')
+    .positive('El monto debe ser mayor a 0')
+    .required('El monto es requerido'),
   currency: Yup.mixed<Currency>()
     .oneOf(Object.values(Currency))
-    .required('Currency is required'),
-  categoryId: Yup.string().required('Category is required'),
-  cardId: Yup.string().required('Card is required'),
+    .required('La moneda es requerida'),
+  categoryId: Yup.string().required('Seleccioná una categoría'),
+  cardId: Yup.string().required('Seleccioná un medio de pago'),
   mode: Yup.mixed<RecurringMode>()
     .oneOf(Object.values(RecurringMode))
-    .required('Mode is required'),
+    .required('El modo es requerido'),
+  frequency: Yup.mixed<RecurringFrequency>()
+    .oneOf(Object.values(RecurringFrequency))
+    .required('La frecuencia es requerida'),
   status: Yup.string().optional(),
   dueDayOfMonth: Yup.number()
     .integer()
-    .min(1)
-    .max(31)
+    .min(1, 'Mínimo día 1')
+    .max(31, 'Máximo día 31')
     .when('mode', {
       is: RecurringMode.Manual,
-      then: (s) => s.required('Due day is required for manual payments'),
+      then: (s) => s.required('El día de vencimiento es requerido'),
       otherwise: (s) => s.optional(),
     }),
 })
