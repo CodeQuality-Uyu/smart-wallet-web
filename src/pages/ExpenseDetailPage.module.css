@@ -104,8 +104,9 @@
 .addLineBtn {
   background: var(--g500); color: #fff; border: none;
   border-radius: 9px; width: 36px; height: 36px;
-  font-size: 16px; flex-shrink: 0;
+  font-size: 16px; flex-shrink: 0; cursor: pointer;
 }
+.addLineBtn:disabled { opacity: 0.5; cursor: default; }
 
 .ticketLine {
   display: flex; align-items: center; justify-content: space-between;

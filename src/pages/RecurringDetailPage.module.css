@@ -40,7 +40,13 @@
 .uploadArea { border: 2px dashed var(--border); border-radius: var(--radius); padding: 14px; text-align: center; font-size: 12px; color: var(--muted); margin-bottom: 12px; }
 
 .historySection { padding: 0 20px 16px; }
-.historyTitle { font-family: var(--font-head); font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 10px; }
+.historyHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.historyTitle { font-family: var(--font-head); font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 0; }
+.addPaymentBtn { font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 20px; border: 1.5px solid var(--g500); background: none; color: var(--g600); cursor: pointer; font-family: inherit; transition: background .15s; }
+.addPaymentBtn:hover:not(:disabled) { background: var(--g50); }
+.addPaymentBtn:disabled { border-color: var(--border); color: var(--muted); cursor: default; }
+.inlineForm { background: var(--g50); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; }
+.inlineFormActions { display: flex; justify-content: space-between; margin-top: 8px; }
 .histRow { display: flex; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--border); }
 .histRow:last-child { border-bottom: none; }
 .histDate { font-size: 12px; color: var(--muted); flex: 1; }

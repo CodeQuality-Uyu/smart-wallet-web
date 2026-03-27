@@ -31,6 +31,7 @@ const PlacesPage = lazy(() => import('@/pages/PlacesPage'))
 const CardsPage = lazy(() => import('@/pages/CardsPage'))
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'))
 const SalariesPage = lazy(() => import('@/pages/SalariesPage'))
+const BudgetSettingsPage = lazy(() => import('@/pages/BudgetSettingsPage'))
 const LoginPage = lazy(() => import('@/pages/LoginPage'))
 const VerifyCodePage = lazy(() => import('@/pages/VerifyCodePage'))
 const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'))
@@ -115,6 +116,10 @@ const router = createBrowserRouter([
       {
         path: '/settings',
         element: <SuspenseWrapper><SettingsPage /></SuspenseWrapper>,
+      },
+      {
+        path: '/settings/budget',
+        element: <SuspenseWrapper><BudgetSettingsPage /></SuspenseWrapper>,
       },
       {
         path: '/settings/salaries',

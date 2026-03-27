@@ -142,6 +142,27 @@ export const firestoreMetricsBackend: IMetricsBackend = {
       })
       .sort((a, b) => (b.usd + b.uyu / 100) - (a.usd + a.uyu / 100))
 
+    // Previous period by category
+    const prevCatTotals = new Map<string, { usd: number; uyu: number }>()
+    for (const exp of prevExpenses) {
+      for (const cid of exp.categoryIds) {
+        const cur = prevCatTotals.get(cid) ?? { usd: 0, uyu: 0 }
+        if (exp.currency === Currency.USD) cur.usd += exp.amount
+        else cur.uyu += exp.amount
+        prevCatTotals.set(cid, cur)
+      }
+    }
+    const previousByCategory = Array.from(prevCatTotals.entries()).map(([categoryId, totals]) => {
+      const cat = catMap.get(categoryId)
+      return {
+        categoryId,
+        categoryName: cat?.name ?? categoryId,
+        categoryIcon: cat?.icon ?? '🏷',
+        usd: totals.usd,
+        uyu: totals.uyu,
+      }
+    })
+
     // Fixed breakdown — active recurring.
     // Default frequency to Monthly for records created before the field was added.
     const fixedBreakdown = activeRecurring.map((r) => ({
@@ -165,6 +186,7 @@ export const firestoreMetricsBackend: IMetricsBackend = {
       fixedUyu,
       monthlyHistory,
       byCategory,
+      previousByCategory,
       fixedBreakdown,
     }
   },

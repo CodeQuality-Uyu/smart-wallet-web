@@ -1,11 +1,11 @@
 /* src/pages/HomePage.module.css */
 
-.page { display: flex; flex-direction: column; }
+.page { display: flex; flex-direction: column; min-height: 100dvh; }
 
-/* header */
+/* ── Header ─────────────────────────────────────────────── */
 .header {
   background: linear-gradient(155deg, var(--g800), var(--g600));
-  padding: 18px 20px 26px;
+  padding: 18px 20px 24px;
   position: relative;
   overflow: hidden;
   flex-shrink: 0;
@@ -17,23 +17,20 @@
   border-radius: 50%;
   background: radial-gradient(circle, rgba(76,217,106,.13) 0%, transparent 70%);
   top: -110px; right: -80px;
+  pointer-events: none;
 }
 
 .topBar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 18px;
+  margin-bottom: 4px;
   position: relative;
   z-index: 1;
 }
 
 .greeting { font-size: 12px; color: var(--g200); }
-.name {
-  font-family: var(--font-head);
-  font-size: 17px; font-weight: 700; color: #fff;
-  margin-top: 1px;
-}
+.name { font-family: var(--font-head); font-size: 17px; font-weight: 700; color: #fff; margin-top: 1px; }
 
 .avatar {
   width: 40px; height: 40px;
@@ -41,66 +38,138 @@
   border-radius: 14px;
   display: flex; align-items: center; justify-content: center;
   font-family: var(--font-head);
-  font-size: 14px; font-weight: 800;
-  color: var(--g900);
+  font-size: 14px; font-weight: 800; color: var(--g900);
 }
 
-.metrics {
-  display: flex;
-  gap: 10px;
-  position: relative;
-  z-index: 1;
+.monthLabel {
+  font-size: 11px; color: var(--g200);
+  margin-bottom: 14px;
+  position: relative; z-index: 1;
 }
 
-.metricCard {
+/* Spend cards */
+.spendCards { display: flex; gap: 10px; position: relative; z-index: 1; }
+
+.spendCard {
   flex: 1;
-  background: rgba(255,255,255,.1);
-  border-radius: 14px;
+  background: rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 16px;
   padding: 14px;
-  border: 1px solid rgba(255,255,255,.14);
 }
 
-.metricFlag { font-size: 14px; margin-bottom: 5px; }
-.metricLabel {
-  font-size: 10px; color: var(--g200);
-  text-transform: uppercase; letter-spacing: .06em;
-}
-.metricAmount {
-  font-family: var(--font-num);
-  font-size: 22px; font-weight: 700; color: #fff;
-  letter-spacing: -.03em; margin-top: 3px;
-}
-.metricSub { font-size: 10px; color: var(--g200); }
-.metricDelta {
-  display: inline-block;
+.spendCardTop { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.spendFlag { font-size: 16px; }
+.spendAmount { font-family: var(--font-num); font-size: 20px; font-weight: 700; color: #fff; letter-spacing: -.03em; }
+.spendLabel { font-size: 10px; color: var(--g200); margin-top: 1px; margin-bottom: 8px; }
+
+.delta {
   font-family: var(--font-num);
   font-size: 11px; font-weight: 700;
-  padding: 2px 8px; border-radius: 20px;
-  margin-top: 5px;
+  padding: 2px 7px; border-radius: 20px;
 }
-.up { background: var(--rose-lt); color: var(--rose); }
-.down { background: var(--g50); color: var(--g600); }
+.deltaUp { background: rgba(225,29,72,.25); color: #fca5a5; }
+.deltaDown { background: rgba(34,197,94,.2); color: #86efac; }
 
-/* section */
-.section { flex: 1; }
+/* Budget bar inside card */
+.budgetBar {
+  height: 4px;
+  background: rgba(255,255,255,.2);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.budgetFill { height: 100%; border-radius: 2px; transition: width .3s; }
+.budgetOk { background: #86efac; }
+.budgetWarn { background: #fde68a; }
+.budgetDanger { background: #fca5a5; }
+.budgetLabel { font-size: 10px; color: var(--g200); }
+
+/* ── Body ───────────────────────────────────────────────── */
+.body { flex: 1; padding-bottom: 24px; }
+
+.section { padding: 16px 20px 0; }
 
 .sectionHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 20px 8px;
+  margin-bottom: 8px;
 }
 
 .sectionTitle {
   font-family: var(--font-head);
   font-size: 14px; font-weight: 700; color: var(--ink);
+  margin-bottom: 8px;
 }
 
-.seeAll {
-  font-size: 12px; color: var(--g500); font-weight: 600;
-  background: none; border: none;
+.seeAll { font-size: 12px; color: var(--g500); font-weight: 600; background: none; border: none; cursor: pointer; }
+
+/* Generic card wrapper */
+.card {
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
 }
 
+/* ── Alerts ─────────────────────────────────────────────── */
+.alertList { display: flex; flex-direction: column; gap: 8px; }
+
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  line-height: 1.4;
+  border: 1.5px solid transparent;
+}
+.alertIcon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.alertMsg { flex: 1; }
+
+.alert_warning { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+.alert_danger  { background: #fff1f2; border-color: #fecdd3; color: #9f1239; }
+.alert_info    { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
+.alert_success { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
+
+/* ── Category growth ────────────────────────────────────── */
+.catRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.catRow:last-child { border-bottom: none; }
+.catIcon { font-size: 18px; }
+.catName { flex: 1; font-size: 13px; font-weight: 600; color: var(--ink); }
+.catDelta { font-family: var(--font-num); font-size: 12px; font-weight: 700; }
+
+/* ── Recurring rows ─────────────────────────────────────── */
+.recurringRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+.recurringRow:last-child { border-bottom: none; }
+.allPaidMsg { display: flex; align-items: center; gap: 10px; padding: 14px; font-size: 13px; color: var(--muted); }
+.recurringIcon { font-size: 22px; }
+.recurringInfo { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.recurringName { font-size: 13px; font-weight: 600; color: var(--ink); }
+.recurringDue { font-size: 11px; color: var(--muted); }
+.recurringAmt { font-family: var(--font-num); font-size: 13px; font-weight: 700; color: var(--ink); white-space: nowrap; }
+
+/* ── Recent expenses ────────────────────────────────────── */
 .dateHeader {
   padding: 7px 20px 3px;
   font-size: 10px; font-weight: 700;
@@ -109,5 +178,4 @@
   letter-spacing: .1em;
   background: var(--cream);
 }
-
 .empty { padding: 20px; font-size: 13px; color: var(--muted); text-align: center; }

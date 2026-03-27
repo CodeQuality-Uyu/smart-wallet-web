@@ -8,6 +8,7 @@ import { mockCards } from './data/cards'
 import { mockRecurring } from './data/recurring'
 import { mockMetrics } from './data/metrics'
 import { mockSalaries } from './data/salaries'
+import { mockBudget } from './data/budget'
 
 const BASE = '/api'
 
@@ -234,6 +235,16 @@ export const handlers = [
       status: 'paid',
     }, { status: 201 })
   ),
+
+  // ─── Budget ──────────────────────────────────────────────
+  http.get(`${BASE}/budget`, () => HttpResponse.json(mockBudget)),
+
+  http.put(`${BASE}/budget`, async ({ request }) => {
+    const body = await request.json() as Record<string, unknown>
+    if (typeof body['usd'] === 'number' || body['usd'] === null) mockBudget.usd = body['usd'] as number | undefined
+    if (typeof body['uyu'] === 'number' || body['uyu'] === null) mockBudget.uyu = body['uyu'] as number | undefined
+    return HttpResponse.json(mockBudget)
+  }),
 
   // ─── Metrics ────────────────────────────────────────────
   http.get(`${BASE}/metrics`, () => HttpResponse.json(mockMetrics)),

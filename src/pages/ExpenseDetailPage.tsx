@@ -18,7 +18,7 @@ export default function ExpenseDetailPage(): React.ReactElement {
   const { data: categories = [] } = useCategories()
   const { data: cards = [] } = useCards()
   const { mutateAsync: deleteExpense } = useDeleteExpense()
-  const { mutateAsync: addLine } = useAddTicketLine(id ?? '')
+  const { mutateAsync: addLine, isPending: addingLine } = useAddTicketLine(id ?? '')
   const { mutateAsync: removeLine } = useRemoveTicketLine(id ?? '')
   const { mutateAsync: uploadReceipt, isPending: uploadingReceipt } = useUploadExpenseReceipt(id ?? '')
 
@@ -146,6 +146,7 @@ export default function ExpenseDetailPage(): React.ReactElement {
             value={newLineName}
             onChange={(e) => setNewLineName(e.target.value)}
             aria-label="Nombre del ítem"
+            disabled={addingLine}
           />
           <input
             className={styles.lineInput}
@@ -155,9 +156,15 @@ export default function ExpenseDetailPage(): React.ReactElement {
             onChange={(e) => setNewLineAmount(e.target.value)}
             aria-label="Monto del ítem"
             style={{ width: 90, fontFamily: 'var(--font-num)' }}
+            disabled={addingLine}
           />
-          <button className={styles.addLineBtn} onClick={() => void handleAddLine()} aria-label="Agregar ítem">
-            ✓
+          <button
+            className={styles.addLineBtn}
+            onClick={() => void handleAddLine()}
+            aria-label="Agregar ítem"
+            disabled={addingLine}
+          >
+            {addingLine ? '⏳' : '✓'}
           </button>
         </div>
 

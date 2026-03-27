@@ -1,0 +1,23 @@
+/* src/pages/BudgetSettingsPage.module.css */
+
+.body { padding: 20px; }
+
+.hint {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin-bottom: 24px;
+  padding: 12px 14px;
+  background: var(--g50);
+  border-radius: var(--radius);
+  border-left: 3px solid var(--g400);
+}
+
+.error { font-size: 13px; color: var(--rose); margin-bottom: 12px; }
+.success { font-size: 13px; color: #166534; background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: var(--radius); padding: 10px 14px; margin-bottom: 12px; }
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+}

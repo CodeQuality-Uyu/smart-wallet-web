@@ -13,6 +13,7 @@ Firebase es una plataforma de Google que provee servicios de backend listos para
 |---|---|
 | **Authentication** | Verifica la identidad de los usuarios (quién sos) |
 | **Firestore** | Base de datos en tiempo real donde se guardan los datos (qué datos tenés) |
+| **Storage** | Almacenamiento de archivos (fotos de comprobantes, recibos, etc.) |
 
 Ambos están alojados en los servidores de Google. Vos solo configurás, no administrás infraestructura.
 
@@ -127,7 +128,54 @@ service cloud.firestore {
 
 ---
 
-## 4️⃣ Configurar Authentication
+## 4️⃣ Configurar Firebase Storage
+
+### ¿Qué es Firebase Storage?
+
+Firebase Storage es un servicio de almacenamiento de archivos binarios (imágenes, PDFs, etc.) alojado en Google Cloud Storage. A diferencia de Firestore, que guarda datos estructurados (texto, números, fechas), Storage está diseñado para archivos de cualquier tamaño.
+
+### ¿Por qué es útil?
+
+Firestore no puede guardar archivos directamente — solo texto y números. Sin Storage, no habría forma de adjuntar una foto de un recibo a un gasto. Storage sube el archivo y devuelve una **URL pública pero protegida** que se guarda en Firestore junto al resto del gasto.
+
+### ¿Qué soluciona en esta app?
+
+- Al confirmar un pago recurrente manual, el usuario puede adjuntar la foto de la factura.
+- Al ver el detalle de un gasto, el usuario puede subir y consultar el comprobante de pago.
+- Los archivos se guardan bajo `receipts/{uid}/...` y solo el usuario dueño puede leerlos o escribirlos.
+
+### Pasos
+
+1. En el menú lateral de la consola, ir a **"Storage"** (dentro de la sección *Build*)
+2. Click en **"Comenzar"** / **"Get started"**
+3. En el diálogo de reglas de seguridad, elegir **"Iniciar en modo de producción"** ✅
+4. Seleccionar la **ubicación** del bucket:
+   - `us-east1` → Virginia (buena latencia para Uruguay, opción estable)
+   - `southamerica-east1` → São Paulo 🇧🇷 (más cercano, pero no siempre disponible en el plan gratuito)
+5. Click en **"Listo"**
+
+> ⚠️ La ubicación del bucket no se puede cambiar después de crearlo. Elegí con cuidado.
+
+### Configurar las reglas de seguridad
+
+Las reglas de Storage funcionan igual que las de Firestore: se evalúan en los servidores de Google antes de permitir cualquier lectura o escritura.
+
+Las reglas están versionadas en el repositorio en [storage.rules](../storage.rules). Para publicarlas:
+
+```bash
+firebase deploy --only storage
+```
+
+> Cada vez que modifiques `storage.rules` tenés que volver a ejecutar el deploy.
+
+### Qué cubren las reglas actuales
+
+- Solo el usuario dueño (`request.auth.uid == uid`) puede leer y escribir archivos bajo `receipts/{uid}/`.
+- Cualquier otra ruta queda denegada por defecto.
+
+---
+
+## 5️⃣ Configurar Authentication
 
 ### ¿Qué es Firebase Authentication?
 Es el servicio que verifica la identidad de los usuarios. Maneja el flujo completo de inicio de sesión y emite tokens seguros. Soporta múltiples métodos: email/contraseña, Google, GitHub, etc.
@@ -164,7 +212,7 @@ Firebase solo envía enlaces de sign-in a URLs que vos explícitamente autorizá
 
 ---
 
-## 5️⃣ Configurar las variables de entorno
+## 6️⃣ Configurar las variables de entorno
 
 Con los valores copiados en el paso 2, completar el archivo `.env.local` en la raíz del proyecto:
 
@@ -184,14 +232,16 @@ VITE_FIREBASE_APP_ID=1:123456789:web:abc123
 
 ---
 
-## 6️⃣ Verificar que todo funciona
+## 7️⃣ Verificar que todo funciona
 
 ### Checklist
 
 - [ ] El proyecto de Firebase está creado
 - [ ] La app web está registrada y tenés el `firebaseConfig`
 - [ ] Firestore Database está creado en modo producción
-- [ ] Las reglas de Firestore están publicadas
+- [ ] Las reglas de Firestore están publicadas (`firebase deploy --only firestore:rules`)
+- [ ] Firebase Storage está habilitado
+- [ ] Las reglas de Storage están publicadas (`firebase deploy --only storage`)
 - [ ] Authentication tiene habilitado Email/Contraseña **y** Email Link
 - [ ] `.env.local` tiene `VITE_BACKEND=firestore` y todas las variables `VITE_FIREBASE_*`
 - [ ] El servidor fue reiniciado después de editar `.env.local`
@@ -287,5 +337,7 @@ No hay que cambiar ningún código — solo la variable de entorno y reiniciar e
 | **Refresh Token** | Token de larga duración que Firebase usa para obtener nuevos ID Tokens. Vive en IndexedDB del navegador. |
 | **UID** | Identificador único del usuario en Firebase Auth. Es la clave primaria para sus datos en Firestore. |
 | **Email Link** | Método de autenticación sin contraseña. Firebase envía un enlace firmado al email del usuario. |
-| **Security Rules** | Lenguaje de reglas de Firestore. Se evalúan en el servidor de Google antes de ejecutar cualquier operación. |
+| **Security Rules** | Lenguaje de reglas de Firestore y Storage. Se evalúan en el servidor de Google antes de ejecutar cualquier operación. |
 | **Subcolección** | Colección dentro de un documento. `users/{uid}/salaries` es una subcolección de `users/{uid}`. |
+| **Storage bucket** | Contenedor de archivos en Firebase Storage. Los archivos se identifican por su ruta, ej: `receipts/{uid}/expenses/{id}/foto.jpg`. |
+| **Download URL** | URL pública generada por Storage para acceder a un archivo. Se guarda en Firestore junto al documento y puede abrirse directamente en el navegador. |

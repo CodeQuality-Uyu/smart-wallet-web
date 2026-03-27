@@ -173,7 +173,15 @@ export interface MetricsSummary {
   fixedUyu: number
   monthlyHistory: MonthlySpend[]
   byCategory: CategorySpend[]
+  previousByCategory: CategorySpend[]
   fixedBreakdown: FixedExpenseBreakdown[]
+}
+
+// ─── Budget ───────────────────────────────────────────────
+
+export interface BudgetSettings {
+  usd?: number
+  uyu?: number
 }
 
 // ─── Auth / User ──────────────────────────────────────────

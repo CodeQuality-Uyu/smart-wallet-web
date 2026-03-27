@@ -27,6 +27,13 @@ export const mockMetrics: MetricsSummary = {
     { categoryId: 'cat-6', categoryName: 'Ocio', categoryIcon: '🎬', usd: 12.98, uyu: 0 },
     { categoryId: 'cat-4', categoryName: 'Salud', categoryIcon: '💊', usd: 0, uyu: 230 },
   ],
+  previousByCategory: [
+    { categoryId: 'cat-1', categoryName: 'Comida', categoryIcon: '🍔', usd: 160, uyu: 2700 },
+    { categoryId: 'cat-5', categoryName: 'Hogar', categoryIcon: '🏠', usd: 0, uyu: 4200 },
+    { categoryId: 'cat-3', categoryName: 'Transporte', categoryIcon: '🚌', usd: 0, uyu: 2600 },
+    { categoryId: 'cat-6', categoryName: 'Ocio', categoryIcon: '🎬', usd: 12.98, uyu: 0 },
+    { categoryId: 'cat-4', categoryName: 'Salud', categoryIcon: '💊', usd: 0, uyu: 310 },
+  ],
   fixedBreakdown: [
     { recurringId: 'rec-3', name: 'UTE — Luz', icon: '💡', amount: 2400, currency: Currency.UYU, frequency: RecurringFrequency.Monthly },
     { recurringId: 'rec-3', name: 'OSE — Agua', icon: '💧', amount: 890, currency: Currency.UYU, frequency: RecurringFrequency.Monthly },

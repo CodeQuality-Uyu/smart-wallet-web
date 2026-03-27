@@ -111,8 +111,8 @@ export const firestoreRecurringBackend: IRecurringBackend = {
     payload: ConfirmRecurringPaymentPayload,
   ): Promise<RecurringPaymentHistory> {
     const uid = requireUid()
-    const ref = doc(firestore, 'users', uid, 'recurring', id)
-    const snap = await getDoc(ref)
+    const docRef = doc(firestore, 'users', uid, 'recurring', id)
+    const snap = await getDoc(docRef)
     if (!snap.exists()) throw { message: 'No encontrado', statusCode: 404 }
 
     const now = new Date()
@@ -126,19 +126,19 @@ export const firestoreRecurringBackend: IRecurringBackend = {
       receiptUrl = await getDownloadURL(snapshot.ref)
     }
 
-    const entry: RecurringPaymentHistory = {
+    const entry = stripUndefined({
       id: entryId,
       month: now.getMonth() + 1,
       year: now.getFullYear(),
       amount: payload.amount,
-      currency: (snap.data()['currency'] as RecurringPaymentHistory['currency']),
+      currency: snap.data()['currency'] as RecurringPaymentHistory['currency'],
       paidAt: now.toISOString(),
       receiptUrl,
       status: RecurringPaymentStatus.Paid,
-    }
+    }) as RecurringPaymentHistory
 
     const existing = (snap.data()['paymentHistory'] ?? []) as RecurringPaymentHistory[]
-    await updateDoc(ref, {
+    await updateDoc(docRef, {
       paymentHistory: [...existing, entry],
       updatedAt: now.toISOString(),
     })

@@ -1,7 +1,7 @@
 // src/backend/index.ts
 // Factory: returns the correct backend implementation based on VITE_BACKEND
 
-import type { IAuthBackend, ICardsBackend, ICategoriesBackend, IExpensesBackend, IMetricsBackend, IPlacesBackend, IRecurringBackend, ISalariesBackend } from './types'
+import type { IAuthBackend, IBudgetBackend, ICardsBackend, ICategoriesBackend, IExpensesBackend, IMetricsBackend, IPlacesBackend, IRecurringBackend, ISalariesBackend } from './types'
 
 type BackendType = 'msw' | 'firestore' | 'aws'
 
@@ -15,6 +15,7 @@ let _expensesBackend: IExpensesBackend | null = null
 let _metricsBackend: IMetricsBackend | null = null
 let _placesBackend: IPlacesBackend | null = null
 let _recurringBackend: IRecurringBackend | null = null
+let _budgetBackend: IBudgetBackend | null = null
 let _salariesBackend: ISalariesBackend | null = null
 
 export async function getAuthBackend(): Promise<IAuthBackend> {
@@ -100,6 +101,18 @@ export async function getRecurringBackend(): Promise<IRecurringBackend> {
     _recurringBackend = mswRecurringBackend
   }
   return _recurringBackend
+}
+
+export async function getBudgetBackend(): Promise<IBudgetBackend> {
+  if (_budgetBackend) return _budgetBackend
+  if (backend === 'firestore') {
+    const { firestoreBudgetBackend } = await import('./firestore/budget')
+    _budgetBackend = firestoreBudgetBackend
+  } else {
+    const { mswBudgetBackend } = await import('./msw/budget')
+    _budgetBackend = mswBudgetBackend
+  }
+  return _budgetBackend
 }
 
 export async function getSalariesBackend(): Promise<ISalariesBackend> {

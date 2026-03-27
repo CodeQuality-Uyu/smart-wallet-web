@@ -17,6 +17,7 @@ const SECTIONS: SettingItem[] = [
   { icon: '🏷️', label: 'Categorías', description: 'Organizá tus gastos por tipo', path: '/settings/categories' },
   { icon: '💳', label: 'Medios de pago', description: 'Tarjetas y formas de pago', path: '/settings/cards' },
   { icon: '💰', label: 'Sueldos', description: 'Registrá tus ingresos mensuales', path: '/settings/salaries' },
+  { icon: '🎯', label: 'Presupuesto', description: 'Límite de gasto mensual por moneda', path: '/settings/budget' },
 ]
 
 export default function SettingsPage(): React.ReactElement {

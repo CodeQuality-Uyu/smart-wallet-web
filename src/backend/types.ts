@@ -9,7 +9,7 @@ import type {
   ConfirmRecurringPaymentPayload, RecurringPaymentHistory,
   Expense, CreateExpensePayload, UpdateExpensePayload,
   TicketLine, PaginatedResponse, ExpenseFilters,
-  MetricsSummary,
+  MetricsSummary, BudgetSettings,
 } from '@/types/models'
 import type { MetricsPeriod, RecurringStatus } from '@/types/enums'
 
@@ -109,6 +109,13 @@ export interface IExpensesBackend {
 
 export interface IMetricsBackend {
   getSummary(period: MetricsPeriod): Promise<MetricsSummary>
+}
+
+// ─── Budget ───────────────────────────────────────────────
+
+export interface IBudgetBackend {
+  get(): Promise<BudgetSettings>
+  set(settings: BudgetSettings): Promise<BudgetSettings>
 }
 
 // ─── Salaries ─────────────────────────────────────────────

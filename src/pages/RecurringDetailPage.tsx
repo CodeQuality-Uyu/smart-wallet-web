@@ -40,6 +40,7 @@ export default function RecurringDetailPage(): React.ReactElement {
   const { data: categories = [] } = useCategories()
   const { data: cards = [] } = useCards()
   const [isEditing, setIsEditing] = useState(false)
+  const [showPaymentForm, setShowPaymentForm] = useState(false)
   const receiptFileInputRef = useRef<HTMLInputElement>(null)
 
   if (isLoading) return <LoadingSpinner fullPage />
@@ -63,7 +64,7 @@ export default function RecurringDetailPage(): React.ReactElement {
 
   async function handleConfirmPayment(values: ConfirmPaymentFormValues): Promise<void> {
     await confirmPayment({ amount: values.amount, receiptFile: values.receiptFile ?? undefined })
-    navigate(-1)
+    setShowPaymentForm(false)
   }
 
   async function handleUpdate(
@@ -290,59 +291,76 @@ export default function RecurringDetailPage(): React.ReactElement {
         </div>
       </div>
 
-      {isManual && isPending && (
-        <div className={styles.confirmSection}>
-          <h2 className={styles.confirmTitle}>Registrar pago</h2>
-          <Formik<ConfirmPaymentFormValues>
-            initialValues={{ amount: rec.amount, receiptFile: undefined }}
-            validationSchema={confirmPaymentSchema}
-            onSubmit={handleConfirmPayment}
-          >
-            {({ isSubmitting, setFieldValue, values, errors, touched }) => (
-              <Form>
-                <FormField name="amount" label="Monto de esta factura">
-                  <TextInput name="amount" type="number" inputMode="decimal" icon="$" />
-                </FormField>
-
-                <input
-                  ref={receiptFileInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,application/pdf"
-                  style={{ display: 'none' }}
-                  onChange={(e) => {
-                    const file = e.target.files?.[0] ?? null
-                    void setFieldValue('receiptFile', file)
-                  }}
-                />
-                <div
-                  className={styles.uploadArea}
-                  onClick={() => receiptFileInputRef.current?.click()}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => e.key === 'Enter' && receiptFileInputRef.current?.click()}
-                  style={{ cursor: 'pointer' }}
-                >
-                  {values.receiptFile ? (
-                    <p>📄 {values.receiptFile.name}</p>
-                  ) : (
-                    <p>📄 Subir factura <span style={{ color: 'var(--muted)' }}>(opcional)</span></p>
-                  )}
-                </div>
-                {touched.receiptFile && errors.receiptFile && (
-                  <p className={styles.fieldError}>{errors.receiptFile as string}</p>
-                )}
-
-                <Button type="submit" variant="secondary" fullWidth loading={isSubmitting}>
-                  Confirmar pago
-                </Button>
-              </Form>
-            )}
-          </Formik>
-        </div>
-      )}
-
       <div className={styles.historySection}>
-        <h2 className={styles.historyTitle}>Historial</h2>
+        <div className={styles.historyHeader}>
+          <h2 className={styles.historyTitle}>Historial</h2>
+          {isManual && (
+            <button
+              className={styles.addPaymentBtn}
+              onClick={() => setShowPaymentForm((v) => !v)}
+              disabled={!isPending}
+              title={isPending ? 'Registrar pago del mes' : 'El mes ya está pagado'}
+            >
+              {isPending ? '+ Registrar pago' : '✓ Pagado'}
+            </button>
+          )}
+        </div>
+
+        {isManual && showPaymentForm && (
+          <div className={styles.inlineForm}>
+            <Formik<ConfirmPaymentFormValues>
+              initialValues={{ amount: rec.amount, receiptFile: undefined }}
+              validationSchema={confirmPaymentSchema}
+              onSubmit={handleConfirmPayment}
+            >
+              {({ isSubmitting, setFieldValue, values, errors, touched }) => (
+                <Form>
+                  <FormField name="amount" label="Monto de esta factura">
+                    <TextInput name="amount" type="number" inputMode="decimal" icon="$" />
+                  </FormField>
+
+                  <input
+                    ref={receiptFileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,application/pdf"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] ?? null
+                      void setFieldValue('receiptFile', file)
+                    }}
+                  />
+                  <div
+                    className={styles.uploadArea}
+                    onClick={() => receiptFileInputRef.current?.click()}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && receiptFileInputRef.current?.click()}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    {values.receiptFile ? (
+                      <p>📄 {values.receiptFile.name}</p>
+                    ) : (
+                      <p>📄 Subir factura <span style={{ color: 'var(--muted)' }}>(opcional)</span></p>
+                    )}
+                  </div>
+                  {touched.receiptFile && errors.receiptFile && (
+                    <p className={styles.fieldError}>{errors.receiptFile as string}</p>
+                  )}
+
+                  <div className={styles.inlineFormActions}>
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setShowPaymentForm(false)}>
+                      Cancelar
+                    </Button>
+                    <Button type="submit" variant="secondary" size="sm" loading={isSubmitting}>
+                      Confirmar pago
+                    </Button>
+                  </div>
+                </Form>
+              )}
+            </Formik>
+          </div>
+        )}
+
         {rec.paymentHistory.map((h) => (
           <div key={h.id} className={styles.histRow}>
             <span className={styles.histDate}>{h.month}/{h.year}</span>
