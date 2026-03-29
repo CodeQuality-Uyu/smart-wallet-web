@@ -329,7 +329,42 @@ No hay que cambiar ningún código — solo la variable de entorno y reiniciar e
 
 ---
 
-## 8️⃣ Deploy automático a Firebase Hosting (GitHub Actions)
+## 8️⃣ `firebase.json` — el archivo de configuración local
+
+`firebase.json` es el archivo que le dice a la Firebase CLI qué servicios gestionar y cómo. Sin él, los comandos `firebase deploy` no saben qué publicar ni dónde encontrar las reglas.
+
+```json
+{
+  "hosting": {
+    "public": "dist",                        // carpeta a publicar en Firebase Hosting
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      { "source": "**", "destination": "/index.html" }  // SPA: todas las rutas van a index.html
+    ]
+  },
+  "firestore": {
+    "rules": "firestore.rules"               // archivo de reglas que deploy sube a Firestore
+  },
+  "storage": {
+    "rules": "storage.rules"                 // archivo de reglas que deploy sube a Storage
+  }
+}
+```
+
+### Qué configura cada sección
+
+| Sección | Qué hace |
+|---|---|
+| `hosting.public` | Le indica a la CLI qué carpeta subir (`dist/`, generada por `npm run build`) |
+| `hosting.rewrites` | Redirige cualquier ruta desconocida a `index.html` para que React Router maneje el routing en el cliente |
+| `firestore.rules` | Vincula el archivo local `firestore.rules` al comando `firebase deploy --only firestore:rules` |
+| `storage.rules` | Vincula el archivo local `storage.rules` al comando `firebase deploy --only storage` |
+
+> 📁 `firebase.json` debe estar en la raíz del proyecto, al mismo nivel que `package.json`. La CLI lo busca automáticamente cuando ejecutás cualquier comando `firebase`.
+
+---
+
+## 9️⃣ Deploy automático a Firebase Hosting (GitHub Actions)
 
 Firebase Hosting sirve la app como sitio estático con CDN global, HTTPS automático y soporte para SPA routing. El deploy se hace automáticamente en cada push a `main` mediante el workflow en `.github/workflows/deploy.yml`.
 

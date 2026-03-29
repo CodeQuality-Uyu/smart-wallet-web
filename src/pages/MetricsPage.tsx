@@ -10,9 +10,9 @@ import { MetricsPeriod, Currency, RecurringFrequency, RecurringMode } from '@/ty
 import styles from './MetricsPage.module.css'
 
 const PERIODS = [
-  { value: MetricsPeriod.SevenDays, label: '7d' },
-  { value: MetricsPeriod.Month, label: 'Mes' },
-  { value: MetricsPeriod.Year, label: 'Año' },
+  { value: MetricsPeriod.SevenDays, label: '7d', sublabel: 'Últimos 7 días' },
+  { value: MetricsPeriod.Month, label: 'Mes', sublabel: 'Mes actual' },
+  { value: MetricsPeriod.Year, label: 'Año', sublabel: 'Último año' },
 ]
 
 export default function MetricsPage(): React.ReactElement {
@@ -65,9 +65,31 @@ export default function MetricsPage(): React.ReactElement {
   // ─── Bar chart scale ──────────────────────────────────────
   const maxBar = Math.max(...metrics.monthlyHistory.map((m) => Math.max(m.usd, m.uyu / 100)), 1)
 
+  const activePeriod = PERIODS.find((p) => p.value === period)
+
   return (
     <div className={styles.page}>
-      {/* Header */}
+
+      {/* Desktop header */}
+      <div className={styles.desktopHeader}>
+        <div>
+          <h1 className={styles.desktopTitle}>📈 Métricas</h1>
+          <p className={styles.desktopSubtitle}>{activePeriod?.sublabel}</p>
+        </div>
+        <div className={styles.desktopTabs} role="tablist">
+          {PERIODS.map((p) => (
+            <button
+              key={p.value}
+              role="tab"
+              aria-selected={period === p.value}
+              className={[styles.desktopTab, period === p.value ? styles.desktopTabActive : ''].join(' ')}
+              onClick={() => setPeriod(p.value)}
+            >{p.label}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Mobile header */}
       <header className={styles.header}>
         <div className={styles.titleRow}>
           <h1 className={styles.title}>Métricas</h1>

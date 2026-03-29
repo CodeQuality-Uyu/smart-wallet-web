@@ -71,3 +71,53 @@
   background: none; border: none; padding: 0; cursor: pointer; font-size: inherit;
   font-family: inherit;
 }
+
+/* ── Desktop ─────────────────────────────────────── */
+@media (min-width: 768px) {
+  .page {
+    flex-direction: row;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .hero {
+    width: 44%;
+    flex: none;
+    min-height: 100%;
+    padding: 52px 48px;
+    justify-content: flex-start;
+  }
+
+  .orb1 { width: 520px; height: 520px; top: -160px; right: -160px; }
+  .orb2 { width: 380px; height: 380px; bottom: -80px; left: -110px; }
+
+  .logoMark { width: 42px; height: 42px; font-size: 22px; border-radius: 14px; }
+  .logoName { font-size: 26px; }
+
+  .heroText { margin-top: 52px; }
+
+  .title { font-size: 52px; }
+  .subtitle { font-size: 15px; margin-top: 10px; }
+
+  .form {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 48px clamp(40px, 7%, 88px);
+    border-radius: 0;
+    margin-top: 0;
+    overflow-y: auto;
+    box-shadow: -10px 0 48px rgba(0,0,0,.06);
+  }
+
+  .formTitle { font-size: 26px; margin-bottom: 10px; }
+
+  .emailHint { font-size: 14px; }
+
+  .input { font-size: 28px; padding: 14px; letter-spacing: .3em; }
+
+  .submitBtn { padding: 15px; font-size: 15px; margin-top: 20px; }
+
+  .hint { font-size: 13px; margin-top: 16px; }
+}

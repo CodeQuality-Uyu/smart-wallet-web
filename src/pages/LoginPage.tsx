@@ -75,6 +75,21 @@ export default function LoginPage(): React.ReactElement {
                 : 'Te mandamos un link para crear una nueva contraseña'}
           </p>
         </div>
+
+        <ul className={styles.features}>
+          <li className={styles.feature}>
+            <span className={styles.featureIcon}>📊</span>
+            <span>Visualizá tus gastos en tiempo real</span>
+          </li>
+          <li className={styles.feature}>
+            <span className={styles.featureIcon}>💳</span>
+            <span>Gestioná múltiples tarjetas y cuentas</span>
+          </li>
+          <li className={styles.feature}>
+            <span className={styles.featureIcon}>🎯</span>
+            <span>Alcanzá tus metas de ahorro</span>
+          </li>
+        </ul>
       </div>
 
       <div className={styles.form}>
@@ -117,7 +132,7 @@ export default function LoginPage(): React.ReactElement {
           {({ isSubmitting, errors, touched }) => (
             <Form noValidate>
               {isRegister && (
-                <>
+                <div className={styles.nameRow}>
                   <div className={styles.field}>
                     <label className={styles.label} htmlFor="name">Nombre</label>
                     <Field
@@ -143,7 +158,7 @@ export default function LoginPage(): React.ReactElement {
                     />
                     <ErrorMessage name="lastName" component="p" className={styles.error} />
                   </div>
-                </>
+                </div>
               )}
 
               <div className={styles.field}>

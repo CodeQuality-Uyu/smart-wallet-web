@@ -84,3 +84,91 @@
   background: none; border: none; padding: 0; cursor: pointer; font-size: inherit;
   font-family: inherit;
 }
+
+/* features list — hidden on mobile, shown on desktop */
+.features { display: none; }
+
+.nameRow { display: contents; }
+
+/* ── Desktop ─────────────────────────────────────── */
+@media (min-width: 768px) {
+  .page {
+    flex-direction: row;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .hero {
+    width: 44%;
+    flex: none;
+    min-height: 100%;
+    padding: 52px 48px;
+    justify-content: flex-start;
+  }
+
+  .orb1 { width: 520px; height: 520px; top: -160px; right: -160px; }
+  .orb2 { width: 380px; height: 380px; bottom: -80px; left: -110px; }
+
+  .dollar { font-size: 200px; bottom: 44px; right: 20px; }
+
+  .logoMark { width: 42px; height: 42px; font-size: 22px; border-radius: 14px; }
+  .logoName { font-size: 26px; }
+
+  .heroText { margin-top: 52px; }
+
+  .title { font-size: 52px; }
+  .subtitle { font-size: 15px; margin-top: 10px; }
+
+  .features {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 40px;
+    padding: 0;
+    list-style: none;
+  }
+
+  .feature {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: rgba(255,255,255,.8);
+    font-size: 13px;
+  }
+
+  .featureIcon {
+    width: 32px; height: 32px; flex-shrink: 0;
+    background: rgba(255,255,255,.1);
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+  }
+
+  .form {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 48px clamp(40px, 7%, 88px);
+    border-radius: 0;
+    margin-top: 0;
+    overflow-y: auto;
+    box-shadow: -10px 0 48px rgba(0,0,0,.06);
+  }
+
+  .formTitle { font-size: 26px; margin-bottom: 22px; }
+
+  .field { margin-bottom: 16px; }
+
+  .input { padding: 13px 15px; font-size: 15px; }
+
+  .submitBtn { padding: 15px; font-size: 15px; margin-top: 20px; }
+
+  .hint { font-size: 13px; margin-top: 16px; }
+
+  .nameRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+}
