@@ -9,6 +9,7 @@ import { mockRecurring } from './data/recurring'
 import { mockMetrics } from './data/metrics'
 import { mockSalaries } from './data/salaries'
 import { mockBudget } from './data/budget'
+import { mockMonthClosings } from './data/monthClosings'
 
 const BASE = '/api'
 
@@ -99,6 +100,22 @@ export const handlers = [
   http.delete(`${BASE}/expenses/:id/ticket-lines/:lineId`, () =>
     new HttpResponse(null, { status: 204 })
   ),
+
+  http.post(`${BASE}/expenses/:id/duplicate`, ({ params }) => {
+    const expense = mockExpenses.find((e) => e.id === params['id'])
+    if (!expense) return new HttpResponse(null, { status: 404 })
+    const copy = {
+      ...expense,
+      id: crypto.randomUUID(),
+      description: `${expense.description} (copia)`,
+      date: new Date().toISOString().split('T')[0] as string,
+      ticketLines: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+    mockExpenses.push(copy)
+    return HttpResponse.json(copy, { status: 201 })
+  }),
 
   // ─── Categories ─────────────────────────────────────────
   http.get(`${BASE}/categories`, () =>
@@ -263,5 +280,21 @@ export const handlers = [
     const idx = mockSalaries.findIndex((s) => s.id === params['id'])
     if (idx !== -1) mockSalaries.splice(idx, 1)
     return new HttpResponse(null, { status: 204 })
+  }),
+
+  // ─── Month closings ──────────────────────────────────────
+  http.get(`${BASE}/month-closings`, () => HttpResponse.json(mockMonthClosings)),
+
+  http.get(`${BASE}/month-closings/:id`, ({ params }) => {
+    const closing = mockMonthClosings.find((c) => c.id === params['id'])
+    if (!closing) return new HttpResponse(null, { status: 404 })
+    return HttpResponse.json(closing)
+  }),
+
+  http.post(`${BASE}/month-closings`, async ({ request }) => {
+    const body = await request.json() as Record<string, unknown>
+    const closing = { ...body, closedAt: new Date().toISOString() }
+    mockMonthClosings.unshift(closing as typeof mockMonthClosings[0])
+    return HttpResponse.json(closing, { status: 201 })
   }),
 ]

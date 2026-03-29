@@ -32,6 +32,8 @@ const CardsPage = lazy(() => import('@/pages/CardsPage'))
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'))
 const SalariesPage = lazy(() => import('@/pages/SalariesPage'))
 const BudgetSettingsPage = lazy(() => import('@/pages/BudgetSettingsPage'))
+const MonthClosingPage = lazy(() => import('@/pages/MonthClosingPage'))
+const ReportsPage = lazy(() => import('@/pages/ReportsPage'))
 const LoginPage = lazy(() => import('@/pages/LoginPage'))
 const VerifyCodePage = lazy(() => import('@/pages/VerifyCodePage'))
 const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'))
@@ -124,6 +126,14 @@ const router = createBrowserRouter([
       {
         path: '/settings/salaries',
         element: <SuspenseWrapper><SalariesPage /></SuspenseWrapper>,
+      },
+      {
+        path: '/settings/reports',
+        element: <SuspenseWrapper><ReportsPage /></SuspenseWrapper>,
+      },
+      {
+        path: '/settings/reports/:yearMonth',
+        element: <SuspenseWrapper><MonthClosingPage /></SuspenseWrapper>,
       },
         ],
       },

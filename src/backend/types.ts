@@ -10,6 +10,7 @@ import type {
   Expense, CreateExpensePayload, UpdateExpensePayload,
   TicketLine, PaginatedResponse, ExpenseFilters,
   MetricsSummary, BudgetSettings,
+  MonthClosing, CreateMonthClosingPayload,
 } from '@/types/models'
 import type { MetricsPeriod, RecurringStatus } from '@/types/enums'
 
@@ -23,6 +24,7 @@ export type {
   Expense, CreateExpensePayload, UpdateExpensePayload,
   TicketLine, PaginatedResponse, ExpenseFilters,
   MetricsSummary, MetricsPeriod,
+  MonthClosing, CreateMonthClosingPayload,
 }
 
 // ─── Auth ──────────────────────────────────────────────────
@@ -100,6 +102,7 @@ export interface IExpensesBackend {
   create(payload: CreateExpensePayload): Promise<Expense>
   update(id: string, payload: UpdateExpensePayload): Promise<Expense>
   remove(id: string): Promise<void>
+  duplicate(id: string): Promise<Expense>
   uploadReceipt(id: string, file: File): Promise<{ receiptUrl: string }>
   addTicketLine(expenseId: string, line: Omit<TicketLine, 'id'>): Promise<TicketLine>
   removeTicketLine(expenseId: string, lineId: string): Promise<void>
@@ -109,6 +112,14 @@ export interface IExpensesBackend {
 
 export interface IMetricsBackend {
   getSummary(period: MetricsPeriod): Promise<MetricsSummary>
+}
+
+// ─── Month closings ───────────────────────────────────────
+
+export interface IMonthClosingsBackend {
+  list(): Promise<MonthClosing[]>
+  getById(id: string): Promise<MonthClosing | null>
+  create(payload: CreateMonthClosingPayload): Promise<MonthClosing>
 }
 
 // ─── Budget ───────────────────────────────────────────────

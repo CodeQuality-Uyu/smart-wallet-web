@@ -1,7 +1,6 @@
 // src/pages/BudgetSettingsPage.tsx
 
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { Formik, Form } from 'formik'
 import type { FormikHelpers } from 'formik'
 import * as Yup from 'yup'
@@ -26,7 +25,6 @@ const budgetSchema = Yup.object({
 type BudgetFormValues = { usd: number | ''; uyu: number | '' }
 
 export default function BudgetSettingsPage(): React.ReactElement {
-  const navigate = useNavigate()
   const { data: budget, isLoading } = useBudget()
   const { mutateAsync: setBudget } = useSetBudget()
   const [savedOk, setSavedOk] = useState(false)

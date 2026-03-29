@@ -5,13 +5,13 @@
   align-items: center;
   gap: 11px;
   padding: 10px 20px;
-  background: #fff;
   border-bottom: 1px solid rgba(0,0,0,.04);
   cursor: pointer;
-  transition: background .12s;
+  transition: opacity .12s;
+  position: relative;
 }
 
-.row:hover { background: var(--g50); }
+.row:hover { opacity: .8; }
 .row:focus-visible { outline: 2px solid var(--g400); outline-offset: -2px; }
 
 .icon {
@@ -71,3 +71,61 @@
   color: var(--muted);
   margin-top: 2px;
 }
+
+/* ─── Action menu ─────────────────────────────────────── */
+
+.menuWrap {
+  position: relative;
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+
+.menuTrigger {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: none;
+  border-radius: 8px;
+  font-size: 16px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background .12s;
+}
+
+.menuTrigger:hover { background: var(--g100); color: var(--ink); }
+
+.menuDropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.12);
+  min-width: 180px;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  transition: background .1s;
+  font-family: inherit;
+}
+
+.menuItem:hover { background: var(--g50); }
+.menuItem + .menuItem { border-top: 1px solid var(--border); }

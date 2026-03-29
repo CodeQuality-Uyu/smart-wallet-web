@@ -13,8 +13,8 @@
 .fullWidth { width: 100%; }
 
 /* variants */
-.primary { background: linear-gradient(135deg,var(--g600),var(--g400)); color:#fff; box-shadow:0 4px 18px rgba(34,139,53,.35); }
-.secondary { background: linear-gradient(135deg,#4338ca,var(--ind)); color:#fff; box-shadow:0 4px 18px rgba(79,70,229,.35); }
+.primary { background: linear-gradient(135deg, var(--gold-dk), var(--gold)); color: var(--ink); box-shadow: 0 4px 18px rgba(196,125,16,.35); }
+.secondary { background: linear-gradient(135deg, var(--g800), var(--g600)); color: #fff; box-shadow: 0 4px 18px rgba(12,43,23,.4); }
 .ghost { background: transparent; color: var(--muted); border: 1.5px solid var(--border); }
 .danger { background: linear-gradient(135deg,#be123c,var(--rose)); color:#fff; box-shadow:0 4px 14px rgba(225,29,72,.3); }
 

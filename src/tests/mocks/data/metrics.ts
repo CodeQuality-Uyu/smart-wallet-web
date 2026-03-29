@@ -1,6 +1,6 @@
 // src/tests/mocks/data/metrics.ts
 import type { MetricsSummary } from '@/types/models'
-import { Currency, RecurringFrequency } from '@/types/enums'
+import { Currency, RecurringFrequency, RecurringMode } from '@/types/enums'
 
 export const mockMetrics: MetricsSummary = {
   period: 'month',
@@ -35,9 +35,9 @@ export const mockMetrics: MetricsSummary = {
     { categoryId: 'cat-4', categoryName: 'Salud', categoryIcon: '💊', usd: 0, uyu: 310 },
   ],
   fixedBreakdown: [
-    { recurringId: 'rec-3', name: 'UTE — Luz', icon: '💡', amount: 2400, currency: Currency.UYU, frequency: RecurringFrequency.Monthly },
-    { recurringId: 'rec-3', name: 'OSE — Agua', icon: '💧', amount: 890, currency: Currency.UYU, frequency: RecurringFrequency.Monthly },
-    { recurringId: 'rec-1', name: 'Netflix', icon: '🎬', amount: 6.99, currency: Currency.USD, frequency: RecurringFrequency.Monthly },
-    { recurringId: 'rec-2', name: 'Spotify', icon: '🎵', amount: 5.99, currency: Currency.USD, frequency: RecurringFrequency.Annual },
+    { recurringId: 'rec-3', name: 'UTE — Luz', icon: '💡', mode: RecurringMode.Manual, amount: 2400, currency: Currency.UYU, frequency: RecurringFrequency.Monthly },
+    { recurringId: 'rec-4', name: 'OSE — Agua', icon: '💧', mode: RecurringMode.Manual, amount: 890, currency: Currency.UYU, frequency: RecurringFrequency.Monthly },
+    { recurringId: 'rec-1', name: 'Netflix', icon: '🎬', mode: RecurringMode.Auto, amount: 6.99, currency: Currency.USD, frequency: RecurringFrequency.Monthly },
+    { recurringId: 'rec-2', name: 'Spotify', icon: '🎵', mode: RecurringMode.Auto, amount: 5.99, currency: Currency.USD, frequency: RecurringFrequency.Annual },
   ],
 }

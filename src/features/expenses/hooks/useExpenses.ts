@@ -60,6 +60,16 @@ export function useDeleteExpense() {
   })
 }
 
+export function useDuplicateExpense() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => expensesService.duplicate(id),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: EXPENSE_KEYS.all })
+    },
+  })
+}
+
 export function useAddTicketLine(expenseId: string) {
   const qc = useQueryClient()
   return useMutation({

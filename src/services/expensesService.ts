@@ -31,6 +31,10 @@ export const expensesService = {
     return (await getExpensesBackend()).remove(id)
   },
 
+  async duplicate(id: string): Promise<Expense> {
+    return (await getExpensesBackend()).duplicate(id)
+  },
+
   async uploadReceipt(id: string, file: File): Promise<{ receiptUrl: string }> {
     return (await getExpensesBackend()).uploadReceipt(id, file)
   },

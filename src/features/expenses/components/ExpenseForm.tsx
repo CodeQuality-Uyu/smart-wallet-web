@@ -16,6 +16,8 @@ interface ExpenseFormProps {
   initialValues?: Partial<ExpenseFormValues>
   onSubmit: (values: ExpenseFormValues) => Promise<void>
   submitLabel?: string
+  variant?: 'mobile' | 'desktop'
+  onCancel?: () => void
 }
 
 const CARD_TYPE_LABEL: Record<CardType, string> = {
@@ -38,7 +40,10 @@ export function ExpenseForm({
   initialValues,
   onSubmit,
   submitLabel = 'Guardar gasto',
+  variant = 'mobile',
+  onCancel,
 }: ExpenseFormProps): React.ReactElement {
+  const isDesktop = variant === 'desktop'
   const { data: categories = [] } = useCategories()
   const { data: cards = [] } = useCards()
   const { data: places = [] } = usePlaces()
@@ -75,8 +80,8 @@ export function ExpenseForm({
         <Form className={styles.form} noValidate>
 
           {/* Amount + currency toggle */}
-          <div className={styles.amountSection}>
-            <p className={styles.amountLabel}>¿Cuánto gastaste?</p>
+          <div className={isDesktop ? styles.amountSectionDesktop : styles.amountSection}>
+            <p className={isDesktop ? styles.amountLabelDesktop : styles.amountLabel}>¿Cuánto gastaste?</p>
             <div className={styles.amountRow}>
               <FormField name="amount" label="">
                 <TextInput
@@ -84,18 +89,18 @@ export function ExpenseForm({
                   type="number"
                   inputMode="decimal"
                   placeholder="0.00"
-                  className={styles.amountInput}
+                  className={isDesktop ? styles.amountInputDesktop : styles.amountInput}
                   aria-label="Monto"
                 />
               </FormField>
-              <div className={styles.currencyToggle} role="group" aria-label="Moneda">
+              <div className={isDesktop ? styles.currencyToggleDesktop : styles.currencyToggle} role="group" aria-label="Moneda">
                 {currencyOptions.map((opt) => (
                   <button
                     key={opt.value}
                     type="button"
                     className={[
-                      styles.currencyBtn,
-                      values.currency === opt.value ? styles.currencyBtnActive : '',
+                      isDesktop ? styles.currencyBtnDesktop : styles.currencyBtn,
+                      values.currency === opt.value ? (isDesktop ? styles.currencyBtnActiveDesktop : styles.currencyBtnActive) : '',
                     ].join(' ')}
                     onClick={() => void setFieldValue('currency', opt.value)}
                   >
@@ -106,7 +111,7 @@ export function ExpenseForm({
             </div>
           </div>
 
-          <div className={styles.fields}>
+          <div className={isDesktop ? styles.fieldsDesktop : styles.fields}>
             <FormField name="description" label="Descripción">
               <TextInput name="description" placeholder="¿Qué compraste?" />
             </FormField>
@@ -155,10 +160,21 @@ export function ExpenseForm({
             </FormField>
           </div>
 
-          <div className={styles.actions}>
-            <Button type="submit" loading={isSubmitting} fullWidth>
-              {submitLabel}
-            </Button>
+          <div className={isDesktop ? styles.actionsDesktop : styles.actions}>
+            {isDesktop && onCancel ? (
+              <>
+                <button type="button" className={styles.cancelBtn} onClick={onCancel}>
+                  Cancelar
+                </button>
+                <Button type="submit" loading={isSubmitting}>
+                  {submitLabel}
+                </Button>
+              </>
+            ) : (
+              <Button type="submit" loading={isSubmitting} fullWidth>
+                {submitLabel}
+              </Button>
+            )}
           </div>
         </Form>
       )}

@@ -46,7 +46,7 @@
   font-family: inherit;
 }
 
-.navItemActive .navLabel { color: var(--g500); font-weight: 700; }
+.navItemActive .navLabel { color: var(--gold-dk); font-weight: 700; }
 
 .navIcon { font-size: 21px; line-height: 1; }
 
@@ -59,6 +59,126 @@
 /* Empty slot that holds space for the FAB in the middle */
 .navSpacer { flex: 1; }
 
+/* ─────────────────────────────────────────────────────────
+   Desktop layout
+   ───────────────────────────────────────────────────────── */
+
+.desktopShell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: var(--cream);
+}
+
+/* Top nav bar */
+.desktopNav {
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.desktopNavInner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 28px;
+  height: 62px;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  position: relative;
+}
+
+/* Logo */
+.desktopLogo {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-shrink: 0;
+}
+
+.desktopLogoMark {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--gold-dk), var(--gold));
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-num); font-size: 16px; font-weight: 700;
+  color: var(--ink);
+  flex-shrink: 0;
+}
+
+.desktopLogoName {
+  font-family: var(--font-head);
+  font-size: 17px; font-weight: 800; color: var(--ink);
+}
+
+/* Nav links */
+.desktopNavLinks {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.desktopNavLink {
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 14px; font-weight: 500;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color .12s;
+}
+
+.desktopNavLink:hover { color: var(--ink); }
+
+.desktopNavLinkActive {
+  color: var(--g300);
+  font-weight: 700;
+}
+
+/* User area */
+.desktopUser {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.desktopUserGreeting {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.desktopUserGreeting strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.desktopAvatar {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--gold-dk), var(--gold));
+  border-radius: 50%;
+  border: none; cursor: pointer;
+  font-family: var(--font-head);
+  font-size: 13px; font-weight: 800; color: var(--ink);
+}
+
+/* Main content */
+.desktopMain {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.desktopContent {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px;
+}
+
 /* ── FAB (positioned between expense and metrics slots) ── */
 .fab {
   position: fixed;
@@ -66,16 +186,16 @@
   left: 50%;
   transform: translateX(-50%) translateX(0px);
   /* Center FAB in the middle nav slot — adjust translateX if nav changes */
-  width: 54px;
-  height: 54px;
-  background: linear-gradient(135deg, var(--g600), var(--g400));
-  border-radius: 19px;
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(145deg, var(--gold), var(--gold-dk));
+  border-radius: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 28px;
-  color: #fff;
-  box-shadow: 0 6px 22px rgba(34,139,53,.42);
+  color: var(--ink);
+  box-shadow: 0 6px 22px rgba(196,125,16,.45);
   z-index: 101;
   text-decoration: none;
 }

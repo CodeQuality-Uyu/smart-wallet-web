@@ -23,8 +23,8 @@
 }
 
 .input:focus {
-  border-color: var(--g400);
-  box-shadow: 0 0 0 3px rgba(76,217,106,.14);
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(245,166,35,.18);
 }
 
 .inputError {
@@ -40,4 +40,20 @@
   pointer-events: none; z-index: 1;
 }
 
-.select { cursor: pointer; }
+.selectWrap { position: relative; }
+
+.selectWrap::after {
+  content: '▾';
+  position: absolute;
+  right: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.select {
+  cursor: pointer;
+  padding-right: 36px;
+}

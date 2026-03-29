@@ -1,7 +1,7 @@
 // src/backend/index.ts
 // Factory: returns the correct backend implementation based on VITE_BACKEND
 
-import type { IAuthBackend, IBudgetBackend, ICardsBackend, ICategoriesBackend, IExpensesBackend, IMetricsBackend, IPlacesBackend, IRecurringBackend, ISalariesBackend } from './types'
+import type { IAuthBackend, IBudgetBackend, ICardsBackend, ICategoriesBackend, IExpensesBackend, IMetricsBackend, IPlacesBackend, IRecurringBackend, ISalariesBackend, IMonthClosingsBackend } from './types'
 
 type BackendType = 'msw' | 'firestore' | 'aws'
 
@@ -17,6 +17,7 @@ let _placesBackend: IPlacesBackend | null = null
 let _recurringBackend: IRecurringBackend | null = null
 let _budgetBackend: IBudgetBackend | null = null
 let _salariesBackend: ISalariesBackend | null = null
+let _monthClosingsBackend: IMonthClosingsBackend | null = null
 
 export async function getAuthBackend(): Promise<IAuthBackend> {
   if (_authBackend) return _authBackend
@@ -125,6 +126,18 @@ export async function getSalariesBackend(): Promise<ISalariesBackend> {
     _salariesBackend = mswSalariesBackend
   }
   return _salariesBackend
+}
+
+export async function getMonthClosingsBackend(): Promise<IMonthClosingsBackend> {
+  if (_monthClosingsBackend) return _monthClosingsBackend
+  if (backend === 'firestore') {
+    const { firestoreMonthClosingsBackend } = await import('./firestore/monthClosings')
+    _monthClosingsBackend = firestoreMonthClosingsBackend
+  } else {
+    const { mswMonthClosingsBackend } = await import('./msw/monthClosings')
+    _monthClosingsBackend = mswMonthClosingsBackend
+  }
+  return _monthClosingsBackend
 }
 
 export { backend as activeBackend }

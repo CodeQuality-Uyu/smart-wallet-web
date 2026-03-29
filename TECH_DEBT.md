@@ -61,3 +61,21 @@ export const registerAutoRecurring = onSchedule('0 6 1 * *', async () => {
 **Impacto estimado**: bajo — función aislada, no toca código existente del frontend.
 
 ---
+
+## Filtros de gastos deben moverse al backend
+
+**Contexto**
+En `ExpensesPage`, todos los filtros (búsqueda, moneda, medio de pago, comercio, categoría) y el agrupado (día/semana/lugar/categoría) se aplican client-side mediante `useMemo` después de recibir todos los gastos del período. El backend solo recibe `{ period }`.
+
+Esto funciona bien para datasets pequeños pero escala mal.
+
+**Solución propuesta**
+Pasar todos los filtros activos a `useExpenses(filters)` y procesarlos en cada backend:
+
+- **MSW** (`handlers.ts`): leer query params en `GET /api/expenses` y filtrar `mockExpenses` antes de responder.
+- **Firestore** (`firestore/expenses.ts`): ya tiene stubs para `currency`, `placeId` y `categoryIds` — extender con `cardId` y `search`. Puede requerir índices compuestos en Firestore.
+- **Página**: eliminar el `useMemo` de filtrado y dejar solo el agrupado client-side (o también delegarlo via `groupBy` param).
+
+**Impacto estimado**: medio — afecta `ExpensesPage`, `useExpenses`, ambos backends y potencialmente requiere migración de índices en Firestore.
+
+---

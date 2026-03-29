@@ -35,7 +35,7 @@ export default function ExpenseDetailPage(): React.ReactElement {
   const ticketTotal = expense.ticketLines.reduce((s, l) => s + l.amount, 0)
 
   async function handleDelete(): Promise<void> {
-    if (!window.confirm('¿Eliminar este gasto?')) return
+    if (!expense || !window.confirm('¿Eliminar este gasto?')) return
     await deleteExpense(expense.id)
     navigate('/expenses')
   }

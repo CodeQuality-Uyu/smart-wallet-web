@@ -135,7 +135,7 @@ export const firestoreRecurringBackend: IRecurringBackend = {
       paidAt: now.toISOString(),
       receiptUrl,
       status: RecurringPaymentStatus.Paid,
-    }) as RecurringPaymentHistory
+    }) as unknown as RecurringPaymentHistory
 
     const existing = (snap.data()['paymentHistory'] ?? []) as RecurringPaymentHistory[]
     await updateDoc(docRef, {

@@ -12,6 +12,7 @@ interface SettingItem {
 }
 
 const SECTIONS: SettingItem[] = [
+  { icon: '📋', label: 'Reportes', description: 'Cierres mensuales e historial de gastos', path: '/settings/reports' },
   { icon: '🔄', label: 'Pagos recurrentes', description: 'Suscripciones y servicios mensuales', path: '/settings/recurring' },
   { icon: '📍', label: 'Locales', description: 'Lugares donde realizás gastos', path: '/settings/places' },
   { icon: '🏷️', label: 'Categorías', description: 'Organizá tus gastos por tipo', path: '/settings/categories' },

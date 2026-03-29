@@ -34,11 +34,11 @@
 
 .avatar {
   width: 40px; height: 40px;
-  background: linear-gradient(135deg, var(--g400), var(--g300));
+  background: linear-gradient(135deg, var(--gold-dk), var(--gold));
   border-radius: 14px;
   display: flex; align-items: center; justify-content: center;
   font-family: var(--font-head);
-  font-size: 14px; font-weight: 800; color: var(--g900);
+  font-size: 14px; font-weight: 800; color: var(--ink);
 }
 
 .monthLabel {
@@ -52,8 +52,8 @@
 
 .spendCard {
   flex: 1;
-  background: rgba(255,255,255,.12);
-  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(0,0,0,.22);
+  border: 1px solid rgba(255,255,255,.1);
   border-radius: 16px;
   padding: 14px;
 }
@@ -68,8 +68,13 @@
   font-size: 11px; font-weight: 700;
   padding: 2px 7px; border-radius: 20px;
 }
-.deltaUp { background: rgba(225,29,72,.25); color: #fca5a5; }
-.deltaDown { background: rgba(34,197,94,.2); color: #86efac; }
+/* On dark header (spend cards) */
+.deltaUp { background: rgba(225,29,72,.22); color: #fca5a5; }
+.deltaDown { background: rgba(34,197,94,.18); color: #86efac; }
+
+/* On light background (category section) */
+.catDeltaUp { background: rgba(225,29,72,.1); color: #be123c; }
+.catDeltaDown { background: rgba(22,163,74,.12); color: #15803d; }
 
 /* Budget bar inside card */
 .budgetBar {
@@ -88,27 +93,30 @@
 /* ── Body ───────────────────────────────────────────────── */
 .body { flex: 1; padding-bottom: 24px; }
 
-.section { padding: 16px 20px 0; }
+.section {
+  padding: 20px 20px 0;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+}
+.section:first-child { border-top: none; margin-top: 0; }
 
 .sectionHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .sectionTitle {
   font-family: var(--font-head);
   font-size: 14px; font-weight: 700; color: var(--ink);
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
-.seeAll { font-size: 12px; color: var(--g500); font-weight: 600; background: none; border: none; cursor: pointer; }
+.seeAll { font-size: 12px; color: var(--gold-dk); font-weight: 600; background: none; border: none; cursor: pointer; }
 
 /* Generic card wrapper */
 .card {
-  background: #fff;
-  border: 1.5px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
 }
@@ -179,3 +187,181 @@
   background: var(--cream);
 }
 .empty { padding: 20px; font-size: 13px; color: var(--muted); text-align: center; }
+
+/* ─── Tips de ahorro ──────────────────────────────────── */
+
+.tipsCard {
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.tipRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 14px;
+  border-bottom: 1px solid rgba(0,0,0,.05);
+}
+.tipRow:last-child { border-bottom: none; }
+
+.tip_success { }
+.tip_warn { }
+.tip_info { }
+
+.tipIcon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.tipText { font-size: 12px; line-height: 1.5; color: var(--ink); }
+
+/* ─────────────────────────────────────────────────────────
+   Desktop view
+   ───────────────────────────────────────────────────────── */
+
+.desktopPage { display: flex; flex-direction: column; gap: 16px; }
+
+/* Two-column grid: white main box | sidebar */
+.desktopGrid {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 16px;
+  align-items: start;
+}
+
+/* Main white box */
+.desktopMainBox {
+  background: #fff;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--border);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.desktopSubtitle { font-size: 13px; color: var(--muted); text-transform: capitalize; font-weight: 500; }
+
+/* Stat cards row inside the box */
+.desktopStatRow { display: flex; gap: 14px; }
+.desktopStatCard {
+  flex: 1; background: var(--cream); border-radius: 12px;
+  padding: 16px 18px; border: 1.5px solid var(--border);
+  display: flex; flex-direction: column;
+}
+.desktopStatLabel {
+  font-size: 10px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px;
+}
+.desktopStatValue {
+  font-family: var(--font-num); font-size: 24px; font-weight: 700; color: var(--ink);
+  margin-bottom: 10px;
+}
+.desktopDelta {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-family: var(--font-num); font-size: 11px; font-weight: 700;
+  padding: 3px 8px; border-radius: 20px; margin-top: auto; align-self: flex-start;
+}
+.desktopDeltaLabel { font-weight: 500; font-family: inherit; }
+.desktopDeltaUp { background: rgba(225,29,72,.1); color: #be123c; }
+.desktopDeltaDown { background: rgba(22,163,74,.12); color: #15803d; }
+
+.desktopBudgetBar {
+  height: 4px; background: rgba(0,0,0,.08); border-radius: 2px;
+  overflow: hidden; margin: 12px 0 4px;
+}
+.desktopBudgetFill { height: 100%; border-radius: 2px; transition: width .3s; }
+.budgetOk { background: #4ade80; }
+.budgetWarn { background: #facc15; }
+.budgetDanger { background: #f87171; }
+.desktopBudgetLabel { font-size: 10px; color: var(--muted); }
+
+/* Section header with icon button */
+.desktopSectionHeader {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.desktopSectionTitle {
+  font-family: var(--font-head); font-size: 15px; font-weight: 700; color: var(--ink);
+}
+.desktopMovHeaderLeft { display: flex; align-items: center; gap: 8px; }
+.desktopSeeAll { font-size: 12px; color: var(--gold-dk); font-weight: 600; background: none; border: none; cursor: pointer; }
+.desktopAddBtn {
+  width: 32px; height: 32px; border-radius: 50%; border: none;
+  background: linear-gradient(135deg, var(--gold-dk), var(--gold));
+  color: var(--ink); font-size: 20px; font-weight: 700; line-height: 1;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px rgba(196,125,16,.35);
+  transition: opacity .15s;
+}
+.desktopAddBtn:hover { opacity: .85; }
+
+/* Movements list */
+.desktopMovList { display: flex; flex-direction: column; margin: 0 -24px -24px; }
+
+.desktopMovRow {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  padding: 12px 24px; background: none; border: none;
+  border-top: 1px solid var(--border); cursor: pointer;
+  text-align: left; font-family: inherit;
+  transition: background .1s;
+}
+.desktopMovRow:hover { background: var(--cream); }
+.desktopMovRow:last-child { border-radius: 0 0 var(--radius) var(--radius); }
+
+.desktopMovIcon {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: var(--cream); border: 1.5px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px; flex-shrink: 0;
+}
+.desktopMovInfo { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.desktopMovName { font-size: 13px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.desktopMovSub { font-size: 11px; color: var(--muted); }
+.desktopMovAmt { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+.desktopMovAmtVal { font-family: var(--font-num); font-size: 14px; font-weight: 700; color: var(--ink); white-space: nowrap; }
+.desktopMovAmtCurr { font-size: 10px; color: var(--muted); }
+
+.desktopEmpty { text-align: center; padding: 40px; font-size: 13px; color: var(--muted); }
+
+/* Right sidebar */
+.desktopSidebar { display: flex; flex-direction: column; gap: 16px; }
+.desktopCard { background: #fff; border-radius: var(--radius); border: 1.5px solid var(--border); overflow: hidden; }
+
+.desktopAllPaid { display: flex; align-items: center; gap: 10px; padding: 14px 16px; font-size: 13px; color: var(--muted); }
+
+.desktopRecurringRow {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  padding: 12px 16px; background: none; border: none;
+  border-bottom: 1px solid var(--border); cursor: pointer; text-align: left; font-family: inherit;
+}
+.desktopRecurringRow:last-child { border-bottom: none; }
+.desktopRecurringIcon { font-size: 20px; }
+.desktopRecurringInfo { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.desktopRecurringName { font-size: 13px; font-weight: 600; color: var(--ink); }
+.desktopRecurringDue { font-size: 11px; color: var(--muted); }
+.desktopRecurringAmt { font-family: var(--font-num); font-size: 13px; font-weight: 700; color: var(--ink); white-space: nowrap; }
+
+.desktopTipRow {
+  display: flex; align-items: flex-start; gap: 10px; padding: 11px 16px;
+  border-bottom: 1px solid rgba(0,0,0,.05);
+}
+.desktopTipRow:last-child { border-bottom: none; }
+.desktopTipIcon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.desktopTipText { font-size: 12px; line-height: 1.5; color: var(--ink); }
+
+.desktopCatRow {
+  display: flex; align-items: center; gap: 10px; padding: 11px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.desktopCatRow:last-child { border-bottom: none; }
+.desktopCatIcon { font-size: 18px; }
+.desktopCatName { flex: 1; font-size: 13px; font-weight: 600; color: var(--ink); }
+.desktopCatDelta { font-family: var(--font-num); font-size: 12px; font-weight: 700; }
+
+/* ─── Reporte mensual ─────────────────────────────────── */
+
+.closingCard {
+  width: 100%; display: flex; align-items: center; justify-content: space-between;
+  text-align: left; cursor: pointer; font-family: inherit; border: none;
+  padding: 14px 16px;
+}
+.closingLeft { flex: 1; }
+.closingMonth { font-size: 13px; font-weight: 600; color: var(--ink); }
+.closingStatus { font-size: 12px; margin-top: 3px; }
+.closingArrow { font-size: 12px; font-weight: 600; color: var(--g500); flex-shrink: 0; }

@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { formatCurrency } from '@/utils/formatCurrency'
-import { RecurringMode, RecurringFrequency, RecurringPaymentStatus, RecurringStatus, Currency, CardType } from '@/types/enums'
+import { RecurringMode, RecurringFrequency, RecurringStatus, Currency, CardType } from '@/types/enums'
 import styles from './RecurringPage.module.css'
 
 const ICON_OPTIONS = ['📺', '🎵', '☁️', '💡', '🌊', '📱', '🎮', '🏠', '💊', '🔒', '📰', '🚗']
@@ -44,7 +44,7 @@ export default function RecurringPage(): React.ReactElement {
     return acc
   }, {})
 
-  if (isLoading) return <LoadingSpinner fullPage />
+if (isLoading) return <LoadingSpinner fullPage />
   if (error) return <ErrorMessage onRetry={() => void refetch()} />
 
   async function handleSubmit(
@@ -73,11 +73,16 @@ export default function RecurringPage(): React.ReactElement {
   }
 
   const renderItem = (item: (typeof recurring)[0]): React.ReactElement => {
-    const isPending = item.currentMonthStatus === RecurringPaymentStatus.Pending
+    const card = cards.find((c) => c.id === item.cardId)
+    const cardLabel = card ? `${card.type === CardType.Credit ? 'Crédito' : card.type === CardType.Debit ? 'Débito' : 'Transf.'} ${card.bank}` : ''
+    const dayLabel = item.dueDayOfMonth ? `Día ${item.dueDayOfMonth}` : null
+    const subtitle = [cardLabel, dayLabel].filter(Boolean).join(' · ')
+    const freqLabel = `${item.currency}/${item.frequency === RecurringFrequency.Annual ? 'año' : 'mes'}`
+
     return (
       <article
         key={item.id}
-        className={[styles.item, isPending ? styles.itemPending : ''].join(' ')}
+        className={styles.item}
         onClick={() => navigate(`/settings/recurring/${item.id}`)}
         role="button"
         tabIndex={0}
@@ -85,35 +90,17 @@ export default function RecurringPage(): React.ReactElement {
       >
         <div className={styles.itemIcon}>{item.icon}</div>
         <div className={styles.itemInfo}>
-          <div className={styles.itemTop}>
-            <span className={styles.itemName}>{item.name}</span>
-            <span className={[styles.modeBadge, item.mode === RecurringMode.Auto ? styles.auto : styles.manual].join(' ')}>
-              {item.mode === RecurringMode.Auto ? 'Auto' : 'Manual'}
-            </span>
-            {item.status === 'paused' && (
+          <p className={styles.itemName}>
+            {item.name}
+            {item.status === RecurringStatus.Paused && (
               <span className={styles.pausedBadge}>Pausado</span>
             )}
-          </div>
-          <div className={styles.itemSub}>
-            {item.mode === RecurringMode.Manual && item.currentMonthStatus && (
-              <span className={[
-                styles.paymentState,
-                item.currentMonthStatus === RecurringPaymentStatus.Paid ? styles.paid : styles.pending
-              ].join(' ')}>
-                {item.currentMonthStatus === RecurringPaymentStatus.Paid
-                  ? '✓ Pagado'
-                  : `⚠ Vence día ${item.dueDayOfMonth}`}
-              </span>
-            )}
-          </div>
+          </p>
+          {subtitle && <p className={styles.itemSub}>{subtitle}</p>}
         </div>
         <div className={styles.itemRight}>
-          <p className={styles.itemAmt}>
-            {formatCurrency(item.amount, item.currency)}{' '}
-            <span className={styles.itemCurr}>
-              {item.currency}/{item.frequency === RecurringFrequency.Annual ? 'año' : 'mes'}
-            </span>
-          </p>
+          <p className={styles.itemAmt}>{formatCurrency(item.amount, item.currency)}</p>
+          <p className={styles.itemFreq}>{freqLabel}</p>
         </div>
       </article>
     )
@@ -121,9 +108,9 @@ export default function RecurringPage(): React.ReactElement {
 
   return (
     <div>
-      <PageHeader title="Recurrentes" subtitle="Se registran automáticamente cada mes" showBack />
+      <PageHeader title="Recurrentes" subtitle="Suscripciones y gastos fijos" showBack />
 
-      <div style={{ padding: '12px 20px' }}>
+      <div className={styles.body}>
         <button className={styles.addBtn} onClick={() => setShowForm((s) => !s)}>
           ＋ Agregar recurrente
         </button>
@@ -263,7 +250,7 @@ export default function RecurringPage(): React.ReactElement {
           return (
             <React.Fragment key={catId}>
               <p className={styles.groupLabel}>
-                {cat ? `${cat.icon} ${cat.name}` : 'Sin categoría'}
+                {cat ? cat.name : 'Sin categoría'}
               </p>
               {items.map(renderItem)}
             </React.Fragment>
@@ -271,9 +258,7 @@ export default function RecurringPage(): React.ReactElement {
         })}
 
         {recurring.length === 0 && (
-          <p style={{ color: 'var(--muted)', fontSize: 13, textAlign: 'center', marginTop: 32 }}>
-            No hay pagos recurrentes.
-          </p>
+          <p className={styles.empty}>No hay pagos recurrentes.</p>
         )}
       </div>
     </div>

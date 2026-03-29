@@ -45,7 +45,7 @@ Firebase puede tener múltiples clientes conectados al mismo proyecto (iOS, Andr
 
 1. En la pantalla principal del proyecto, hacer click en el ícono **`</>`** (Web)
 2. Asignar un apodo a la app, por ejemplo: `smart-wallet-web`
-3. **No** tildar "Firebase Hosting" (no lo vamos a usar por ahora)
+3. Tildar "Firebase Hosting" si querés usar el deploy automático descrito en el paso 8 (opcional)
 4. Click en **"Registrar app"**
 5. Firebase muestra un bloque de código como este:
 
@@ -326,6 +326,53 @@ VITE_BACKEND=firestore
 ```
 
 No hay que cambiar ningún código — solo la variable de entorno y reiniciar el servidor.
+
+---
+
+## 8️⃣ Deploy automático a Firebase Hosting (GitHub Actions)
+
+Firebase Hosting sirve la app como sitio estático con CDN global, HTTPS automático y soporte para SPA routing. El deploy se hace automáticamente en cada push a `main` mediante el workflow en `.github/workflows/deploy.yml`.
+
+### Cómo funciona
+
+1. GitHub Actions ejecuta `npm ci` y `npm run build`
+2. Las variables `VITE_FIREBASE_*` se inyectan desde los secrets del repositorio
+3. El artefacto `dist/` se sube a Firebase Hosting en el canal `live` (producción)
+4. El rewrite `** → /index.html` asegura que el routing de la SPA funcione correctamente en cualquier ruta
+
+### Configurar los secrets en GitHub
+
+Ir a **Settings → Secrets and variables → Actions** en el repositorio y agregar:
+
+| Secret | Cómo obtenerlo |
+|---|---|
+| `FIREBASE_SERVICE_ACCOUNT` | Firebase Console → Project Settings → Service Accounts → **Generate new private key** → copiar el JSON completo |
+| `VITE_FIREBASE_API_KEY` | Del objeto `firebaseConfig` obtenido en el paso 2 |
+| `VITE_FIREBASE_AUTH_DOMAIN` | Ídem |
+| `VITE_FIREBASE_PROJECT_ID` | Ídem |
+| `VITE_FIREBASE_STORAGE_BUCKET` | Ídem |
+| `VITE_FIREBASE_MESSAGING_SENDER_ID` | Ídem |
+| `VITE_FIREBASE_APP_ID` | Ídem |
+
+> ⚠️ El `FIREBASE_SERVICE_ACCOUNT` es el JSON completo que descargás (no solo el `private_key`). Pegarlo tal cual en el secret.
+
+### Agregar el dominio de producción a Authentication
+
+Una vez deployado, Firebase Hosting asigna un dominio del tipo `smart-wallet-app.web.app`. Ese dominio debe estar en la lista de dominios autorizados para que los email links funcionen en producción:
+
+1. **Authentication → Settings → Authorized domains**
+2. Click en **"Agregar dominio"**
+3. Ingresar `smart-wallet-app.web.app` (y el dominio custom si configuraste uno)
+
+### Verificar el deploy
+
+```bash
+# Ver el historial de releases en Firebase Hosting
+firebase hosting:releases
+
+# Ver la URL del proyecto
+firebase open hosting:site
+```
 
 ---
 

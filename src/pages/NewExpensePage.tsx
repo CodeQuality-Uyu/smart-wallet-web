@@ -4,12 +4,14 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ExpenseForm } from '@/features/expenses/components/ExpenseForm'
 import { useCreateExpense } from '@/features/expenses/hooks/useExpenses'
+import { useIsDesktop } from '@/hooks/useIsDesktop'
 import type { ExpenseFormValues } from '@/features/expenses/schemas/expenseSchema'
 import type { CreateExpensePayload } from '@/types/models'
 import styles from './NewExpensePage.module.css'
 
 export default function NewExpensePage(): React.ReactElement {
   const navigate = useNavigate()
+  const isDesktop = useIsDesktop()
   const { mutateAsync: createExpense } = useCreateExpense()
 
   async function handleSubmit(values: ExpenseFormValues): Promise<void> {
@@ -24,6 +26,24 @@ export default function NewExpensePage(): React.ReactElement {
     }
     await createExpense(payload)
     navigate('/expenses')
+  }
+
+  if (isDesktop) {
+    return (
+      <div className={styles.desktopPage}>
+        <div className={styles.desktopCard}>
+          <div className={styles.desktopHeader}>
+            <h1 className={styles.desktopTitle}>Nuevo gasto</h1>
+          </div>
+          <ExpenseForm
+            onSubmit={handleSubmit}
+            submitLabel="Guardar gasto"
+            variant="desktop"
+            onCancel={() => navigate(-1)}
+          />
+        </div>
+      </div>
+    )
   }
 
   return (

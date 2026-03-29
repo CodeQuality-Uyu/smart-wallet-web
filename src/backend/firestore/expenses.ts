@@ -71,7 +71,7 @@ export const firestoreExpensesBackend: IExpensesBackend = {
       orderBy('date', 'desc'),
     )
     const snap = await getDocs(q)
-    const all = snap.docs.map((d) => ({ id: d.id, ticketLines: [], ...d.data() } as Expense))
+    const all = snap.docs.map((d) => ({ id: d.id, ticketLines: [], ...d.data() } as unknown as Expense))
 
     // All filters applied client-side to avoid composite index requirements
     const bounds = filters?.period ? getPeriodBounds(filters.period) : null
@@ -94,7 +94,7 @@ export const firestoreExpensesBackend: IExpensesBackend = {
     const snap = await getDoc(doc(firestore, 'users', uid, 'expenses', id))
     if (!snap.exists()) throw { message: 'No encontrado', statusCode: 404 }
     const data = snap.data()
-    return { id: snap.id, ticketLines: [], ...data } as Expense
+    return { id: snap.id, ticketLines: [], ...data } as unknown as Expense
   },
 
   async create(payload: CreateExpensePayload): Promise<Expense> {
@@ -116,6 +116,25 @@ export const firestoreExpensesBackend: IExpensesBackend = {
   async remove(id: string): Promise<void> {
     const uid = requireUid()
     await deleteDoc(doc(firestore, 'users', uid, 'expenses', id))
+  },
+
+  async duplicate(id: string): Promise<Expense> {
+    const uid = requireUid()
+    const snap = await getDoc(doc(firestore, 'users', uid, 'expenses', id))
+    if (!snap.exists()) throw { message: 'No encontrado', statusCode: 404 }
+    const now = new Date().toISOString()
+    const today = now.split('T')[0] as string
+    const data = stripUndefined({
+      ...snap.data(),
+      description: `${String(snap.data()['description'])} (copia)`,
+      date: today,
+      ticketLines: [],
+      receiptUrl: undefined,
+      createdAt: now,
+      updatedAt: now,
+    })
+    const newRef = await addDoc(collection(firestore, 'users', uid, 'expenses'), data)
+    return { id: newRef.id, ...data } as Expense
   },
 
   async uploadReceipt(id: string, file: File): Promise<{ receiptUrl: string }> {

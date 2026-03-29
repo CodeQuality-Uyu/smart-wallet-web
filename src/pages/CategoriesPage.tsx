@@ -31,7 +31,7 @@ export default function CategoriesPage(): React.ReactElement {
       if (editing) {
         await updateCat(values)
       } else {
-        await createCat(values)
+        await createCat({ ...values, active: true })
       }
       setShowForm(false)
       setEditing(null)

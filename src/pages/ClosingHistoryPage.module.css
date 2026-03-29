@@ -1,0 +1,26 @@
+/* src/pages/ClosingHistoryPage.module.css */
+
+.page { display: flex; flex-direction: column; }
+
+.body { padding: 14px 0; }
+
+.row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px;
+  background: #fff; border: none;
+  border-bottom: 1px solid var(--border);
+  width: 100%; cursor: pointer;
+  font-family: inherit; text-align: left;
+  transition: background .12s;
+}
+.row:hover { background: var(--g50); }
+
+.rowLeft { flex: 1; }
+.rowMonth { font-size: 14px; font-weight: 600; color: var(--ink); }
+.rowDate { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+.rowRight { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.rowAmt { font-family: var(--font-num); font-size: 12px; font-weight: 700; color: var(--ink); }
+.arrow { font-size: 14px; color: var(--muted); }
+
+.empty { padding: 40px 20px; text-align: center; font-size: 13px; color: var(--muted); }

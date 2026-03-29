@@ -1,6 +1,6 @@
 // src/tests/utils/groupByDate.test.ts
 
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { groupExpensesByDate } from '@/utils/groupByDate'
 import { mockExpenses } from '../mocks/data/expenses'
 

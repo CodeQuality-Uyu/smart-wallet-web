@@ -83,7 +83,7 @@ export function SelectInput({
   const hasError = Boolean(meta.touched && meta.error)
 
   return (
-    <div className={styles.inputWrap}>
+    <div className={[styles.inputWrap, styles.selectWrap].join(' ')}>
       {icon && <span className={styles.inputIcon} aria-hidden>{icon}</span>}
       <select
         id={name}

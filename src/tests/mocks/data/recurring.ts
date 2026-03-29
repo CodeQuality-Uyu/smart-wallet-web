@@ -1,6 +1,6 @@
 // src/tests/mocks/data/recurring.ts
 import type { RecurringExpense } from '@/types/models'
-import { Currency, RecurringMode, RecurringStatus, RecurringPaymentStatus } from '@/types/enums'
+import { Currency, RecurringFrequency, RecurringMode, RecurringStatus, RecurringPaymentStatus } from '@/types/enums'
 
 export const mockRecurring: RecurringExpense[] = [
   {
@@ -12,6 +12,7 @@ export const mockRecurring: RecurringExpense[] = [
     categoryId: 'cat-7',
     cardId: 'card-4',
     mode: RecurringMode.Auto,
+    frequency: RecurringFrequency.Monthly,
     status: RecurringStatus.Active,
     currentMonthStatus: RecurringPaymentStatus.Paid,
     paymentHistory: [
@@ -30,6 +31,7 @@ export const mockRecurring: RecurringExpense[] = [
     categoryId: 'cat-7',
     cardId: 'card-2',
     mode: RecurringMode.Auto,
+    frequency: RecurringFrequency.Monthly,
     status: RecurringStatus.Active,
     currentMonthStatus: RecurringPaymentStatus.Paid,
     paymentHistory: [],
@@ -45,6 +47,7 @@ export const mockRecurring: RecurringExpense[] = [
     categoryId: 'cat-8',
     cardId: 'card-1',
     mode: RecurringMode.Manual,
+    frequency: RecurringFrequency.Monthly,
     status: RecurringStatus.Active,
     dueDayOfMonth: 12,
     currentMonthStatus: RecurringPaymentStatus.Pending,
@@ -63,6 +66,7 @@ export const mockRecurring: RecurringExpense[] = [
     categoryId: 'cat-8',
     cardId: 'card-1',
     mode: RecurringMode.Manual,
+    frequency: RecurringFrequency.Monthly,
     status: RecurringStatus.Active,
     dueDayOfMonth: 10,
     currentMonthStatus: RecurringPaymentStatus.Paid,

@@ -90,7 +90,10 @@ export interface ExpenseFilters {
   period?: string
   categoryIds?: string[]
   currency?: Currency
+  cardId?: string
   placeId?: string
+  search?: string
+  groupBy?: 'day' | 'week' | 'place' | 'category'
 }
 
 // ─── Recurring expense ────────────────────────────────────
@@ -156,6 +159,7 @@ export interface FixedExpenseBreakdown {
   recurringId: string
   name: string
   icon: string
+  mode: RecurringMode
   amount: number
   currency: Currency
   frequency: RecurringFrequency
@@ -183,6 +187,43 @@ export interface BudgetSettings {
   usd?: number
   uyu?: number
 }
+
+// ─── Month closings ───────────────────────────────────────
+
+export interface MonthClosingRecurring {
+  recurringId: string
+  name: string
+  icon: string
+  amount: number
+  currency: Currency
+  mode: RecurringMode
+  frequency: RecurringFrequency
+}
+
+export interface MonthClosingCategory {
+  categoryId: string
+  categoryName: string
+  categoryIcon: string
+  usd: number
+  uyu: number
+}
+
+export interface MonthClosing {
+  id: string // "{year}-{month:02d}" e.g. "2026-03"
+  year: number
+  month: number
+  closedAt: string
+  totalUsd: number
+  totalUyu: number
+  variableUsd: number
+  variableUyu: number
+  fixedUsd: number
+  fixedUyu: number
+  recurringPaid: MonthClosingRecurring[]
+  topCategories: MonthClosingCategory[]
+}
+
+export type CreateMonthClosingPayload = Omit<MonthClosing, 'closedAt'>
 
 // ─── Auth / User ──────────────────────────────────────────
 

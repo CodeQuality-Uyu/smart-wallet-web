@@ -39,6 +39,11 @@ export const mswExpensesBackend: IExpensesBackend = {
     await httpClient.delete(`/expenses/${id}`)
   },
 
+  async duplicate(id: string): Promise<Expense> {
+    const { data } = await httpClient.post<Expense>(`/expenses/${id}/duplicate`)
+    return data
+  },
+
   async uploadReceipt(id: string, file: File): Promise<{ receiptUrl: string }> {
     const form = new FormData()
     form.append('receipt', file)

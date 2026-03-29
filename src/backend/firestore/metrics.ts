@@ -169,6 +169,7 @@ export const firestoreMetricsBackend: IMetricsBackend = {
       recurringId: r.id,
       name: r.name,
       icon: r.icon,
+      mode: r.mode,
       amount: r.amount,
       currency: r.currency,
       frequency: r.frequency ?? RecurringFrequency.Monthly,

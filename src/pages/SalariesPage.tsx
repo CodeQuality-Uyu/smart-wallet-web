@@ -9,6 +9,7 @@ import { PageHeader } from '@/components/shared/PageHeader'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { formatCurrency } from '@/utils/formatCurrency'
+import { Currency } from '@/types/enums'
 import styles from './SalariesPage.module.css'
 
 const CURRENCIES = ['UYU', 'USD']
@@ -59,7 +60,7 @@ export default function SalariesPage(): React.ReactElement {
   if (isLoading) return <LoadingSpinner fullPage />
 
   async function handleDelete(salary: Salary): Promise<void> {
-    if (!window.confirm(`¿Eliminar sueldo de ${formatCurrency(salary.amount, salary.currency)} ${salary.currency}?`)) return
+    if (!window.confirm(`¿Eliminar sueldo de ${formatCurrency(salary.amount, salary.currency as Currency)} ${salary.currency}?`)) return
     await deleteSalary(salary.id)
   }
 
@@ -153,7 +154,7 @@ export default function SalariesPage(): React.ReactElement {
                 <span className={styles.itemCurrencyBadge}>{s.currency}</span>
                 <div>
                   <p className={styles.itemAmount}>
-                    {formatCurrency(s.amount, s.currency)}
+                    {formatCurrency(s.amount, s.currency as Currency)}
                   </p>
                   {s.notes && <p className={styles.itemNotes}>{s.notes}</p>}
                 </div>

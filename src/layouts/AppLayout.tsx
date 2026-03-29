@@ -1,7 +1,9 @@
 // src/layouts/AppLayout.tsx
 
 import React from 'react'
-import { Outlet, NavLink } from 'react-router-dom'
+import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { useAuth } from '@/app/providers/AuthContext'
+import { useIsDesktop } from '@/hooks/useIsDesktop'
 import styles from './AppLayout.module.css'
 
 interface NavItem {
@@ -11,23 +13,83 @@ interface NavItem {
 }
 
 const NAV_ITEMS_LEFT: NavItem[] = [
-  { to: '/home', icon: '🏠', label: 'Inicio' },
+  { to: '/home',    icon: '🏠', label: 'Inicio' },
   { to: '/expenses', icon: '📋', label: 'Gastos' },
 ]
 
 const NAV_ITEMS_RIGHT: NavItem[] = [
-  { to: '/metrics', icon: '📊', label: 'Métricas' },
+  { to: '/metrics',  icon: '📊', label: 'Métricas' },
   { to: '/settings', icon: '⚙️', label: 'Configurar' },
 ]
 
-export function AppLayout(): React.ReactElement {
+const ALL_NAV = [...NAV_ITEMS_LEFT, ...NAV_ITEMS_RIGHT]
+
+function DesktopLayout(): React.ReactElement {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+
+  function handleLogout(): void {
+    logout()
+    void navigate('/login', { replace: true })
+  }
+
+  const initials = user?.name?.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase() ?? '?'
+
+  return (
+    <div className={styles.desktopShell}>
+      <header className={styles.desktopNav}>
+        <div className={styles.desktopNavInner}>
+          {/* Logo */}
+          <div className={styles.desktopLogo}>
+            <div className={styles.desktopLogoMark}>$</div>
+            <span className={styles.desktopLogoName}>Smart Wallet</span>
+          </div>
+
+          {/* Nav links */}
+          <nav className={styles.desktopNavLinks}>
+            {ALL_NAV.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) =>
+                  [styles.desktopNavLink, isActive ? styles.desktopNavLinkActive : ''].join(' ')
+                }
+              >
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
+
+          {/* User */}
+          <div className={styles.desktopUser}>
+            {user && (
+              <span className={styles.desktopUserGreeting}>
+                Hola, <strong>{user.name}</strong>
+              </span>
+            )}
+            <button className={styles.desktopAvatar} onClick={handleLogout} title="Cerrar sesión">
+              {initials}
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main className={styles.desktopMain}>
+        <div className={styles.desktopContent}>
+          <Outlet />
+        </div>
+      </main>
+    </div>
+  )
+}
+
+function MobileLayout(): React.ReactElement {
   return (
     <div className={styles.shell}>
       <main className={styles.main}>
         <Outlet />
       </main>
 
-      {/* FAB — new expense */}
       <NavLink to="/expenses/new" className={styles.fab} aria-label="Registrar gasto">
         <span aria-hidden>＋</span>
       </NavLink>
@@ -46,7 +108,6 @@ export function AppLayout(): React.ReactElement {
           </NavLink>
         ))}
 
-        {/* Empty slot for FAB */}
         <div className={styles.navSpacer} aria-hidden />
 
         {NAV_ITEMS_RIGHT.map((item) => (
@@ -64,4 +125,9 @@ export function AppLayout(): React.ReactElement {
       </nav>
     </div>
   )
+}
+
+export function AppLayout(): React.ReactElement {
+  const isDesktop = useIsDesktop()
+  return isDesktop ? <DesktopLayout /> : <MobileLayout />
 }

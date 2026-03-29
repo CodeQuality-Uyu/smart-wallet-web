@@ -95,3 +95,95 @@
   border-top: 1px solid var(--border);
   flex-shrink: 0;
 }
+
+/* ── Desktop variant ── */
+.amountSectionDesktop {
+  background: #fff;
+  border-bottom: 1.5px solid var(--border);
+  padding: 24px 24px 20px;
+  flex-shrink: 0;
+}
+
+.amountLabelDesktop {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.amountInputDesktop {
+  font-family: var(--font-num) !important;
+  font-size: 36px !important;
+  font-weight: 700 !important;
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 2px solid var(--border) !important;
+  border-radius: 0 !important;
+  color: var(--ink) !important;
+  padding: 4px 0 !important;
+  width: 100%;
+  box-shadow: none !important;
+}
+
+.amountInputDesktop::placeholder { color: var(--border); }
+
+.currencyToggleDesktop {
+  display: flex;
+  background: var(--border);
+  border-radius: 22px;
+  padding: 3px;
+  flex-shrink: 0;
+}
+
+.currencyBtnDesktop {
+  padding: 5px 14px;
+  border-radius: 19px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-num);
+  transition: background .15s, color .15s;
+}
+
+.currencyBtnActiveDesktop {
+  background: var(--ink);
+  color: #fff;
+}
+
+.fieldsDesktop {
+  padding: 20px 24px;
+  flex: 1;
+  background: #fff;
+}
+
+.actionsDesktop {
+  padding: 16px 24px;
+  background: #fff;
+  border-top: 1.5px solid var(--border);
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cancelBtn {
+  padding: 9px 18px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  background: #fff;
+  font-family: var(--font-head);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  transition: border-color .15s, color .15s;
+}
+
+.cancelBtn:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+}

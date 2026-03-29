@@ -1,0 +1,64 @@
+/* src/pages/MonthClosingPage.module.css */
+
+.page { display: flex; flex-direction: column; min-height: 100%; }
+
+.header {
+  background: linear-gradient(155deg, var(--g800), var(--g600));
+  padding: 18px 20px 24px;
+}
+.headerTop { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.back { width: 36px; height: 36px; background: rgba(255,255,255,.16); border: none; border-radius: 12px; font-size: 18px; color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.closedBadge { background: rgba(255,255,255,.18); color: #fff; border-radius: 20px; padding: 4px 12px; font-size: 11px; font-weight: 700; border: 1px solid rgba(255,255,255,.3); }
+.title { font-family: var(--font-head); font-size: 22px; font-weight: 800; color: #fff; }
+.subtitle { font-size: 12px; color: var(--g300); margin-top: 4px; }
+.closedDate { font-size: 12px; color: var(--g300); margin-top: 4px; }
+
+.body { padding: 14px 16px 32px; display: flex; flex-direction: column; gap: 12px; }
+
+.card {
+  background: #fff; border-radius: var(--radius);
+  padding: 14px; border: 1.5px solid var(--border); box-shadow: var(--shadow);
+}
+.cardTitle { font-family: var(--font-head); font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 12px; }
+
+.totalGrid { display: flex; gap: 10px; margin-bottom: 12px; }
+.totalBlock { flex: 1; background: var(--cream); border-radius: 10px; padding: 10px; }
+.totalLbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.totalAmt { font-family: var(--font-num); font-size: 18px; font-weight: 700; color: var(--ink); margin-top: 2px; }
+
+.splitRow { display: flex; gap: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
+.splitItem { flex: 1; }
+.splitLbl { display: block; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 2px; }
+.splitVal { font-family: var(--font-num); font-size: 11px; font-weight: 600; color: var(--ink); }
+
+.catRow { display: flex; align-items: center; gap: 7px; padding: 7px 0; border-bottom: 1px solid var(--border); }
+.catRow:last-child { border-bottom: none; }
+.catIcon { font-size: 15px; }
+.catName { flex: 1; font-size: 12px; font-weight: 500; color: var(--ink); }
+.catAmt { font-family: var(--font-num); font-size: 11px; font-weight: 600; color: var(--ink); }
+
+.recurRow { display: flex; align-items: center; gap: 7px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+.recurRow:last-child { border-bottom: none; }
+.recurName { flex: 1; font-weight: 500; color: var(--ink); }
+.recurAmt { font-family: var(--font-num); font-weight: 600; color: var(--ink); }
+.modeBadge { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
+.modeAuto { background: #dbeafe; color: #1d4ed8; }
+.modeManual { background: var(--amb-lt); color: var(--amb); }
+
+/* Blocker */
+.blocker {
+  background: var(--amb-lt); border: 1.5px solid rgba(217,119,6,.3);
+  border-radius: var(--radius); padding: 14px;
+}
+.blockerTitle { font-family: var(--font-head); font-size: 13px; font-weight: 700; color: var(--amb); margin-bottom: 4px; }
+.blockerSub { font-size: 12px; color: #92400e; margin-bottom: 10px; }
+.blockerItem { display: flex; align-items: center; justify-content: space-between; width: 100%; background: rgba(255,255,255,.6); border: none; border-radius: 8px; padding: 8px 10px; margin-bottom: 6px; font-size: 12px; font-weight: 500; color: var(--ink); cursor: pointer; font-family: inherit; }
+.blockerItem:last-child { margin-bottom: 0; }
+.blockerAmt { font-family: var(--font-num); font-weight: 600; color: var(--amb); }
+
+/* Confirm */
+.confirmSection { display: flex; flex-direction: column; gap: 12px; }
+.confirmCheck { display: flex; align-items: flex-start; gap: 10px; font-size: 12px; color: var(--ink); line-height: 1.5; cursor: pointer; }
+.confirmCheck input { margin-top: 2px; flex-shrink: 0; width: 16px; height: 16px; cursor: pointer; }
+
+.noData { padding: 40px 20px; text-align: center; font-size: 13px; color: var(--muted); }
