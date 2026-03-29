@@ -136,28 +136,57 @@ export default function HomePage(): React.ReactElement {
   const groups = groupExpensesByDate(expenses).slice(0, 2)
 
   const spendCards = [
-    { currency: Currency.USD, total: metrics.totalUsd, prev: metrics.previousPeriodUsd, deltaPct: usdDeltaPct, budgetPct: budgetUsdPct, budget: budget?.usd, flag: '🇺🇸', label: 'USD' },
-    { currency: Currency.UYU, total: metrics.totalUyu, prev: metrics.previousPeriodUyu, deltaPct: uyuDeltaPct, budgetPct: budgetUyuPct, budget: budget?.uyu, flag: '🇺🇾', label: 'UYU' },
+    { currency: Currency.USD, total: metrics.totalUsd, prev: metrics.previousPeriodUsd, deltaPct: usdDeltaPct, budgetPct: budgetUsdPct, budget: budget?.usd, symbol: 'U$S', label: 'USD' },
+    { currency: Currency.UYU, total: metrics.totalUyu, prev: metrics.previousPeriodUyu, deltaPct: uyuDeltaPct, budgetPct: budgetUyuPct, budget: budget?.uyu, symbol: '$', label: 'UYU' },
   ]
 
   // ── Desktop render ────────────────────────────────────────
   if (isDesktop) {
     return (
-      <div className={styles.desktopPage}>
+      <div className={styles.desktopGrid}>
 
-        {/* Two-column grid: white main box | sidebar */}
-        <div className={styles.desktopGrid}>
+        {/* Left: pending payments — spans full height */}
+        <div className={styles.desktopSidebar}>
+          <h2 className={styles.desktopSectionTitle}>Pagos pendientes</h2>
+          <div className={styles.desktopCard}>
+            {pendingRecurring.length === 0 ? (
+              <div className={styles.desktopAllPaid}>✅ Todos los pagos al día</div>
+            ) : (
+              pendingRecurring.map((r) => (
+                <button
+                  key={r.id}
+                  className={styles.desktopRecurringRow}
+                  onClick={() => void navigate(`/settings/recurring/${r.id}`)}
+                >
+                  <span className={styles.desktopRecurringIcon}>{r.icon}</span>
+                  <div className={styles.desktopRecurringInfo}>
+                    <span className={styles.desktopRecurringName}>{r.name}</span>
+                    {r.dueDayOfMonth && <span className={styles.desktopRecurringDue}>Vence el día {r.dueDayOfMonth}</span>}
+                  </div>
+                  <span className={styles.desktopRecurringAmt}>{formatCurrency(r.amount, r.currency)}</span>
+                </button>
+              ))
+            )}
+          </div>
+        </div>
 
-          {/* Main white box: month label + stat cards + movimientos */}
+        {/* Right: column of independent cards */}
+        <div className={styles.desktopRightCol}>
+
+          {/* Stat cards */}
           <div className={styles.desktopMainBox}>
             <p className={styles.desktopSubtitle}>{monthLabel}</p>
-
-            {/* Stat cards row spanning full width of box */}
             <div className={styles.desktopStatRow}>
-              {spendCards.map(({ currency, total, deltaPct, budgetPct, budget: bgt, label }) => (
+              {spendCards.map(({ currency, total, deltaPct, budgetPct, budget: bgt, symbol, label }) => (
                 <div key={currency} className={styles.desktopStatCard}>
-                  <p className={styles.desktopStatLabel}>{label} ESTE MES</p>
-                  <p className={styles.desktopStatValue}>{formatAmount(total, currency)}</p>
+                  <div className={styles.desktopStatLabelRow}>
+                    <span className={styles.desktopCurrBadge}>{label}</span>
+                    <span className={styles.desktopStatLabelText}>ESTE MES</span>
+                  </div>
+                  <p className={styles.desktopStatValue}>
+                    <span className={styles.desktopAmtSymbol}>{symbol} </span>
+                    {formatAmount(total, currency).replace(/^\$/, '')}
+                  </p>
                   {deltaPct !== 0 && (
                     <div className={[styles.desktopDelta, deltaPct > 0 ? styles.desktopDeltaUp : styles.desktopDeltaDown].join(' ')}>
                       {deltaPct > 0 ? '↑' : '↓'}{Math.abs(deltaPct)}% <span className={styles.desktopDeltaLabel}>vs mes pasado</span>
@@ -177,8 +206,10 @@ export default function HomePage(): React.ReactElement {
                 </div>
               ))}
             </div>
+          </div>
 
-            {/* Section header with icon button */}
+          {/* Movements */}
+          <div className={styles.desktopMainBox}>
             <div className={styles.desktopSectionHeader}>
               <div className={styles.desktopMovHeaderLeft}>
                 <h2 className={styles.desktopSectionTitle}>Últimos movimientos</h2>
@@ -190,99 +221,76 @@ export default function HomePage(): React.ReactElement {
               </div>
               <button className={styles.desktopSeeAll} onClick={() => void navigate('/expenses')}>Ver todos →</button>
             </div>
-
-            {/* Movements list */}
             <div className={styles.desktopMovList}>
               {expenses.length === 0 ? (
                 <p className={styles.desktopEmpty}>No hay gastos este mes.</p>
               ) : (
-                expenses.slice(0, 10).map((expense) => {
-                  const firstCat = categories.find((c) => expense.categoryIds.includes(c.id))
-                  const card = cards.find((c) => c.id === expense.cardId)
-                  const cardLabel = card ? `${card.type === 'credit' ? 'Crédito' : card.type === 'debit' ? 'Débito' : 'Transf.'} ${card.bank}` : null
-                  const subtitle = [firstCat?.name, cardLabel].filter(Boolean).join(' · ')
-                  return (
-                    <button
-                      key={expense.id}
-                      className={styles.desktopMovRow}
-                      onClick={() => void navigate(`/expenses/${expense.id}`)}
-                    >
-                      <span className={styles.desktopMovIcon}>{firstCat?.icon ?? '💸'}</span>
-                      <div className={styles.desktopMovInfo}>
-                        <span className={styles.desktopMovName}>{expense.description}</span>
-                        {subtitle && <span className={styles.desktopMovSub}>{subtitle}</span>}
-                      </div>
-                      <div className={styles.desktopMovAmt}>
-                        <span className={styles.desktopMovAmtVal}>-{formatCurrency(expense.amount, expense.currency)}</span>
-                        <span className={styles.desktopMovAmtCurr}>{expense.currency}</span>
-                      </div>
-                    </button>
-                  )
-                })
+                groupExpensesByDate(expenses.slice(0, 10)).map((group) => (
+                  <React.Fragment key={group.date}>
+                    <div className={styles.desktopDateHeader}>{group.label}</div>
+                    {group.expenses.map((expense) => {
+                      const firstCat = categories.find((c) => expense.categoryIds.includes(c.id))
+                      const card = cards.find((c) => c.id === expense.cardId)
+                      const cardLabel = card ? `${card.type === 'credit' ? 'Crédito' : card.type === 'debit' ? 'Débito' : 'Transf.'} ${card.bank}` : null
+                      const subtitle = [firstCat?.name, cardLabel].filter(Boolean).join(' · ')
+                      return (
+                        <button
+                          key={expense.id}
+                          className={styles.desktopMovRow}
+                          onClick={() => void navigate(`/expenses/${expense.id}`)}
+                        >
+                          <span className={styles.desktopMovIcon}>{firstCat?.icon ?? '💸'}</span>
+                          <div className={styles.desktopMovInfo}>
+                            <span className={styles.desktopMovName}>{expense.description}</span>
+                            {subtitle && <span className={styles.desktopMovSub}>{subtitle}</span>}
+                          </div>
+                          <div className={styles.desktopMovAmt}>
+                            <span className={styles.desktopMovAmtVal}>{formatCurrency(expense.amount, expense.currency)}</span>
+                            <span className={styles.desktopMovAmtCurr}>{expense.currency}</span>
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </React.Fragment>
+                ))
               )}
             </div>
           </div>
 
-          {/* Right sidebar */}
-          <div className={styles.desktopSidebar}>
-            {/* Pending recurring — top */}
-            <div>
-              <h2 className={styles.desktopSectionTitle}>Pagos pendientes</h2>
-              <div className={styles.desktopCard}>
-                {pendingRecurring.length === 0 ? (
-                  <div className={styles.desktopAllPaid}>✅ Todos los pagos al día</div>
-                ) : (
-                  pendingRecurring.map((r) => (
-                    <button
-                      key={r.id}
-                      className={styles.desktopRecurringRow}
-                      onClick={() => void navigate(`/settings/recurring/${r.id}`)}
-                    >
-                      <span className={styles.desktopRecurringIcon}>{r.icon}</span>
-                      <div className={styles.desktopRecurringInfo}>
-                        <span className={styles.desktopRecurringName}>{r.name}</span>
-                        {r.dueDayOfMonth && <span className={styles.desktopRecurringDue}>Vence el día {r.dueDayOfMonth}</span>}
+          {/* Tips + categories — independent side-by-side cards */}
+          {(shownTips.length > 0 || categoryGrowth.length > 0) && (
+            <div className={styles.desktopBottomRow}>
+              {shownTips.length > 0 && (
+                <div>
+                  <h2 className={styles.desktopSectionTitle}>💡 Tips de ahorro</h2>
+                  <div className={styles.desktopCard}>
+                    {shownTips.map((tip, i) => (
+                      <div key={i} className={styles.desktopTipRow}>
+                        <span className={styles.desktopTipIcon}>{tip.icon}</span>
+                        <p className={styles.desktopTipText}>{tip.text}</p>
                       </div>
-                      <span className={styles.desktopRecurringAmt}>{formatCurrency(r.amount, r.currency)}</span>
-                    </button>
-                  ))
-                )}
-              </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {categoryGrowth.length > 0 && (
+                <div>
+                  <h2 className={styles.desktopSectionTitle}>Categorías destacadas</h2>
+                  <div className={styles.desktopCard}>
+                    {categoryGrowth.map((cat) => (
+                      <div key={cat.categoryId} className={styles.desktopCatRow}>
+                        <span className={styles.desktopCatIcon}>{cat.categoryIcon}</span>
+                        <span className={styles.desktopCatName}>{cat.categoryName}</span>
+                        <span className={[styles.desktopCatDelta, cat.delta > 0 ? styles.catDeltaUp : styles.catDeltaDown].join(' ')}>
+                          {cat.delta > 0 ? '↑' : '↓'}{Math.abs(cat.delta)}%
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-
-            {/* Tips */}
-            {shownTips.length > 0 && (
-              <div>
-                <h2 className={styles.desktopSectionTitle}>💡 Tips de ahorro</h2>
-                <div className={styles.desktopCard}>
-                  {shownTips.map((tip, i) => (
-                    <div key={i} className={styles.desktopTipRow}>
-                      <span className={styles.desktopTipIcon}>{tip.icon}</span>
-                      <p className={styles.desktopTipText}>{tip.text}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Category growth */}
-            {categoryGrowth.length > 0 && (
-              <div>
-                <h2 className={styles.desktopSectionTitle}>Categorías destacadas</h2>
-                <div className={styles.desktopCard}>
-                  {categoryGrowth.map((cat) => (
-                    <div key={cat.categoryId} className={styles.desktopCatRow}>
-                      <span className={styles.desktopCatIcon}>{cat.categoryIcon}</span>
-                      <span className={styles.desktopCatName}>{cat.categoryName}</span>
-                      <span className={[styles.desktopCatDelta, cat.delta > 0 ? styles.catDeltaUp : styles.catDeltaDown].join(' ')}>
-                        {cat.delta > 0 ? '↑' : '↓'}{Math.abs(cat.delta)}%
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
     )
@@ -306,10 +314,10 @@ export default function HomePage(): React.ReactElement {
 
         {/* Spend cards */}
         <div className={styles.spendCards}>
-          {spendCards.map(({ currency, total, deltaPct, budgetPct, budget: bgt, flag, label }) => (
+          {spendCards.map(({ currency, total, deltaPct, budgetPct, budget: bgt, symbol, label }) => (
             <div key={currency} className={styles.spendCard}>
               <div className={styles.spendCardTop}>
-                <span className={styles.spendFlag}>{flag}</span>
+                <span className={styles.spendSymbol}>{symbol}</span>
                 {deltaPct !== 0 && (
                   <span className={[styles.delta, deltaPct > 0 ? styles.deltaUp : styles.deltaDown].join(' ')}>
                     {deltaPct > 0 ? '↑' : '↓'}{Math.abs(deltaPct)}%
@@ -317,7 +325,7 @@ export default function HomePage(): React.ReactElement {
                 )}
               </div>
               <p className={styles.spendAmount}>{formatAmount(total, currency)}</p>
-              <p className={styles.spendLabel}>{label} este mes</p>
+              <p className={styles.spendLabel}><span className={styles.spendCurrLabel}>{label}</span> este mes</p>
               {budgetPct !== null && bgt !== undefined && (
                 <div className={styles.budgetBar}>
                   <div

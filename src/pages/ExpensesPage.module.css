@@ -357,7 +357,7 @@
   cursor: pointer; transition: background .1s;
 }
 .desktopRow:last-child { border-bottom: none; }
-.desktopRow:hover { background: var(--cream); }
+.desktopRow:hover { background: var(--g50); }
 
 .desktopTable td { padding: 13px 16px; font-size: 13px; color: var(--ink); vertical-align: middle; }
 

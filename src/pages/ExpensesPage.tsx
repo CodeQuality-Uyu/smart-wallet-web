@@ -179,7 +179,7 @@ export default function ExpensesPage(): React.ReactElement {
                   const expCats = categories.filter((c) => expense.categoryIds.includes(c.id))
                   const card = cards.find((c) => c.id === expense.cardId)
                   const firstCat = expCats[0]
-                  const dateStr = new Date(expense.date).toLocaleDateString('es-UY', { day: 'numeric', month: 'short' })
+                  const dateStr = new Date(`${expense.date}T12:00:00`).toLocaleDateString('es-UY', { day: 'numeric', month: 'short' })
                   return (
                     <tr
                       key={expense.id}

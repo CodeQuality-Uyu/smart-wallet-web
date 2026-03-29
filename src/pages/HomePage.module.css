@@ -42,9 +42,10 @@
 }
 
 .monthLabel {
-  font-size: 11px; color: var(--g200);
+  font-size: 13px; color: #fff; font-weight: 600;
   margin-bottom: 14px;
   position: relative; z-index: 1;
+  letter-spacing: .02em;
 }
 
 /* Spend cards */
@@ -59,7 +60,20 @@
 }
 
 .spendCardTop { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-.spendFlag { font-size: 16px; }
+.spendSymbol {
+  font-family: var(--font-num);
+  font-size: 11px; font-weight: 800;
+  padding: 2px 8px; border-radius: 6px;
+  background: rgba(255,255,255,.18);
+  color: #fff;
+  letter-spacing: .04em;
+}
+
+.spendCurrLabel {
+  font-family: var(--font-num);
+  font-size: 10px; font-weight: 800;
+  letter-spacing: .06em;
+}
 .spendAmount { font-family: var(--font-num); font-size: 20px; font-weight: 700; color: #fff; letter-spacing: -.03em; }
 .spendLabel { font-size: 10px; color: var(--g200); margin-top: 1px; margin-bottom: 8px; }
 
@@ -215,14 +229,20 @@
    Desktop view
    ───────────────────────────────────────────────────────── */
 
-.desktopPage { display: flex; flex-direction: column; gap: 16px; }
-
-/* Two-column grid: white main box | sidebar */
+/* Root two-column grid: pending payments | right column */
 .desktopGrid {
   display: grid;
-  grid-template-columns: 1fr 300px;
+  grid-template-columns: 300px 1fr;
   gap: 16px;
   align-items: start;
+}
+
+/* Right column: flex column of independent cards */
+.desktopRightCol {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
 }
 
 /* Main white box */
@@ -236,7 +256,11 @@
   gap: 20px;
 }
 
-.desktopSubtitle { font-size: 13px; color: var(--muted); text-transform: capitalize; font-weight: 500; }
+.desktopSubtitle {
+  font-family: var(--font-head);
+  font-size: 16px; color: var(--ink);
+  font-weight: 700; text-transform: capitalize;
+}
 
 /* Stat cards row inside the box */
 .desktopStatRow { display: flex; gap: 14px; }
@@ -278,8 +302,10 @@
 }
 .desktopSectionTitle {
   font-family: var(--font-head); font-size: 15px; font-weight: 700; color: var(--ink);
+  margin-bottom: 8px;
 }
 .desktopMovHeaderLeft { display: flex; align-items: center; gap: 8px; }
+.desktopMovHeaderLeft .desktopSectionTitle { margin-bottom: 0; }
 .desktopSeeAll { font-size: 12px; color: var(--gold-dk); font-weight: 600; background: none; border: none; cursor: pointer; }
 .desktopAddBtn {
   width: 32px; height: 32px; border-radius: 50%; border: none;
@@ -301,7 +327,7 @@
   text-align: left; font-family: inherit;
   transition: background .1s;
 }
-.desktopMovRow:hover { background: var(--cream); }
+.desktopMovRow:hover { background: var(--g50); }
 .desktopMovRow:last-child { border-radius: 0 0 var(--radius) var(--radius); }
 
 .desktopMovIcon {
@@ -317,10 +343,19 @@
 .desktopMovAmtVal { font-family: var(--font-num); font-size: 14px; font-weight: 700; color: var(--ink); white-space: nowrap; }
 .desktopMovAmtCurr { font-size: 10px; color: var(--muted); }
 
+.desktopDateHeader {
+  padding: 7px 24px 4px;
+  font-size: 10px; font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  background: var(--cream);
+}
+
 .desktopEmpty { text-align: center; padding: 40px; font-size: 13px; color: var(--muted); }
 
 /* Right sidebar */
-.desktopSidebar { display: flex; flex-direction: column; gap: 16px; }
+.desktopSidebar { display: flex; flex-direction: column; }
 .desktopCard { background: #fff; border-radius: var(--radius); border: 1.5px solid var(--border); overflow: hidden; }
 
 .desktopAllPaid { display: flex; align-items: center; gap: 10px; padding: 14px 16px; font-size: 13px; color: var(--muted); }
@@ -329,7 +364,9 @@
   display: flex; align-items: center; gap: 12px; width: 100%;
   padding: 12px 16px; background: none; border: none;
   border-bottom: 1px solid var(--border); cursor: pointer; text-align: left; font-family: inherit;
+  transition: background .1s;
 }
+.desktopRecurringRow:hover { background: var(--g50); }
 .desktopRecurringRow:last-child { border-bottom: none; }
 .desktopRecurringIcon { font-size: 20px; }
 .desktopRecurringInfo { flex: 1; display: flex; flex-direction: column; gap: 2px; }
@@ -353,6 +390,36 @@
 .desktopCatIcon { font-size: 18px; }
 .desktopCatName { flex: 1; font-size: 13px; font-weight: 600; color: var(--ink); }
 .desktopCatDelta { font-family: var(--font-num); font-size: 12px; font-weight: 700; }
+
+/* Independent side-by-side cards: tips + categories */
+.desktopBottomRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* Currency symbol prefix in stat card amount */
+.desktopAmtSymbol {
+  font-size: 14px;
+  font-weight: 600;
+  opacity: 0.55;
+}
+
+/* Desktop stat card currency badge */
+.desktopStatLabelRow {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 8px;
+}
+.desktopCurrBadge {
+  font-family: var(--font-num);
+  font-size: 10px; font-weight: 800;
+  padding: 2px 7px; border-radius: 4px;
+  background: var(--g50); color: var(--g700);
+  letter-spacing: .06em;
+}
+.desktopStatLabelText {
+  font-size: 10px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .08em;
+}
 
 /* ─── Reporte mensual ─────────────────────────────────── */
 
