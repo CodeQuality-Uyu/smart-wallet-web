@@ -245,8 +245,8 @@ export default function HomePage(): React.ReactElement {
                             {subtitle && <span className={styles.desktopMovSub}>{subtitle}</span>}
                           </div>
                           <div className={styles.desktopMovAmt}>
-                            <span className={styles.desktopMovAmtVal}>{formatCurrency(expense.amount, expense.currency)}</span>
-                            <span className={styles.desktopMovAmtCurr}>{expense.currency}</span>
+                            <span className={styles.desktopMovAmtVal}>{expense.currency === Currency.USD ? 'U$S' : '$'} {formatCurrency(expense.amount, expense.currency).replace(/^[^\d]*/, '')}</span>
+                            <span className={styles.desktopMovAmtCurrBadge}>{expense.currency}</span>
                           </div>
                         </button>
                       )

@@ -26,16 +26,16 @@ Decisiones conocidas que quedaron pendientes por complejidad o prioridad.
 
 ### Pantalla de gastos
 
-- [ ] Sacar el título "Gastos"
-- [ ] El símbolo de moneda debe corresponder al tipo de moneda en las cards de totales
-- [ ] Destacar el tipo de moneda en la card
-- [ ] Sacar los íconos de las cards de totales (el dólar volando)
-- [ ] Mostrar "Marzo 2026" como en inicio
-- [ ] Al cambiar el filtrado por fecha, especificar "Desde" y "Hasta"
-- [ ] Poder filtrar por tipo de moneda
-- [ ] Agregar buscador
-- [ ] Agregar agrupaciones
-- [ ] Agregar sombreado en el filtro de fecha seleccionado
+- [x] Sacar el título "Gastos" (desktop)
+- [x] El símbolo de moneda debe corresponder al tipo de moneda en las cards de totales (mobile y desktop)
+- [x] Destacar el tipo de moneda en la card (mobile y desktop)
+- [x] Sacar los íconos de las cards de totales (el dólar volando) (mobile y desktop)
+- [x] Mostrar "Marzo 2026" como en la pantalla de inicio (mobile y desktop)
+- [x] Al cambiar el filtrado por fecha, especificar "Desde" y "Hasta" (mobile y desktop)
+- [x] Poder filtrar por tipo de moneda (mobile y desktop)
+- [x] Agregar buscador (mobile y desktop)
+- [x] Agregar agrupaciones (desktop)
+- [x] Agregar sombreado en el filtro de fecha seleccionado (mobile y desktop)
 
 ---
 

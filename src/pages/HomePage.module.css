@@ -339,9 +339,13 @@
 .desktopMovInfo { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .desktopMovName { font-size: 13px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .desktopMovSub { font-size: 11px; color: var(--muted); }
-.desktopMovAmt { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+.desktopMovAmt { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
 .desktopMovAmtVal { font-family: var(--font-num); font-size: 14px; font-weight: 700; color: var(--ink); white-space: nowrap; }
-.desktopMovAmtCurr { font-size: 10px; color: var(--muted); }
+.desktopMovAmtCurrBadge {
+  font-family: var(--font-num); font-size: 9px; font-weight: 800;
+  padding: 1px 5px; border-radius: 4px;
+  background: var(--g50); color: var(--g700); letter-spacing: .05em;
+}
 
 .desktopDateHeader {
   padding: 7px 24px 4px;

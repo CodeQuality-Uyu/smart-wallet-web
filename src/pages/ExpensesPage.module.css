@@ -11,6 +11,20 @@
   background: var(--g800);
 }
 
+/* Mobile month + range header */
+.mobileHeader {
+  padding: 14px 16px 6px;
+}
+.mobileMonthLabel {
+  font-family: var(--font-head);
+  font-size: 17px; font-weight: 700; color: #fff;
+  letter-spacing: .01em;
+}
+.mobileRange {
+  font-size: 11px; color: var(--g200);
+  margin-top: 2px;
+}
+
 /* ─── Search ──────────────────────────────────────────── */
 
 .searchWrap {
@@ -78,9 +92,9 @@
 }
 
 .tabActive {
-  background: rgba(255,255,255,.16);
-  color: #fff;
-  border-color: rgba(255,255,255,.22);
+  background: var(--g300);
+  color: var(--g900);
+  border-color: var(--g300);
 }
 
 .filterBtn {
@@ -222,8 +236,18 @@
   border: 1.5px solid var(--border);
 }
 
-.totalLabel { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
-.totalAmt { font-family: var(--font-num); font-size: 16px; font-weight: 700; color: var(--ink); margin-top: 2px; }
+.totalLabelRow { margin-bottom: 4px; }
+
+.totalCurrBadge {
+  font-family: var(--font-num);
+  font-size: 10px; font-weight: 800;
+  padding: 2px 7px; border-radius: 4px;
+  background: var(--g50); color: var(--g700);
+  letter-spacing: .06em;
+}
+
+.totalAmt { font-family: var(--font-num); font-size: 16px; font-weight: 700; color: var(--ink); }
+.totalSymbol { font-size: 11px; font-weight: 600; opacity: .55; }
 
 /* ─── Group header ────────────────────────────────────── */
 
@@ -247,11 +271,20 @@
 .groupTotal {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
+}
+
+.groupTotalItem { display: flex; align-items: center; gap: 4px; }
+
+.groupTotalAmt {
   font-family: var(--font-num);
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--ink);
+  font-size: 11px; font-weight: 700; color: var(--ink);
+}
+
+.groupTotalBadge {
+  font-family: var(--font-num); font-size: 8px; font-weight: 800;
+  padding: 1px 4px; border-radius: 3px;
+  background: var(--g50); color: var(--g700); letter-spacing: .05em;
 }
 
 .dot { color: var(--muted); }
@@ -268,14 +301,35 @@
 
 /* Header */
 .desktopHeader {
-  display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
 }
-.desktopTitle {
-  font-family: var(--font-head); font-size: 28px; font-weight: 800; color: var(--ink);
+.desktopMonthLabel {
+  font-family: var(--font-head); font-size: 22px; font-weight: 700; color: var(--ink);
+  text-transform: capitalize;
 }
-.desktopSubtitle { font-size: 13px; color: var(--muted); margin-top: 3px; text-transform: capitalize; }
+.desktopRange { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
 .desktopHeaderRight { display: flex; align-items: center; gap: 12px; }
+
+/* Desktop search */
+.desktopSearchWrap {
+  display: flex; align-items: center; gap: 6px;
+  background: #fff; border: 1.5px solid var(--border); border-radius: 10px;
+  padding: 7px 12px; min-width: 200px;
+  transition: border-color .12s;
+}
+.desktopSearchWrap:focus-within { border-color: var(--g400); }
+.desktopSearchIcon { font-size: 13px; opacity: .5; flex-shrink: 0; }
+.desktopSearchInput {
+  flex: 1; border: none; outline: none;
+  font-size: 13px; color: var(--ink); background: none; font-family: inherit;
+}
+.desktopSearchInput::placeholder { color: var(--muted); }
+.desktopSearchClear {
+  background: none; border: none; color: var(--muted);
+  font-size: 11px; cursor: pointer; padding: 1px 3px; border-radius: 3px;
+}
+.desktopSearchClear:hover { color: var(--ink); }
 
 .desktopTabs {
   display: flex; gap: 4px;
@@ -287,7 +341,7 @@
   background: none; cursor: pointer; font-family: inherit;
   transition: background .12s, color .12s;
 }
-.desktopTabActive { background: var(--ink); color: #fff; }
+.desktopTabActive { background: var(--g50); color: var(--g700); border-color: var(--g400); }
 
 .desktopNewBtn {
   padding: 9px 18px; border-radius: 10px; border: none;
@@ -305,19 +359,36 @@
   flex: 1; background: #fff; border-radius: var(--radius);
   padding: 16px 18px; border: 1.5px solid var(--border);
 }
-.desktopStatLabel {
+.desktopStatLabelRow { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.desktopCurrBadge {
+  font-family: var(--font-num); font-size: 10px; font-weight: 800;
+  padding: 2px 7px; border-radius: 4px;
+  background: var(--g50); color: var(--g700); letter-spacing: .06em;
+}
+.desktopStatLabelText {
   font-size: 10px; font-weight: 700; color: var(--muted);
-  text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px;
-}
-.desktopStatValueRose {
-  font-family: var(--font-num); font-size: 22px; font-weight: 700; color: var(--rose);
-}
-.desktopStatValueGreen {
-  font-family: var(--font-num); font-size: 22px; font-weight: 700; color: var(--g500);
+  text-transform: uppercase; letter-spacing: .08em;
 }
 .desktopStatValueInk {
   font-family: var(--font-num); font-size: 22px; font-weight: 700; color: var(--ink);
 }
+.desktopAmtSymbol { font-size: 14px; font-weight: 600; opacity: .55; }
+
+/* Desktop filter bar: currency + groupBy */
+.desktopFilterBar {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  flex-wrap: wrap;
+}
+.desktopFilterSection { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.desktopGroupChip {
+  padding: 5px 12px; border-radius: 20px; border: 1.5px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--muted); background: #fff;
+  cursor: pointer; font-family: inherit;
+  transition: border-color .12s, background .12s, color .12s;
+}
+.desktopGroupChip:hover { color: var(--ink); border-color: var(--ink); }
+.desktopGroupChipActive { background: var(--g50); color: var(--g700); border-color: var(--g500); }
 
 /* Category filter chips */
 .desktopCatChips { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -352,6 +423,26 @@
 }
 .desktopThRight { text-align: right !important; }
 
+/* Group header row inside table */
+.desktopGroupRow { background: var(--cream); }
+.desktopGroupLabel {
+  padding: 6px 16px !important;
+  font-size: 10px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .1em;
+}
+.desktopGroupTotal {
+  padding: 6px 16px !important;
+  text-align: right;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.desktopGroupTotal .groupTotalItem {
+  display: inline-flex; align-items: center; gap: 3px;
+}
+.desktopGroupTotal .groupTotalAmt { font-size: 11px; }
+.desktopGroupDot { color: var(--muted); margin: 0 4px; }
+.desktopGroupDot { color: var(--muted); }
+
 .desktopRow {
   border-bottom: 1px solid var(--border);
   cursor: pointer; transition: background .1s;
@@ -384,7 +475,12 @@
   font-family: var(--font-num); font-size: 14px; font-weight: 700; color: var(--ink);
   display: block;
 }
-.desktopAmtCurr { font-size: 10px; color: var(--muted); }
+.desktopAmtCurrBadge {
+  display: inline-block; margin-top: 3px;
+  font-family: var(--font-num); font-size: 9px; font-weight: 800;
+  padding: 1px 5px; border-radius: 4px;
+  background: var(--g50); color: var(--g700); letter-spacing: .05em;
+}
 
 .desktopEmpty {
   text-align: center; padding: 40px; font-size: 13px; color: var(--muted);

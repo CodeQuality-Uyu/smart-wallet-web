@@ -66,10 +66,12 @@
   color: var(--ink);
 }
 
-.currency {
-  font-size: 10px;
-  color: var(--muted);
-  margin-top: 2px;
+.currencyBadge {
+  display: inline-block;
+  margin-top: 3px;
+  font-family: var(--font-num); font-size: 9px; font-weight: 800;
+  padding: 1px 5px; border-radius: 4px;
+  background: var(--g50); color: var(--g700); letter-spacing: .05em;
 }
 
 /* ─── Action menu ─────────────────────────────────────── */

@@ -8,7 +8,6 @@ import { useCards } from '@/features/cards/hooks/useCards'
 import { usePlaces } from '@/features/places/hooks/usePlaces'
 import { ExpenseListItem } from '@/features/expenses/components/ExpenseListItem'
 import { CategoryChips } from '@/features/expenses/components/CategoryChips'
-import { PageHeader } from '@/components/shared/PageHeader'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { useIsDesktop } from '@/hooks/useIsDesktop'
@@ -21,6 +20,8 @@ import {
 import { formatAmount, formatCurrency } from '@/utils/formatCurrency'
 import { Currency, ExpenseFilterPeriod } from '@/types/enums'
 import styles from './ExpensesPage.module.css'
+
+const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
 
 const PERIODS = [
   { value: ExpenseFilterPeriod.SevenDays, label: '7d' },
@@ -37,6 +38,29 @@ const GROUP_OPTIONS = [
 ]
 
 type GroupBy = 'day' | 'week' | 'place' | 'category'
+
+function getPeriodRange(p: ExpenseFilterPeriod): string {
+  const now = new Date()
+  const fmt = (d: Date) => d.toLocaleDateString('es-UY', { day: 'numeric', month: 'short' })
+  switch (p) {
+    case ExpenseFilterPeriod.SevenDays: {
+      const from = new Date(now); from.setDate(from.getDate() - 6)
+      return `${fmt(from)} – ${fmt(now)}`
+    }
+    case ExpenseFilterPeriod.Month: {
+      const from = new Date(now.getFullYear(), now.getMonth(), 1)
+      return `${fmt(from)} – ${fmt(now)}`
+    }
+    case ExpenseFilterPeriod.ThreeMonths: {
+      const from = new Date(now); from.setMonth(from.getMonth() - 3)
+      return `${fmt(from)} – ${fmt(now)}`
+    }
+    case ExpenseFilterPeriod.Year: {
+      const from = new Date(now.getFullYear(), 0, 1)
+      return `${fmt(from)} – ${fmt(now)}`
+    }
+  }
+}
 
 export default function ExpensesPage(): React.ReactElement {
   const isDesktop = useIsDesktop()
@@ -55,6 +79,10 @@ export default function ExpensesPage(): React.ReactElement {
   const { data: cards = [] } = useCards()
   const { data: places = [] } = usePlaces()
   const { mutateAsync: duplicate } = useDuplicateExpense()
+
+  const now = new Date()
+  const monthLabel = `${MONTH_NAMES[now.getMonth()] ?? ''} ${now.getFullYear()}`
+  const periodRange = getPeriodRange(period)
 
   const expenses = page?.data ?? []
 
@@ -82,12 +110,8 @@ export default function ExpensesPage(): React.ReactElement {
     }
   }, [filtered, groupBy, places, categories])
 
-  const totalUsd = filtered
-    .filter((e) => e.currency === Currency.USD)
-    .reduce((s, e) => s + e.amount, 0)
-  const totalUyu = filtered
-    .filter((e) => e.currency === Currency.UYU)
-    .reduce((s, e) => s + e.amount, 0)
+  const totalUsd = filtered.filter((e) => e.currency === Currency.USD).reduce((s, e) => s + e.amount, 0)
+  const totalUyu = filtered.filter((e) => e.currency === Currency.UYU).reduce((s, e) => s + e.amount, 0)
 
   const activeFilterCount = [
     filterCurrency !== '',
@@ -100,8 +124,6 @@ export default function ExpensesPage(): React.ReactElement {
 
   // ── Desktop render ────────────────────────────────────
   if (isDesktop) {
-    const periodLabel = PERIODS.find((p) => p.value === period)?.label ?? 'Mes'
-    // Single category filter (one at a time for desktop chips)
     const activeCatId = filterCategoryIds[0] ?? ''
 
     return (
@@ -109,10 +131,24 @@ export default function ExpensesPage(): React.ReactElement {
         {/* Header row */}
         <div className={styles.desktopHeader}>
           <div>
-            <h1 className={styles.desktopTitle}>💸 Gastos</h1>
-            <p className={styles.desktopSubtitle}>{periodLabel === 'Mes' ? new Date().toLocaleString('es-UY', { month: 'long', year: 'numeric' }) : periodLabel}</p>
+            <p className={styles.desktopMonthLabel}>{monthLabel}</p>
+            <p className={styles.desktopRange}>Desde {periodRange.split('–')[0].trim()} hasta {periodRange.split('–')[1].trim()}</p>
           </div>
           <div className={styles.desktopHeaderRight}>
+            {/* Search */}
+            <div className={styles.desktopSearchWrap}>
+              <span className={styles.desktopSearchIcon}>🔍</span>
+              <input
+                className={styles.desktopSearchInput}
+                placeholder="Buscar gastos..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              {search && (
+                <button className={styles.desktopSearchClear} onClick={() => setSearch('')}>✕</button>
+              )}
+            </div>
+            {/* Tabs */}
             <div className={styles.desktopTabs}>
               {PERIODS.map((p) => (
                 <button
@@ -122,24 +158,51 @@ export default function ExpensesPage(): React.ReactElement {
                 >{p.label}</button>
               ))}
             </div>
-            <button
-              className={styles.desktopNewBtn}
-              onClick={() => void navigate('/expenses/new')}
-            >+ Nuevo gasto</button>
+            <button className={styles.desktopNewBtn} onClick={() => void navigate('/expenses/new')}>
+              + Nuevo gasto
+            </button>
           </div>
         </div>
 
         {/* Stat cards */}
         <div className={styles.desktopStats}>
-          {[
-            { label: 'Total USD', value: formatAmount(totalUsd, Currency.USD), flag: '💸', valueStyle: styles.desktopStatValueInk },
-            { label: 'Total UYU', value: formatAmount(totalUyu, Currency.UYU), flag: '💸', valueStyle: styles.desktopStatValueInk },
-          ].map((s) => (
-            <div key={s.label} className={styles.desktopStatCard}>
-              <p className={styles.desktopStatLabel}>{s.flag} {s.label.toUpperCase()}</p>
-              <p className={s.valueStyle}>{s.value}</p>
+          {([
+            { currency: Currency.USD, total: totalUsd, label: 'USD', symbol: 'U$S' },
+            { currency: Currency.UYU, total: totalUyu, label: 'UYU', symbol: '$' },
+          ] as const).map(({ currency, total, label, symbol }) => (
+            <div key={currency} className={styles.desktopStatCard}>
+              <div className={styles.desktopStatLabelRow}>
+                <span className={styles.desktopCurrBadge}>{label}</span>
+                <span className={styles.desktopStatLabelText}>TOTAL</span>
+              </div>
+              <p className={styles.desktopStatValueInk}>
+                <span className={styles.desktopAmtSymbol}>{symbol} </span>
+                {formatAmount(total, currency).replace(/^\$/, '')}
+              </p>
             </div>
           ))}
+        </div>
+
+        {/* Filter bar: currency + groupBy */}
+        <div className={styles.desktopFilterBar}>
+          <div className={styles.desktopFilterSection}>
+            {(['', Currency.USD, Currency.UYU] as const).map((c) => (
+              <button
+                key={c || 'all'}
+                className={[styles.desktopCatChip, filterCurrency === c ? styles.desktopCatChipActive : ''].join(' ')}
+                onClick={() => setFilterCurrency(c)}
+              >{c || 'Todas las monedas'}</button>
+            ))}
+          </div>
+          <div className={styles.desktopFilterSection}>
+            {GROUP_OPTIONS.map((g) => (
+              <button
+                key={g.value}
+                className={[styles.desktopGroupChip, groupBy === g.value ? styles.desktopGroupChipActive : ''].join(' ')}
+                onClick={() => setGroupBy(g.value)}
+              >{g.label}</button>
+            ))}
+          </div>
         </div>
 
         {/* Category chips */}
@@ -170,40 +233,64 @@ export default function ExpensesPage(): React.ReactElement {
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
+              {groups.length === 0 ? (
                 <tr>
                   <td colSpan={5} className={styles.desktopEmpty}>No hay gastos en este período.</td>
                 </tr>
               ) : (
-                filtered.map((expense) => {
-                  const expCats = categories.filter((c) => expense.categoryIds.includes(c.id))
-                  const card = cards.find((c) => c.id === expense.cardId)
-                  const firstCat = expCats[0]
-                  const dateStr = new Date(`${expense.date}T12:00:00`).toLocaleDateString('es-UY', { day: 'numeric', month: 'short' })
+                groups.map((group) => {
+                  const gUsd = group.expenses.filter((e) => e.currency === Currency.USD).reduce((s, e) => s + e.amount, 0)
+                  const gUyu = group.expenses.filter((e) => e.currency === Currency.UYU).reduce((s, e) => s + e.amount, 0)
                   return (
-                    <tr
-                      key={expense.id}
-                      className={styles.desktopRow}
-                      onClick={() => void navigate(`/expenses/${expense.id}`)}
-                    >
-                      <td className={styles.desktopTdDesc}>
-                        <span className={styles.desktopRowIcon}>{firstCat?.icon ?? '💸'}</span>
-                        {expense.description}
-                      </td>
-                      <td>
-                        {expCats.map((c) => (
-                          <span key={c.id} className={styles.desktopCatBadge}>{c.name}</span>
-                        ))}
-                      </td>
-                      <td className={styles.desktopTdMuted}>{card ? `${card.type === 'credit' ? 'Crédito' : card.type === 'debit' ? 'Débito' : 'Transferencia'} ${card.bank}` : '—'}</td>
-                      <td className={styles.desktopTdMuted}>{dateStr}</td>
-                      <td className={styles.desktopTdAmt}>
-                        <span className={styles.desktopAmt}>
-                          {formatCurrency(expense.amount, expense.currency)}
-                        </span>
-                        <span className={styles.desktopAmtCurr}>{expense.currency}</span>
-                      </td>
-                    </tr>
+                    <React.Fragment key={group.date}>
+                      <tr className={styles.desktopGroupRow}>
+                        <td colSpan={4} className={styles.desktopGroupLabel}>{group.label}</td>
+                        <td className={styles.desktopGroupTotal}>
+                          {gUsd > 0 && (
+                            <span className={styles.groupTotalItem}>
+                              <span className={styles.groupTotalAmt}>U$S {formatAmount(gUsd, Currency.USD).replace(/^[^\d]*/, '')}</span>
+                              <span className={styles.groupTotalBadge}>USD</span>
+                            </span>
+                          )}
+                          {gUsd > 0 && gUyu > 0 && <span className={styles.desktopGroupDot}> · </span>}
+                          {gUyu > 0 && (
+                            <span className={styles.groupTotalItem}>
+                              <span className={styles.groupTotalAmt}>$ {formatAmount(gUyu, Currency.UYU).replace(/^[^\d]*/, '')}</span>
+                              <span className={styles.groupTotalBadge}>UYU</span>
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                      {group.expenses.map((expense) => {
+                        const expCats = categories.filter((c) => expense.categoryIds.includes(c.id))
+                        const card = cards.find((c) => c.id === expense.cardId)
+                        const firstCat = expCats[0]
+                        const dateStr = new Date(`${expense.date}T12:00:00`).toLocaleDateString('es-UY', { day: 'numeric', month: 'short' })
+                        return (
+                          <tr
+                            key={expense.id}
+                            className={styles.desktopRow}
+                            onClick={() => void navigate(`/expenses/${expense.id}`)}
+                          >
+                            <td className={styles.desktopTdDesc}>
+                              <span className={styles.desktopRowIcon}>{firstCat?.icon ?? '💸'}</span>
+                              {expense.description}
+                            </td>
+                            <td>
+                              {expCats.map((c) => (
+                                <span key={c.id} className={styles.desktopCatBadge}>{c.name}</span>
+                              ))}
+                            </td>
+                            <td className={styles.desktopTdMuted}>{card ? `${card.type === 'credit' ? 'Crédito' : card.type === 'debit' ? 'Débito' : 'Transferencia'} ${card.bank}` : '—'}</td>
+                            <td className={styles.desktopTdMuted}>{dateStr}</td>
+                            <td className={styles.desktopTdAmt}>
+                              <span className={styles.desktopAmt}>{expense.currency === Currency.USD ? 'U$S' : '$'} {formatCurrency(expense.amount, expense.currency).replace(/^[^\d]*/, '')}</span>
+                              <span className={styles.desktopAmtCurrBadge}>{expense.currency}</span>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </React.Fragment>
                   )
                 })
               )}
@@ -229,7 +316,11 @@ export default function ExpensesPage(): React.ReactElement {
     <div className={styles.page}>
       {/* Sticky top section */}
       <div className={styles.stickyTop}>
-        <PageHeader title="Gastos" />
+        {/* Month + range header */}
+        <div className={styles.mobileHeader}>
+          <p className={styles.mobileMonthLabel}>{monthLabel}</p>
+          <p className={styles.mobileRange}>{periodRange.split('–')[0].trim()} – {periodRange.split('–')[1].trim()}</p>
+        </div>
 
         {/* Search bar */}
         <div className={styles.searchWrap}>
@@ -241,13 +332,7 @@ export default function ExpensesPage(): React.ReactElement {
             onChange={(e) => setSearch(e.target.value)}
           />
           {search && (
-            <button
-              className={styles.clearSearch}
-              onClick={() => setSearch('')}
-              aria-label="Limpiar búsqueda"
-            >
-              ✕
-            </button>
+            <button className={styles.clearSearch} onClick={() => setSearch('')} aria-label="Limpiar búsqueda">✕</button>
           )}
         </div>
 
@@ -295,49 +380,31 @@ export default function ExpensesPage(): React.ReactElement {
 
           <div className={styles.filterRow}>
             <span className={styles.filterLbl}>Medio de pago</span>
-            <select
-              className={styles.filterSelect}
-              value={filterCardId}
-              onChange={(e) => setFilterCardId(e.target.value)}
-            >
+            <select className={styles.filterSelect} value={filterCardId} onChange={(e) => setFilterCardId(e.target.value)}>
               <option value="">Todos</option>
               {cards.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.bank} ···· {c.lastFour ?? '—'}
-                </option>
+                <option key={c.id} value={c.id}>{c.bank} ···· {c.lastFour ?? '—'}</option>
               ))}
             </select>
           </div>
 
           <div className={styles.filterRow}>
             <span className={styles.filterLbl}>Comercio</span>
-            <select
-              className={styles.filterSelect}
-              value={filterPlaceId}
-              onChange={(e) => setFilterPlaceId(e.target.value)}
-            >
+            <select className={styles.filterSelect} value={filterPlaceId} onChange={(e) => setFilterPlaceId(e.target.value)}>
               <option value="">Todos</option>
               {places.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
+                <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
           </div>
 
           <div className={styles.filterRow}>
             <span className={styles.filterLbl}>Categoría</span>
-            <CategoryChips
-              categories={categories}
-              selected={filterCategoryIds}
-              onChange={setFilterCategoryIds}
-            />
+            <CategoryChips categories={categories} selected={filterCategoryIds} onChange={setFilterCategoryIds} />
           </div>
 
           {activeFilterCount > 0 && (
-            <button className={styles.clearBtn} onClick={clearFilters}>
-              Limpiar filtros
-            </button>
+            <button className={styles.clearBtn} onClick={clearFilters}>Limpiar filtros</button>
           )}
         </div>
       )}
@@ -358,12 +425,22 @@ export default function ExpensesPage(): React.ReactElement {
       {/* Totals */}
       <div className={styles.totals}>
         <div className={styles.totalChip}>
-          <p className={styles.totalLabel}>🇺🇸 USD</p>
-          <p className={styles.totalAmt}>{formatAmount(totalUsd, Currency.USD)}</p>
+          <div className={styles.totalLabelRow}>
+            <span className={styles.totalCurrBadge}>USD</span>
+          </div>
+          <p className={styles.totalAmt}>
+            <span className={styles.totalSymbol}>U$S </span>
+            {formatAmount(totalUsd, Currency.USD).replace(/^\$/, '')}
+          </p>
         </div>
         <div className={styles.totalChip}>
-          <p className={styles.totalLabel}>🇺🇾 UYU</p>
-          <p className={styles.totalAmt}>{formatAmount(totalUyu, Currency.UYU)}</p>
+          <div className={styles.totalLabelRow}>
+            <span className={styles.totalCurrBadge}>UYU</span>
+          </div>
+          <p className={styles.totalAmt}>
+            <span className={styles.totalSymbol}>$ </span>
+            {formatAmount(totalUyu, Currency.UYU).replace(/^\$/, '')}
+          </p>
         </div>
       </div>
 
@@ -371,28 +448,32 @@ export default function ExpensesPage(): React.ReactElement {
 
       {!error && groups.length === 0 && (
         <p className={styles.empty}>
-          {search || activeFilterCount > 0
-            ? 'No hay gastos con esos filtros.'
-            : 'No hay gastos en este período.'}
+          {search || activeFilterCount > 0 ? 'No hay gastos con esos filtros.' : 'No hay gastos en este período.'}
         </p>
       )}
 
       {/* Expense groups */}
       {groups.map((group) => {
-        const gUsd = group.expenses
-          .filter((e) => e.currency === Currency.USD)
-          .reduce((s, e) => s + e.amount, 0)
-        const gUyu = group.expenses
-          .filter((e) => e.currency === Currency.UYU)
-          .reduce((s, e) => s + e.amount, 0)
+        const gUsd = group.expenses.filter((e) => e.currency === Currency.USD).reduce((s, e) => s + e.amount, 0)
+        const gUyu = group.expenses.filter((e) => e.currency === Currency.UYU).reduce((s, e) => s + e.amount, 0)
         return (
           <div key={group.date}>
             <div className={styles.groupHeader}>
               <span className={styles.groupLabel}>{group.label}</span>
               <span className={styles.groupTotal}>
-                {gUsd > 0 && <span>{formatAmount(gUsd, Currency.USD)}</span>}
+                {gUsd > 0 && (
+                  <span className={styles.groupTotalItem}>
+                    <span className={styles.groupTotalAmt}>U$S {formatAmount(gUsd, Currency.USD).replace(/^[^\d]*/, '')}</span>
+                    <span className={styles.groupTotalBadge}>USD</span>
+                  </span>
+                )}
                 {gUsd > 0 && gUyu > 0 && <span className={styles.dot}>·</span>}
-                {gUyu > 0 && <span>{formatAmount(gUyu, Currency.UYU)}</span>}
+                {gUyu > 0 && (
+                  <span className={styles.groupTotalItem}>
+                    <span className={styles.groupTotalAmt}>$ {formatAmount(gUyu, Currency.UYU).replace(/^[^\d]*/, '')}</span>
+                    <span className={styles.groupTotalBadge}>UYU</span>
+                  </span>
+                )}
               </span>
             </div>
             {group.expenses.map((expense) => (

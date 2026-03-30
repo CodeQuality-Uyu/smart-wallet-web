@@ -66,8 +66,10 @@ export function ExpenseListItem({
       </div>
 
       <div className={styles.amount}>
-        <p className={styles.value}>{formatCurrency(expense.amount, expense.currency)}</p>
-        <p className={styles.currency}>{expense.currency}</p>
+        <p className={styles.value}>
+          {expense.currency === 'USD' ? 'U$S' : '$'} {formatCurrency(expense.amount, expense.currency).replace(/^[^\d]*/, '')}
+        </p>
+        <p className={styles.currencyBadge}>{expense.currency}</p>
       </div>
 
       {hasActions && (
