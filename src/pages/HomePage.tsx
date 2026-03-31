@@ -317,7 +317,6 @@ export default function HomePage(): React.ReactElement {
           {spendCards.map(({ currency, total, deltaPct, budgetPct, budget: bgt, symbol, label }) => (
             <div key={currency} className={styles.spendCard}>
               <div className={styles.spendCardTop}>
-                <span className={styles.spendSymbol}>{symbol}</span>
                 {deltaPct !== 0 && (
                   <span className={[styles.delta, deltaPct > 0 ? styles.deltaUp : styles.deltaDown].join(' ')}>
                     {deltaPct > 0 ? '↑' : '↓'}{Math.abs(deltaPct)}%

@@ -1,0 +1,52 @@
+/* src/features/expenses/components/NewCardModal.module.css */
+
+.body {
+  padding: 20px 24px 24px;
+  overflow-y: auto;
+}
+
+.typeLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  margin-bottom: 8px;
+}
+
+.typeSelector {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.typeOpt {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: #fff;
+  font-family: var(--font-head);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  transition: border-color .15s, background .15s, color .15s;
+}
+
+.typeOptActive {
+  border-color: var(--g700);
+  background: var(--g50);
+  color: var(--g800);
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 8px;
+}

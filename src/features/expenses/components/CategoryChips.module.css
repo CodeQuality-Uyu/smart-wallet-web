@@ -2,18 +2,10 @@
 
 .scroll {
   display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
   gap: 7px;
-  overflow-x: auto;
   padding-bottom: 4px;
-}
-.scroll::-webkit-scrollbar { display: none; }
-
-/* Show scrollbar on desktop (mouse users can't touch-scroll) */
-@media (hover: hover) and (pointer: fine) {
-  .scroll::-webkit-scrollbar { display: block; height: 4px; }
-  .scroll::-webkit-scrollbar-track { background: transparent; }
-  .scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-  .scroll { padding-bottom: 8px; }
 }
 
 .chip {

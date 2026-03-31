@@ -56,6 +56,7 @@
   font-family: var(--font-num);
   font-size: 14px; font-weight: 700; color: var(--ink);
 }
+.itemAmtSymbol { font-size: 10px; font-weight: 600; color: var(--muted); }
 .itemFreq { font-size: 10px; color: var(--muted); margin-top: 1px; }
 
 .pausedBadge {
@@ -115,3 +116,36 @@
 .formActions { display: flex; gap: 8px; justify-content: space-between; margin-top: 4px; }
 
 .empty { text-align: center; font-size: 13px; color: var(--muted); padding: 32px 0; }
+
+/* ── Totals card ── */
+.totalsCard {
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 20px;
+}
+.totalsTitle {
+  font-size: 10px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .08em;
+  margin-bottom: 10px;
+}
+.totalsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.totalsItem {
+  display: flex; flex-direction: column; gap: 2px;
+}
+.totalsLbl { font-size: 10px; color: var(--muted); font-weight: 600; }
+.totalsVal {
+  font-family: var(--font-num);
+  font-size: 16px; font-weight: 700; color: var(--ink);
+}
+.totalsSymbol { font-size: 11px; font-weight: 600; color: var(--muted); }
+.totalsNote {
+  font-size: 10px; color: var(--muted);
+  margin-top: 8px; padding-top: 8px;
+  border-top: 1px solid var(--border);
+}

@@ -1,11 +1,14 @@
 // src/features/expenses/components/ExpenseForm.tsx
 
-import React from 'react'
+import React, { useState } from 'react'
 import { Formik, Form } from 'formik'
 import { expenseSchema, type ExpenseFormValues } from '../schemas/expenseSchema'
 import { FormField, TextInput, SelectInput } from '@/components/ui/FormField'
 import { Button } from '@/components/ui/Button'
 import { CategoryChips } from './CategoryChips'
+import { NewCardModal } from './NewCardModal'
+import { CategoryPickerModal } from './CategoryPickerModal'
+import { NewPlaceModal } from './NewPlaceModal'
 import { useCategories } from '@/features/categories/hooks/useCategories'
 import { useCards } from '@/features/cards/hooks/useCards'
 import { usePlaces } from '@/features/places/hooks/usePlaces'
@@ -36,6 +39,8 @@ const DEFAULT_VALUES: ExpenseFormValues = {
   date: new Date().toISOString().split('T')[0] ?? '',
 }
 
+type ActiveModal = 'card' | 'categories' | 'place' | null
+
 export function ExpenseForm({
   initialValues,
   onSubmit,
@@ -44,6 +49,8 @@ export function ExpenseForm({
   onCancel,
 }: ExpenseFormProps): React.ReactElement {
   const isDesktop = variant === 'desktop'
+  const [activeModal, setActiveModal] = useState<ActiveModal>(null)
+
   const { data: categories = [] } = useCategories()
   const { data: cards = [] } = useCards()
   const { data: places = [] } = usePlaces()
@@ -83,6 +90,9 @@ export function ExpenseForm({
           <div className={isDesktop ? styles.amountSectionDesktop : styles.amountSection}>
             <p className={isDesktop ? styles.amountLabelDesktop : styles.amountLabel}>¿Cuánto gastaste?</p>
             <div className={styles.amountRow}>
+              <span className={isDesktop ? styles.amtSymbolDesktop : styles.amtSymbol}>
+                {values.currency === Currency.USD ? 'U$S' : '$'}
+              </span>
               <FormField name="amount" label="">
                 <TextInput
                   name="amount"
@@ -91,6 +101,7 @@ export function ExpenseForm({
                   placeholder="0.00"
                   className={isDesktop ? styles.amountInputDesktop : styles.amountInput}
                   aria-label="Monto"
+                  onFocus={(e) => { if (Number(e.target.value) === 0) void setFieldValue('amount', '') }}
                 />
               </FormField>
               <div className={isDesktop ? styles.currencyToggleDesktop : styles.currencyToggle} role="group" aria-label="Moneda">
@@ -123,21 +134,37 @@ export function ExpenseForm({
                 placeholder="Seleccioná una tarjeta"
                 icon="💳"
               />
+              <p className={styles.createHint}>
+                ¿No encontrás el medio de pago?{' '}
+                <button type="button" className={styles.createLink} onClick={() => setActiveModal('card')}>
+                  Agregar nueva
+                </button>
+              </p>
             </FormField>
 
-            <FormField name="categoryIds" label="Categorías (una o más)">
+            <FormField
+              name="categoryIds"
+              label={
+                values.categoryIds.length > 0
+                  ? `Categorías (${values.categoryIds.length} seleccionadas)`
+                  : 'Categorías (una o más)'
+              }
+              labelRight={
+                <button
+                  type="button"
+                  className={styles.createLinkRight}
+                  onClick={() => setActiveModal('categories')}
+                >
+                  Ver todas
+                </button>
+              }
+            >
               <CategoryChips
                 categories={categories}
                 selected={values.categoryIds}
                 onChange={(ids) => void setFieldValue('categoryIds', ids)}
+                maxVisible={5}
               />
-              {/* Inline create hint */}
-              <p className={styles.createHint}>
-                ¿No encontrás la categoría?{' '}
-                <a href="/settings/categories" className={styles.createLink}>
-                  Crear nueva →
-                </a>
-              </p>
             </FormField>
 
             <FormField name="placeId" label="Lugar">
@@ -149,23 +176,23 @@ export function ExpenseForm({
               />
               <p className={styles.createHint}>
                 ¿No encontrás el lugar?{' '}
-                <a href="/settings/places" className={styles.createLink}>
-                  Crear nuevo →
-                </a>
+                <button type="button" className={styles.createLink} onClick={() => setActiveModal('place')}>
+                  Crear nuevo
+                </button>
               </p>
             </FormField>
 
             <FormField name="date" label="Fecha">
-              <TextInput name="date" type="date" max={new Date().toISOString().split('T')[0]} />
+              <TextInput name="date" type="date" icon="📅" max={new Date().toISOString().split('T')[0]} />
             </FormField>
           </div>
 
           <div className={isDesktop ? styles.actionsDesktop : styles.actions}>
             {isDesktop && onCancel ? (
               <>
-                <button type="button" className={styles.cancelBtn} onClick={onCancel}>
+                <Button type="button" variant="ghost" onClick={onCancel}>
                   Cancelar
-                </button>
+                </Button>
                 <Button type="submit" loading={isSubmitting}>
                   {submitLabel}
                 </Button>
@@ -176,6 +203,38 @@ export function ExpenseForm({
               </Button>
             )}
           </div>
+
+          {/* Modals */}
+          {activeModal === 'card' && (
+            <NewCardModal
+              onClose={() => setActiveModal(null)}
+              onCreated={(card) => {
+                void setFieldValue('cardId', card.id)
+                setActiveModal(null)
+              }}
+            />
+          )}
+
+          {activeModal === 'categories' && (
+            <CategoryPickerModal
+              selected={values.categoryIds}
+              onConfirm={(ids) => {
+                void setFieldValue('categoryIds', ids)
+                setActiveModal(null)
+              }}
+              onClose={() => setActiveModal(null)}
+            />
+          )}
+
+          {activeModal === 'place' && (
+            <NewPlaceModal
+              onClose={() => setActiveModal(null)}
+              onCreated={(place) => {
+                void setFieldValue('placeId', place.id)
+                setActiveModal(null)
+              }}
+            />
+          )}
         </Form>
       )}
     </Formik>

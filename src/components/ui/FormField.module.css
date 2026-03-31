@@ -1,10 +1,16 @@
 /* src/components/ui/FormField.module.css */
 
-.field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 13px; }
+.field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 18px; }
+
+.labelRow { display: flex; justify-content: space-between; align-items: center; }
 
 .label {
   font-size: 11px; font-weight: 600; color: var(--muted);
   text-transform: uppercase; letter-spacing: .09em;
+}
+
+.labelRightAction {
+  font-size: 11px; font-weight: 600; color: var(--ind);
 }
 
 .hint { font-size: 11px; color: var(--muted); }
@@ -21,6 +27,10 @@
   transition: border-color .2s, box-shadow .2s;
   appearance: none;
 }
+
+.input::placeholder { color: #acacac; }
+
+.input[type="date"]::-webkit-calendar-picker-indicator { display: none; }
 
 .input:focus {
   border-color: var(--gold);

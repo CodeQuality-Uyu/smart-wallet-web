@@ -1,6 +1,5 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { PageHeader } from '@/components/shared/PageHeader'
 import { useAuth } from '@/app/providers/AuthContext'
 import styles from './SettingsPage.module.css'
 
@@ -32,7 +31,6 @@ export default function SettingsPage(): React.ReactElement {
 
   return (
     <div>
-      <PageHeader title="Configuración" subtitle="Personalizá tu experiencia" />
       <div className={styles.body}>
         {SECTIONS.map((item) => (
           <button

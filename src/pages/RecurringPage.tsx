@@ -44,6 +44,15 @@ export default function RecurringPage(): React.ReactElement {
     return acc
   }, {})
 
+  // Totals for active recurring
+  const active = recurring.filter((r) => r.status === RecurringStatus.Active)
+  const monthlyUsd = active.filter((r) => r.currency === Currency.USD && r.frequency === RecurringFrequency.Monthly).reduce((s, r) => s + r.amount, 0)
+  const monthlyUyu = active.filter((r) => r.currency === Currency.UYU && r.frequency === RecurringFrequency.Monthly).reduce((s, r) => s + r.amount, 0)
+  const annualUsd = active.filter((r) => r.currency === Currency.USD && r.frequency === RecurringFrequency.Annual).reduce((s, r) => s + r.amount, 0)
+  const annualUyu = active.filter((r) => r.currency === Currency.UYU && r.frequency === RecurringFrequency.Annual).reduce((s, r) => s + r.amount, 0)
+  const equivMonthlyUsd = monthlyUsd + annualUsd / 12
+  const equivMonthlyUyu = monthlyUyu + annualUyu / 12
+
 if (isLoading) return <LoadingSpinner fullPage />
   if (error) return <ErrorMessage onRetry={() => void refetch()} />
 
@@ -77,7 +86,8 @@ if (isLoading) return <LoadingSpinner fullPage />
     const cardLabel = card ? `${card.type === CardType.Credit ? 'Crédito' : card.type === CardType.Debit ? 'Débito' : 'Transf.'} ${card.bank}` : ''
     const dayLabel = item.dueDayOfMonth ? `Día ${item.dueDayOfMonth}` : null
     const subtitle = [cardLabel, dayLabel].filter(Boolean).join(' · ')
-    const freqLabel = `${item.currency}/${item.frequency === RecurringFrequency.Annual ? 'año' : 'mes'}`
+    const freqLabel = `${item.frequency === RecurringFrequency.Annual ? 'año' : 'mes'}`
+    const symbol = item.currency === Currency.USD ? 'U$S' : '$'
 
     return (
       <article
@@ -99,8 +109,8 @@ if (isLoading) return <LoadingSpinner fullPage />
           {subtitle && <p className={styles.itemSub}>{subtitle}</p>}
         </div>
         <div className={styles.itemRight}>
-          <p className={styles.itemAmt}>{formatCurrency(item.amount, item.currency)}</p>
-          <p className={styles.itemFreq}>{freqLabel}</p>
+          <p className={styles.itemAmt}><span className={styles.itemAmtSymbol}>{symbol}</span> {formatCurrency(item.amount, item.currency).replace(/^[^0-9]+/, '')}</p>
+          <p className={styles.itemFreq}>{item.currency}/{freqLabel}</p>
         </div>
       </article>
     )
@@ -259,6 +269,41 @@ if (isLoading) return <LoadingSpinner fullPage />
 
         {recurring.length === 0 && (
           <p className={styles.empty}>No hay pagos recurrentes.</p>
+        )}
+
+        {active.length > 0 && (
+          <div className={styles.totalsCard}>
+            <p className={styles.totalsTitle}>Totales activos</p>
+            <div className={styles.totalsGrid}>
+              {equivMonthlyUsd > 0 && (
+                <div className={styles.totalsItem}>
+                  <span className={styles.totalsLbl}>U$S / mes</span>
+                  <span className={styles.totalsVal}><span className={styles.totalsSymbol}>U$S</span> {formatCurrency(equivMonthlyUsd, Currency.USD).replace(/^[^0-9]+/, '')}</span>
+                </div>
+              )}
+              {equivMonthlyUyu > 0 && (
+                <div className={styles.totalsItem}>
+                  <span className={styles.totalsLbl}>$ / mes</span>
+                  <span className={styles.totalsVal}>{formatCurrency(equivMonthlyUyu, Currency.UYU)}</span>
+                </div>
+              )}
+              {annualUsd > 0 && (
+                <div className={styles.totalsItem}>
+                  <span className={styles.totalsLbl}>U$S / año</span>
+                  <span className={styles.totalsVal}><span className={styles.totalsSymbol}>U$S</span> {formatCurrency(annualUsd, Currency.USD).replace(/^[^0-9]+/, '')}</span>
+                </div>
+              )}
+              {annualUyu > 0 && (
+                <div className={styles.totalsItem}>
+                  <span className={styles.totalsLbl}>$ / año</span>
+                  <span className={styles.totalsVal}>{formatCurrency(annualUyu, Currency.UYU)}</span>
+                </div>
+              )}
+            </div>
+            {(annualUsd > 0 || annualUyu > 0) && (
+              <p className={styles.totalsNote}>Equiv. mensual incluye anuales ÷ 12</p>
+            )}
+          </div>
         )}
       </div>
     </div>

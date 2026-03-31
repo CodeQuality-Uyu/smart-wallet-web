@@ -23,8 +23,26 @@
 
 .amountRow {
   display: flex;
-  align-items: flex-end;
-  gap: 12px;
+  align-items: center;
+  gap: 8px;
+}
+
+.amtSymbol {
+  font-family: var(--font-num);
+  font-size: 18px;
+  font-weight: 700;
+  color: rgba(255,255,255,.65);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.amtSymbolDesktop {
+  font-family: var(--font-num);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--muted);
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .amountInput {
@@ -86,6 +104,24 @@
   color: var(--ind);
   font-weight: 600;
   text-decoration: none;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: inherit;
+  font-family: inherit;
+}
+
+.createLinkRight {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ind);
+  text-decoration: none;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
 }
 
 /* ── Actions ── */
@@ -168,22 +204,5 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.cancelBtn {
-  padding: 9px 18px;
-  border-radius: 10px;
-  border: 1.5px solid var(--border);
-  background: #fff;
-  font-family: var(--font-head);
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--muted);
-  cursor: pointer;
-  transition: border-color .15s, color .15s;
-}
-
-.cancelBtn:hover {
-  border-color: var(--ink);
-  color: var(--ink);
+  gap: 12px;
 }

@@ -6,14 +6,48 @@ import { useBudget } from '@/hooks/useBudget'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { formatAmount, formatCurrency } from '@/utils/formatCurrency'
-import { MetricsPeriod, Currency, RecurringFrequency, RecurringMode } from '@/types/enums'
+import { MetricsPeriod, Currency, RecurringFrequency } from '@/types/enums'
 import styles from './MetricsPage.module.css'
+
+const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+const _now = new Date()
+const _monthLabel = `${MONTH_NAMES[_now.getMonth()]} ${_now.getFullYear()}`
 
 const PERIODS = [
   { value: MetricsPeriod.SevenDays, label: '7d', sublabel: 'Últimos 7 días' },
-  { value: MetricsPeriod.Month, label: 'Mes', sublabel: 'Mes actual' },
+  { value: MetricsPeriod.Month, label: 'Mes', sublabel: _monthLabel },
+  { value: MetricsPeriod.ThreeMonths, label: '3m', sublabel: 'Últimos 3 meses' },
   { value: MetricsPeriod.Year, label: 'Año', sublabel: 'Último año' },
 ]
+
+function getPeriodRange(p: MetricsPeriod): string {
+  const now = new Date()
+  const fmt = (d: Date) => d.toLocaleDateString('es-UY', { day: 'numeric', month: 'short' })
+  switch (p) {
+    case MetricsPeriod.SevenDays: {
+      const from = new Date(now); from.setDate(from.getDate() - 6)
+      return `${fmt(from)} – ${fmt(now)}`
+    }
+    case MetricsPeriod.Month: {
+      const from = new Date(now.getFullYear(), now.getMonth(), 1)
+      return `${fmt(from)} – ${fmt(now)}`
+    }
+    case MetricsPeriod.ThreeMonths: {
+      const from = new Date(now); from.setMonth(from.getMonth() - 3)
+      return `${fmt(from)} – ${fmt(now)}`
+    }
+    case MetricsPeriod.Year: {
+      const from = new Date(now.getFullYear(), 0, 1)
+      return `${fmt(from)} – ${fmt(now)}`
+    }
+  }
+}
+
+function fmtShort(n: number): string {
+  if (n === 0) return ''
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`
+  return String(Math.round(n))
+}
 
 export default function MetricsPage(): React.ReactElement {
   const [period, setPeriod] = useState(MetricsPeriod.Month)
@@ -55,17 +89,11 @@ export default function MetricsPage(): React.ReactElement {
   // ─── Category percentages ─────────────────────────────────
   const catGrandTotal = metrics.byCategory.reduce((s, c) => s + c.usd * 100 + c.uyu, 0)
 
-  // ─── Fixed breakdown grouped totals ──────────────────────
-  const fixedTotals: Record<string, number> = {}
-  for (const item of metrics.fixedBreakdown) {
-    const key = `${item.mode}-${item.currency}-${item.frequency}`
-    fixedTotals[key] = (fixedTotals[key] ?? 0) + item.amount
-  }
-
   // ─── Bar chart scale ──────────────────────────────────────
   const maxBar = Math.max(...metrics.monthlyHistory.map((m) => Math.max(m.usd, m.uyu / 100)), 1)
 
   const activePeriod = PERIODS.find((p) => p.value === period)
+  const periodRange = getPeriodRange(period)
 
   return (
     <div className={styles.page}>
@@ -73,8 +101,8 @@ export default function MetricsPage(): React.ReactElement {
       {/* Desktop header */}
       <div className={styles.desktopHeader}>
         <div>
-          <h1 className={styles.desktopTitle}>📈 Métricas</h1>
-          <p className={styles.desktopSubtitle}>{activePeriod?.sublabel}</p>
+          <p className={styles.desktopMonthLabel}>{_monthLabel}</p>
+          <p className={styles.desktopRange}>Desde {periodRange.split('–')[0].trim()} hasta {periodRange.split('–')[1].trim()}</p>
         </div>
         <div className={styles.desktopTabs} role="tablist">
           {PERIODS.map((p) => (
@@ -91,21 +119,19 @@ export default function MetricsPage(): React.ReactElement {
 
       {/* Mobile header */}
       <header className={styles.header}>
-        <div className={styles.titleRow}>
-          <h1 className={styles.title}>Métricas</h1>
-          <div className={styles.periodTabs} role="tablist">
-            {PERIODS.map((p) => (
-              <button
-                key={p.value}
-                role="tab"
-                aria-selected={period === p.value}
-                className={[styles.periodTab, period === p.value ? styles.periodTabActive : ''].join(' ')}
-                onClick={() => setPeriod(p.value)}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
+        <p className={styles.mobileMonth}>{activePeriod?.sublabel}</p>
+        <div className={styles.periodTabs} role="tablist">
+          {PERIODS.map((p) => (
+            <button
+              key={p.value}
+              role="tab"
+              aria-selected={period === p.value}
+              className={[styles.periodTab, period === p.value ? styles.periodTabActive : ''].join(' ')}
+              onClick={() => setPeriod(p.value)}
+            >
+              {p.label}
+            </button>
+          ))}
         </div>
       </header>
 
@@ -116,13 +142,15 @@ export default function MetricsPage(): React.ReactElement {
           <h2 className={styles.cardTitle}>📈 Tendencia mensual</h2>
           <div className={styles.chartLegend}>
             <span className={styles.legendDot} style={{ background: '#3b82f6' }} /> USD
-            <span className={styles.legendDot} style={{ background: 'var(--g500)', marginLeft: 10 }} /> UYU (÷100)
+            <span className={styles.legendDot} style={{ background: 'var(--g500)', marginLeft: 10 }} /> UYU
           </div>
           <div className={styles.chart} role="img" aria-label="Gráfico de gasto mensual">
             {metrics.monthlyHistory.map((m, i) => {
               const isLast = i === metrics.monthlyHistory.length - 1
               const usdH = (m.usd / maxBar) * 72
               const uyuH = ((m.uyu / 100) / maxBar) * 72
+              const usdVal = fmtShort(m.usd)
+              const uyuVal = fmtShort(m.uyu / 100)
               return (
                 <div key={`${m.year}-${m.month}`} className={styles.barGroup}>
                   <div className={styles.bars}>
@@ -138,6 +166,10 @@ export default function MetricsPage(): React.ReactElement {
                   <p className={[styles.barLabel, isLast ? styles.barLabelCurrent : ''].join(' ')}>
                     {m.label}
                   </p>
+                  <div className={styles.barBottomVal}>
+                    {usdVal && <span style={{ color: '#2563eb' }}>{usdVal}</span>}
+                    {uyuVal && <span style={{ color: 'var(--g600)' }}>{uyuVal}</span>}
+                  </div>
                 </div>
               )
             })}
@@ -213,7 +245,7 @@ export default function MetricsPage(): React.ReactElement {
           <div className={styles.splitLegend}>
             <div className={styles.splitItem}>
               <span className={styles.splitDot} style={{ background: '#7c3aed' }} />
-              <span className={styles.splitLbl}>Fijos</span>
+              <span className={styles.splitLbl}>Fijos <span className={styles.splitLblNote}>(mensuales + anuales ÷ 12)</span></span>
               <span className={styles.splitPct}>{fixedPct}%</span>
             </div>
             <div className={styles.splitItem}>
@@ -222,8 +254,6 @@ export default function MetricsPage(): React.ReactElement {
               <span className={styles.splitPct}>{100 - fixedPct}%</span>
             </div>
           </div>
-
-          <p className={styles.splitNote}>Fijos mensuales + anuales ÷ 12</p>
 
           <div className={styles.splitAmounts}>
             <div className={styles.splitAmtRow}>
@@ -247,7 +277,7 @@ export default function MetricsPage(): React.ReactElement {
 
         {/* ── 4. Por categoría ────────────────────────────── */}
         <div className={styles.card}>
-          <h2 className={styles.cardTitle}>🏷 Por categoría</h2>
+          <h2 className={styles.cardTitle}>🗂 Por categoría</h2>
           {metrics.byCategory.map((cat) => {
             const normalized = cat.usd * 100 + cat.uyu
             const pct = catGrandTotal > 0 ? Math.round((normalized / catGrandTotal) * 100) : 0
@@ -285,81 +315,6 @@ export default function MetricsPage(): React.ReactElement {
           })}
         </div>
 
-        {/* ── 5. Gastos fijos ─────────────────────────────── */}
-        <div className={[styles.card, styles.fixedCard].join(' ')}>
-          <h2 className={styles.cardTitle}>🔄 Gastos fijos</h2>
-
-          {metrics.fixedBreakdown.map((item) => (
-            <div key={item.recurringId + item.name} className={styles.fixedRow}>
-              <div className={styles.fixedLeft}>
-                <span>{item.icon}</span>
-                <span className={styles.fixedName}>{item.name}</span>
-                <span className={[styles.modeBadge, item.mode === RecurringMode.Auto ? styles.modeAuto : styles.modeManual].join(' ')}>
-                  {item.mode === RecurringMode.Auto ? 'Auto' : 'Manual'}
-                </span>
-              </div>
-              <div className={styles.fixedRight}>
-                <span className={styles.fixedAmt}>{formatCurrency(item.amount, item.currency)} {item.currency}</span>
-                <span className={styles.fixedFreq}>/ {item.frequency === RecurringFrequency.Annual ? 'año' : 'mes'}</span>
-              </div>
-            </div>
-          ))}
-
-          <div className={styles.fixedDivider} />
-
-          {/* Por mes */}
-          <p className={styles.fixedTotalGroup}>Por mes</p>
-          {([Currency.USD, Currency.UYU] as const).map((cur) => {
-            const total = metrics.fixedBreakdown
-              .filter((i) => i.frequency === RecurringFrequency.Monthly && i.currency === cur)
-              .reduce((s, i) => s + i.amount, 0)
-            if (total === 0) return null
-            return (
-              <div key={`m-${cur}`} className={styles.fixedTotalRow}>
-                <span className={styles.fixedTotalLbl}>{cur} mensual</span>
-                <span className={styles.fixedTotalAmt}>{formatCurrency(total, cur)}</span>
-              </div>
-            )
-          })}
-
-          {/* Por año */}
-          {metrics.fixedBreakdown.some((i) => i.frequency === RecurringFrequency.Annual) && (
-            <>
-              <p className={styles.fixedTotalGroup} style={{ marginTop: 8 }}>Por año</p>
-              {([Currency.USD, Currency.UYU] as const).map((cur) => {
-                const total = metrics.fixedBreakdown
-                  .filter((i) => i.frequency === RecurringFrequency.Annual && i.currency === cur)
-                  .reduce((s, i) => s + i.amount, 0)
-                if (total === 0) return null
-                return (
-                  <div key={`a-${cur}`} className={styles.fixedTotalRow}>
-                    <span className={styles.fixedTotalLbl}>{cur} anual</span>
-                    <span className={styles.fixedTotalAmt}>{formatCurrency(total, cur)}</span>
-                  </div>
-                )
-              })}
-            </>
-          )}
-
-          {/* Equivalente mensual real */}
-          <p className={styles.fixedTotalGroup} style={{ marginTop: 8 }}>Equivalente mensual</p>
-          {([Currency.USD, Currency.UYU] as const).map((cur) => {
-            const monthly = metrics.fixedBreakdown
-              .filter((i) => i.frequency === RecurringFrequency.Monthly && i.currency === cur)
-              .reduce((s, i) => s + i.amount, 0)
-            const annual = metrics.fixedBreakdown
-              .filter((i) => i.frequency === RecurringFrequency.Annual && i.currency === cur)
-              .reduce((s, i) => s + i.amount, 0)
-            const equiv = monthly + annual / 12
-            if (equiv === 0) return null
-            return (
-              <div key={`e-${cur}`} className={[styles.fixedTotalRow, styles.fixedTotalHighlight].join(' ')}>
-                <span className={styles.fixedTotalLbl}>{cur}/mes (incl. anuales)</span>
-                <span className={styles.fixedTotalAmt}>{formatCurrency(equiv, cur)}</span>
-              </div>
-            )
-          })}
-        </div>
 
       </div>
     </div>

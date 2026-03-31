@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { categoriesService } from '@/services/categoriesService'
-import type { CreateCategoryPayload, UpdateCategoryPayload } from '@/types/models'
+import type { Category, CreateCategoryPayload, UpdateCategoryPayload } from '@/types/models'
 
 export const CATEGORY_KEYS = {
   all: ['categories'] as const,
@@ -21,7 +21,10 @@ export function useCreateCategory() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (payload: CreateCategoryPayload) => categoriesService.create(payload),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: CATEGORY_KEYS.all }),
+    onSuccess: (newCategory) => {
+      // Update cache directly to avoid triggering a refetch that would reset form state
+      qc.setQueryData<Category[]>(CATEGORY_KEYS.list(), (prev) => [...(prev ?? []), newCategory])
+    },
   })
 }
 

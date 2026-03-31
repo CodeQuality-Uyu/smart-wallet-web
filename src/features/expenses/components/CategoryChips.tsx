@@ -8,12 +8,14 @@ interface CategoryChipsProps {
   categories: Category[]
   selected: string[]
   onChange: (ids: string[]) => void
+  maxVisible?: number
 }
 
 export function CategoryChips({
   categories,
   selected,
   onChange,
+  maxVisible,
 }: CategoryChipsProps): React.ReactElement {
   function toggle(id: string): void {
     if (selected.includes(id)) {
@@ -23,9 +25,11 @@ export function CategoryChips({
     }
   }
 
+  const visible = maxVisible ? categories.slice(0, maxVisible) : categories
+
   return (
     <div className={styles.scroll} role="group" aria-label="Categorías">
-      {categories.map((cat) => {
+      {visible.map((cat) => {
         const isSelected = selected.includes(cat.id)
         return (
           <button

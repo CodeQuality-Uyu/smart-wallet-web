@@ -1,0 +1,163 @@
+/* src/features/expenses/components/CategoryPickerModal.module.css */
+
+/* ── Header create button ── */
+.headerCreateBtn {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ind);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+  white-space: nowrap;
+}
+
+/* ── Inline create form ── */
+.createForm {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  background: var(--cream);
+  margin-bottom: 14px;
+}
+
+.createFormRow {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.iconPicker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.icoBtn {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: #fff;
+  font-size: 17px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color .15s, background .15s;
+}
+
+.icoBtnActive {
+  border-color: var(--ind);
+  background: var(--ind-lt, #eef2ff);
+  box-shadow: 0 0 0 2px rgba(79,70,229,.18);
+}
+
+.formError { font-size: 12px; color: var(--rose); margin-bottom: 8px; }
+
+.createFormActions {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* ── Search ── */
+.searchBar {
+  position: relative;
+  padding: 12px 16px;
+  border-bottom: 1.5px solid var(--border);
+  flex-shrink: 0;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 28px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 13px;
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  background: var(--cream);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 9px 13px 9px 34px;
+  font-size: 14px;
+  color: var(--ink);
+  outline: none;
+  font-family: var(--font-body);
+  transition: border-color .2s;
+}
+
+.searchInput:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,166,35,.18); }
+.searchInput::placeholder { color: #acacac; }
+
+/* ── Tile grid ── */
+.list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 16px;
+  min-height: 160px;
+  max-height: 360px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 9px;
+}
+
+.tile {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 13px 8px 10px;
+  border: 1.5px solid var(--border);
+  text-align: center;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  transition: border-color .15s, background .15s;
+}
+
+.tile:hover { border-color: var(--g400); }
+
+.tileSelected {
+  border-color: var(--g700);
+  background: var(--g50);
+}
+
+.tileIcon { font-size: 22px; }
+
+.tileName {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.tileCheck {
+  position: absolute;
+  top: 5px;
+  right: 7px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--g700);
+}
+
+.sentinel { height: 20px; }
+.empty { font-size: 13px; color: var(--muted); text-align: center; padding: 28px 0; }
+
+/* ── Footer ── */
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-top: 1.5px solid var(--border);
+  flex-shrink: 0;
+}

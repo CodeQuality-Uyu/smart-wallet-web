@@ -1,7 +1,7 @@
 // src/pages/NewExpensePage.tsx
 
 import React from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { ExpenseForm } from '@/features/expenses/components/ExpenseForm'
 import { useCreateExpense } from '@/features/expenses/hooks/useExpenses'
 import { useIsDesktop } from '@/hooks/useIsDesktop'
@@ -9,10 +9,27 @@ import type { ExpenseFormValues } from '@/features/expenses/schemas/expenseSchem
 import type { CreateExpensePayload } from '@/types/models'
 import styles from './NewExpensePage.module.css'
 
+interface LocationState {
+  pickedCategoryIds?: string[]
+  savedFormValues?: ExpenseFormValues
+}
+
 export default function NewExpensePage(): React.ReactElement {
   const navigate = useNavigate()
+  const location = useLocation()
+  const locationState = (location.state ?? {}) as LocationState
   const isDesktop = useIsDesktop()
   const { mutateAsync: createExpense } = useCreateExpense()
+
+  // Restore form values when returning from CategoryPickerPage
+  const restoredValues = locationState.savedFormValues
+    ? {
+        ...locationState.savedFormValues,
+        ...(locationState.pickedCategoryIds !== undefined && { categoryIds: locationState.pickedCategoryIds }),
+      }
+    : locationState.pickedCategoryIds !== undefined
+      ? { categoryIds: locationState.pickedCategoryIds }
+      : undefined
 
   async function handleSubmit(values: ExpenseFormValues): Promise<void> {
     const payload: CreateExpensePayload = {
@@ -36,6 +53,7 @@ export default function NewExpensePage(): React.ReactElement {
             <h1 className={styles.desktopTitle}>Nuevo gasto</h1>
           </div>
           <ExpenseForm
+            initialValues={restoredValues}
             onSubmit={handleSubmit}
             submitLabel="Guardar gasto"
             variant="desktop"
@@ -60,7 +78,7 @@ export default function NewExpensePage(): React.ReactElement {
         <div style={{ width: 36 }} />
       </header>
 
-      <ExpenseForm onSubmit={handleSubmit} submitLabel="Guardar gasto" />
+      <ExpenseForm initialValues={restoredValues} onSubmit={handleSubmit} submitLabel="Guardar gasto" />
     </div>
   )
 }

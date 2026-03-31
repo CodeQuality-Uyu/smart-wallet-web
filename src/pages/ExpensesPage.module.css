@@ -92,9 +92,9 @@
 }
 
 .tabActive {
-  background: var(--g300);
-  color: var(--g900);
-  border-color: var(--g300);
+  background: rgba(255,255,255,.18);
+  color: #fff;
+  border-color: rgba(255,255,255,.3);
 }
 
 .filterBtn {

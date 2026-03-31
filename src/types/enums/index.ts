@@ -58,6 +58,7 @@ export enum LocaleFilterPeriod {
 export enum MetricsPeriod {
   SevenDays = '7d',
   Month = 'month',
+  ThreeMonths = '3m',
   Year = 'year',
 }
 

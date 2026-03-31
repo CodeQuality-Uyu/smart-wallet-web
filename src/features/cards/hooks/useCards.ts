@@ -21,7 +21,9 @@ export function useCreateCard() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (payload: CreateCardPayload) => cardsService.create(payload),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: CARD_KEYS.all }),
+    onSuccess: (newCard) => {
+      qc.setQueryData<Card[]>(CARD_KEYS.list(), (prev) => [...(prev ?? []), newCard])
+    },
   })
 }
 

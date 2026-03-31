@@ -20,6 +20,7 @@
   display: flex; align-items: center; justify-content: center;
   font-size: 18px; color: #fff;
   flex-shrink: 0;
+  cursor: pointer;
 }
 
 .title {
@@ -37,4 +38,31 @@
 .right {
   margin-left: auto;
   flex-shrink: 0;
+}
+
+/* ── Desktop: sin banner verde ── */
+@media (min-width: 768px) {
+  .header {
+    background: none;
+    padding: 0 0 20px;
+    border-bottom: 1.5px solid var(--border);
+    margin-bottom: 8px;
+  }
+
+  .backBtn {
+    background: var(--g50);
+    color: var(--g700);
+    border: 1.5px solid var(--border);
+  }
+
+  .title {
+    color: var(--ink);
+    font-size: 24px;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 0;
+  }
 }

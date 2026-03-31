@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { placesService } from '@/services/placesService'
-import type { CreatePlacePayload, UpdatePlacePayload } from '@/types/models'
+import type { Place, CreatePlacePayload, UpdatePlacePayload } from '@/types/models'
 import { LocaleFilterPeriod } from '@/types/enums'
 
 export const PLACE_KEYS = {
@@ -21,7 +21,10 @@ export function useCreatePlace() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (payload: CreatePlacePayload) => placesService.create(payload),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: PLACE_KEYS.all }),
+    onSuccess: (newPlace) => {
+      // Update all cached lists (regardless of period filter) to include the new place
+      qc.setQueriesData<Place[]>({ queryKey: ['places', 'list'] }, (prev) => [...(prev ?? []), newPlace])
+    },
   })
 }
 

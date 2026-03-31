@@ -9,18 +9,22 @@ interface FormFieldProps {
   name: string
   label: string
   hint?: string
+  labelRight?: React.ReactNode
   children: React.ReactNode
 }
 
-export function FormField({ name, label, hint, children }: FormFieldProps): React.ReactElement {
+export function FormField({ name, label, hint, labelRight, children }: FormFieldProps): React.ReactElement {
   const [, meta] = useField(name)
   const hasError = Boolean(meta.touched && meta.error)
 
   return (
     <div className={styles.field}>
-      <label className={styles.label} htmlFor={name}>
-        {label}
-      </label>
+      <div className={styles.labelRow}>
+        <label className={styles.label} htmlFor={name}>
+          {label}
+        </label>
+        {labelRight && <span className={styles.labelRightAction}>{labelRight}</span>}
+      </div>
       {children}
       {hint && !hasError && <p className={styles.hint}>{hint}</p>}
       {hasError && (

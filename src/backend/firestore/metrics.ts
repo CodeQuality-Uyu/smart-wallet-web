@@ -31,6 +31,10 @@ function getPeriodBounds(period: MPeriod): { start: string; end: string } {
     const m = String(now.getMonth() + 1).padStart(2, '0')
     return { start: `${y}-${m}-01`, end: today }
   }
+  if (period === MetricsPeriod.ThreeMonths) {
+    const d = new Date(now); d.setMonth(d.getMonth() - 3)
+    return { start: isoDate(d), end: today }
+  }
   // Year
   return { start: `${now.getFullYear()}-01-01`, end: today }
 }
@@ -46,6 +50,11 @@ function getPreviousPeriodBounds(period: MPeriod): { start: string; end: string 
     const first = new Date(now.getFullYear(), now.getMonth() - 1, 1)
     const last = new Date(now.getFullYear(), now.getMonth(), 0)
     return { start: isoDate(first), end: isoDate(last) }
+  }
+  if (period === MetricsPeriod.ThreeMonths) {
+    const end = new Date(now); end.setMonth(end.getMonth() - 3)
+    const start = new Date(end); start.setMonth(start.getMonth() - 3)
+    return { start: isoDate(start), end: isoDate(end) }
   }
   // Year
   const prev = now.getFullYear() - 1
@@ -181,8 +190,8 @@ export const firestoreMetricsBackend: IMetricsBackend = {
       totalUyu,
       previousPeriodUsd,
       previousPeriodUyu,
-      variableUsd: Math.max(0, totalUsd - fixedUsd),
-      variableUyu: Math.max(0, totalUyu - fixedUyu),
+      variableUsd: totalUsd,
+      variableUyu: totalUyu,
       fixedUsd,
       fixedUyu,
       monthlyHistory,
