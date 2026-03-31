@@ -7,6 +7,8 @@ import {
   RecurringFrequency,
   RecurringStatus,
   RecurringPaymentStatus,
+  ProductPricingType,
+  WeightUnit,
 } from '@/types/enums'
 
 // ─── Shared ───────────────────────────────────────────────
@@ -240,6 +242,51 @@ export interface MonthClosing {
 }
 
 export type CreateMonthClosingPayload = Omit<MonthClosing, 'closedAt'>
+
+// ─── Product catalog ──────────────────────────────────────
+
+export interface ProductCategory extends Timestamps {
+  id: string
+  name: string
+  icon: string
+}
+
+export type CreateProductCategoryPayload = Omit<ProductCategory, 'id' | 'createdAt' | 'updatedAt'>
+export type UpdateProductCategoryPayload = Partial<CreateProductCategoryPayload>
+
+export interface Brand extends Timestamps {
+  id: string
+  name: string
+}
+
+export type CreateBrandPayload = Pick<Brand, 'name'>
+export type UpdateBrandPayload = Partial<CreateBrandPayload>
+
+export interface Product extends Timestamps {
+  id: string
+  name: string
+  pricingType: ProductPricingType
+  weightUnit?: WeightUnit
+  productCategoryId: string
+  brandId?: string
+}
+
+export type CreateProductPayload = Omit<Product, 'id' | 'createdAt' | 'updatedAt'>
+export type UpdateProductPayload = Partial<CreateProductPayload>
+
+export interface ProductPriceRecord {
+  id: string
+  productId: string
+  placeId: string
+  unitPrice: number
+  currency: Currency
+  recordedAt: string
+  expenseId?: string
+  lineItemId?: string
+  createdAt: string
+}
+
+export type CreateProductPriceRecordPayload = Omit<ProductPriceRecord, 'id' | 'createdAt'>
 
 // ─── Auth / User ──────────────────────────────────────────
 

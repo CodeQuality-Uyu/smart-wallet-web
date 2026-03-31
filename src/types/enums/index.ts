@@ -67,3 +67,21 @@ export enum AppEnv {
   Staging = 'staging',
   Production = 'production',
 }
+
+export enum ProductPricingType {
+  Fixed    = 'fixed',
+  ByWeight = 'by_weight',
+}
+
+export enum WeightUnit {
+  Kg = 'kg',
+  G  = 'g',
+  L  = 'l',
+  Ml = 'ml',
+}
+
+export enum PriceDataConfidence {
+  Fresh = 'fresh',
+  Stale = 'stale',
+  Old   = 'old',
+}

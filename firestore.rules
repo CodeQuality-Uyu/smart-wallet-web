@@ -41,12 +41,31 @@ service cloud.firestore {
       match /monthClosings/{closingId} {
         allow read, create: if request.auth != null && request.auth.uid == uid;
       }
+
     }
 
     // Global places pool — shared community data
     // Any authenticated user can read or create; nobody can update/delete
     match /places/{placeId} {
       allow read, create: if request.auth != null;
+    }
+
+    // Global product catalog — shared community data
+    // Any authenticated user can read or create; nobody can delete
+    match /productCategories/{categoryId} {
+      allow read, create, update: if request.auth != null;
+    }
+
+    match /brands/{brandId} {
+      allow read, create, update: if request.auth != null;
+    }
+
+    match /products/{productId} {
+      allow read, create, update: if request.auth != null;
+    }
+
+    match /priceHistory/{recordId} {
+      allow read, create, update: if request.auth != null;
     }
 
     // Deny everything else

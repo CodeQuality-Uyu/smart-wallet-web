@@ -11,6 +11,10 @@ import type {
   TicketLine, PaginatedResponse, ExpenseFilters,
   MetricsSummary, BudgetSettings,
   MonthClosing, CreateMonthClosingPayload,
+  ProductCategory, CreateProductCategoryPayload, UpdateProductCategoryPayload,
+  Brand, CreateBrandPayload, UpdateBrandPayload,
+  Product, CreateProductPayload, UpdateProductPayload,
+  ProductPriceRecord, CreateProductPriceRecordPayload,
 } from '@/types/models'
 import type { MetricsPeriod, RecurringStatus } from '@/types/enums'
 
@@ -25,6 +29,10 @@ export type {
   TicketLine, PaginatedResponse, ExpenseFilters,
   MetricsSummary, MetricsPeriod,
   MonthClosing, CreateMonthClosingPayload,
+  ProductCategory, CreateProductCategoryPayload, UpdateProductCategoryPayload,
+  Brand, CreateBrandPayload, UpdateBrandPayload,
+  Product, CreateProductPayload, UpdateProductPayload,
+  ProductPriceRecord, CreateProductPriceRecordPayload,
 }
 
 // ─── Auth ──────────────────────────────────────────────────
@@ -152,4 +160,51 @@ export interface ISalariesBackend {
   list(): Promise<Salary[]>
   create(payload: CreateSalaryPayload): Promise<Salary>
   remove(id: string): Promise<void>
+}
+
+// ─── Product categories ────────────────────────────────────
+
+export interface IProductCategoriesBackend {
+  list(): Promise<ProductCategory[]>
+  create(payload: CreateProductCategoryPayload): Promise<ProductCategory>
+  update(id: string, payload: UpdateProductCategoryPayload): Promise<ProductCategory>
+  remove(id: string): Promise<void>
+}
+
+// ─── Brands ───────────────────────────────────────────────
+
+export interface IBrandsBackend {
+  list(): Promise<Brand[]>
+  search(query: string): Promise<Brand[]>
+  create(payload: CreateBrandPayload): Promise<Brand>
+  update(id: string, payload: UpdateBrandPayload): Promise<Brand>
+  remove(id: string): Promise<void>
+}
+
+// ─── Products ─────────────────────────────────────────────
+
+export interface ProductsFilter {
+  search?: string
+  categoryId?: string
+  brandId?: string
+}
+
+export interface PriceByPlace {
+  placeId: string
+  placeName: string
+  unitPrice: number
+  currency: string
+  recordedAt: string
+  diffPct: number
+}
+
+export interface IProductsBackend {
+  list(filters?: ProductsFilter): Promise<Product[]>
+  getById(id: string): Promise<Product>
+  create(payload: CreateProductPayload): Promise<Product>
+  update(id: string, payload: UpdateProductPayload): Promise<Product>
+  remove(id: string): Promise<void>
+  getPriceHistory(productId: string): Promise<ProductPriceRecord[]>
+  getPriceByPlace(productId: string): Promise<PriceByPlace[]>
+  addPriceRecord(payload: CreateProductPriceRecordPayload): Promise<ProductPriceRecord>
 }
