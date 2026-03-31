@@ -10,6 +10,10 @@ import { mockMetrics } from './data/metrics'
 import { mockSalaries } from './data/salaries'
 import { mockBudget } from './data/budget'
 import { mockMonthClosings } from './data/monthClosings'
+import { mockProductCategories } from './data/productCategories'
+import { mockBrands } from './data/brands'
+import { mockProducts } from './data/products'
+import { mockPriceHistory } from './data/priceHistory'
 
 const BASE = '/api'
 
@@ -304,5 +308,138 @@ export const handlers = [
     const closing = { ...body, closedAt: new Date().toISOString() }
     mockMonthClosings.unshift(closing as typeof mockMonthClosings[0])
     return HttpResponse.json(closing, { status: 201 })
+  }),
+
+  // ─── Product categories ───────────────────────────────────
+  http.get(`${BASE}/product-categories`, () => HttpResponse.json(mockProductCategories)),
+
+  http.post(`${BASE}/product-categories`, async ({ request }) => {
+    const body = await request.json() as Record<string, unknown>
+    const created = { ...body, id: crypto.randomUUID(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+    mockProductCategories.push(created as typeof mockProductCategories[0])
+    return HttpResponse.json(created, { status: 201 })
+  }),
+
+  http.patch(`${BASE}/product-categories/:id`, async ({ params, request }) => {
+    const cat = mockProductCategories.find((c) => c.id === params['id'])
+    if (!cat) return new HttpResponse(null, { status: 404 })
+    const body = await request.json() as Record<string, unknown>
+    Object.assign(cat, { ...body, updatedAt: new Date().toISOString() })
+    return HttpResponse.json(cat)
+  }),
+
+  http.delete(`${BASE}/product-categories/:id`, () => new HttpResponse(null, { status: 204 })),
+
+  // ─── Brands ───────────────────────────────────────────────
+  http.get(`${BASE}/brands`, ({ request }) => {
+    const search = new URL(request.url).searchParams.get('search')?.toLowerCase() ?? ''
+    const results = search.length >= 2
+      ? mockBrands.filter((b) => b.name.toLowerCase().includes(search))
+      : mockBrands
+    return HttpResponse.json(results)
+  }),
+
+  http.post(`${BASE}/brands`, async ({ request }) => {
+    const body = await request.json() as Record<string, unknown>
+    const created = { ...body, id: crypto.randomUUID(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+    mockBrands.push(created as typeof mockBrands[0])
+    return HttpResponse.json(created, { status: 201 })
+  }),
+
+  http.patch(`${BASE}/brands/:id`, async ({ params, request }) => {
+    const brand = mockBrands.find((b) => b.id === params['id'])
+    if (!brand) return new HttpResponse(null, { status: 404 })
+    const body = await request.json() as Record<string, unknown>
+    Object.assign(brand, { ...body, updatedAt: new Date().toISOString() })
+    return HttpResponse.json(brand)
+  }),
+
+  http.delete(`${BASE}/brands/:id`, () => new HttpResponse(null, { status: 204 })),
+
+  // ─── Products ─────────────────────────────────────────────
+  http.get(`${BASE}/products`, ({ request }) => {
+    const url = new URL(request.url)
+    const search     = url.searchParams.get('search')?.toLowerCase() ?? ''
+    const categoryId = url.searchParams.get('categoryId') ?? ''
+    const brandId    = url.searchParams.get('brandId') ?? ''
+
+    let results = [...mockProducts]
+    if (search)     results = results.filter((p) => p.name.toLowerCase().includes(search))
+    if (categoryId) results = results.filter((p) => p.productCategoryId === categoryId)
+    if (brandId)    results = results.filter((p) => p.brandId === brandId)
+
+    return HttpResponse.json(results)
+  }),
+
+  http.get(`${BASE}/products/:id`, ({ params }) => {
+    const product = mockProducts.find((p) => p.id === params['id'])
+    if (!product) return new HttpResponse(null, { status: 404 })
+    return HttpResponse.json(product)
+  }),
+
+  http.post(`${BASE}/products`, async ({ request }) => {
+    const body = await request.json() as Record<string, unknown>
+    const created = { ...body, id: crypto.randomUUID(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+    mockProducts.push(created as typeof mockProducts[0])
+    return HttpResponse.json(created, { status: 201 })
+  }),
+
+  http.patch(`${BASE}/products/:id`, async ({ params, request }) => {
+    const product = mockProducts.find((p) => p.id === params['id'])
+    if (!product) return new HttpResponse(null, { status: 404 })
+    const body = await request.json() as Record<string, unknown>
+    Object.assign(product, { ...body, updatedAt: new Date().toISOString() })
+    return HttpResponse.json(product)
+  }),
+
+  http.delete(`${BASE}/products/:id`, () => new HttpResponse(null, { status: 204 })),
+
+  // ─── Price history ────────────────────────────────────────
+  http.get(`${BASE}/products/:id/price-history`, ({ params }) => {
+    const records = mockPriceHistory
+      .filter((r) => r.productId === params['id'])
+      .sort((a, b) => b.recordedAt.localeCompare(a.recordedAt))
+    return HttpResponse.json(records)
+  }),
+
+  http.get(`${BASE}/products/:id/price-by-place`, ({ params }) => {
+    const records = mockPriceHistory.filter((r) => r.productId === params['id'])
+
+    const latestByPlace = new Map<string, typeof mockPriceHistory[0]>()
+    for (const r of records.sort((a, b) => b.recordedAt.localeCompare(a.recordedAt))) {
+      if (!latestByPlace.has(r.placeId)) latestByPlace.set(r.placeId, r)
+    }
+
+    const rows = Array.from(latestByPlace.values()).map((r) => ({
+      placeId: r.placeId,
+      placeName: [...mockPlaces, ...mockGlobalPlaces].find((p) => p.id === r.placeId)?.name ?? r.placeId,
+      unitPrice: r.unitPrice,
+      currency: r.currency,
+      recordedAt: r.recordedAt,
+      diffPct: 0,
+    }))
+
+    const minPrice = Math.min(...rows.map((r) => r.unitPrice))
+    const result = rows.map((r) => ({
+      ...r,
+      diffPct: minPrice > 0 ? Math.round(((r.unitPrice - minPrice) / minPrice) * 100) : 0,
+    }))
+
+    return HttpResponse.json(result)
+  }),
+
+  http.post(`${BASE}/products/:id/price-history`, async ({ params, request }) => {
+    const body = await request.json() as Record<string, unknown>
+    const created = { ...body, id: crypto.randomUUID(), productId: params['id'], createdAt: new Date().toISOString() }
+    mockPriceHistory.push(created as typeof mockPriceHistory[0])
+    return HttpResponse.json(created, { status: 201 })
+  }),
+
+  http.patch(`${BASE}/price-history/:id`, async ({ params, request }) => {
+    const record = mockPriceHistory.find((r) => r.id === params['id'])
+    if (!record) return new HttpResponse(null, { status: 404 })
+    const body = await request.json() as Record<string, unknown>
+    Object.assign(record, body)
+    return HttpResponse.json(record)
   }),
 ]
