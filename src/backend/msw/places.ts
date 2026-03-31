@@ -2,11 +2,16 @@
 // Places backend implemented via the MSW-intercepted HTTP adapter
 
 import { httpClient } from '@/api/httpClient'
-import type { IPlacesBackend, Place, CreatePlacePayload, UpdatePlacePayload } from '../types'
+import type { IPlacesBackend, GlobalPlace, Place, CreatePlacePayload, UpdatePlacePayload } from '../types'
 
 export const mswPlacesBackend: IPlacesBackend = {
   async list(): Promise<Place[]> {
     const { data } = await httpClient.get<Place[]>('/places')
+    return data
+  },
+
+  async searchGlobal(query: string): Promise<GlobalPlace[]> {
+    const { data } = await httpClient.get<GlobalPlace[]>(`/places/global?q=${encodeURIComponent(query)}`)
     return data
   },
 

@@ -1,11 +1,15 @@
 // src/services/placesService.ts
 
 import { getPlacesBackend } from '@/backend'
-import type { Place, CreatePlacePayload, UpdatePlacePayload } from '@/types/models'
+import type { GlobalPlace, Place, CreatePlacePayload, UpdatePlacePayload } from '@/types/models'
 
 export const placesService = {
   async list(): Promise<Place[]> {
     return (await getPlacesBackend()).list()
+  },
+
+  async searchGlobal(query: string): Promise<GlobalPlace[]> {
+    return (await getPlacesBackend()).searchGlobal(query)
   },
 
   async create(payload: CreatePlacePayload): Promise<Place> {

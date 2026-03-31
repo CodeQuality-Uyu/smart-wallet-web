@@ -38,16 +38,32 @@ export type UpdateCategoryPayload = Partial<CreateCategoryPayload>
 
 // ─── Place / Locale ────────────────────────────────────────
 
+export interface GlobalPlace {
+  id: string
+  name: string
+  address?: string
+  icon?: string
+  nameLower: string
+  createdAt: string
+}
+
 export interface Place extends Timestamps {
   id: string
   name: string
   address?: string
+  icon?: string
   visitCount: number
   active: boolean
+  globalPlaceId?: string
 }
 
-export type CreatePlacePayload = Pick<Place, 'name' | 'address'>
-export type UpdatePlacePayload = Partial<CreatePlacePayload>
+export interface CreatePlacePayload {
+  name: string
+  address?: string
+  icon?: string
+  globalPlaceId?: string
+}
+export type UpdatePlacePayload = Partial<Pick<Place, 'name' | 'address' | 'icon'>>
 
 // ─── Card / Payment method ────────────────────────────────
 

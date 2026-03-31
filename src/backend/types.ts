@@ -4,7 +4,7 @@
 import type {
   Card, CreateCardPayload,
   Category, CreateCategoryPayload, UpdateCategoryPayload,
-  Place, CreatePlacePayload, UpdatePlacePayload,
+  GlobalPlace, Place, CreatePlacePayload, UpdatePlacePayload,
   RecurringExpense, CreateRecurringPayload, UpdateRecurringPayload,
   ConfirmRecurringPaymentPayload, RecurringPaymentHistory,
   Expense, CreateExpensePayload, UpdateExpensePayload,
@@ -17,7 +17,7 @@ import type { MetricsPeriod, RecurringStatus } from '@/types/enums'
 export type {
   Card, CreateCardPayload,
   Category, CreateCategoryPayload, UpdateCategoryPayload,
-  Place, CreatePlacePayload, UpdatePlacePayload,
+  GlobalPlace, Place, CreatePlacePayload, UpdatePlacePayload,
   RecurringExpense, CreateRecurringPayload, UpdateRecurringPayload,
   ConfirmRecurringPaymentPayload, RecurringPaymentHistory,
   RecurringStatus,
@@ -77,6 +77,7 @@ export interface ICategoriesBackend {
 
 export interface IPlacesBackend {
   list(): Promise<Place[]>
+  searchGlobal(query: string): Promise<GlobalPlace[]>
   create(payload: CreatePlacePayload): Promise<Place>
   update(id: string, payload: UpdatePlacePayload): Promise<Place>
   remove(id: string): Promise<void>

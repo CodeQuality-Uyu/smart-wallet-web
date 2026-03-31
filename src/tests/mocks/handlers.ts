@@ -3,7 +3,7 @@
 import { http, HttpResponse } from 'msw'
 import { mockExpenses } from './data/expenses'
 import { mockCategories } from './data/categories'
-import { mockPlaces } from './data/places'
+import { mockGlobalPlaces, mockPlaces } from './data/places'
 import { mockCards } from './data/cards'
 import { mockRecurring } from './data/recurring'
 import { mockMetrics } from './data/metrics'
@@ -148,6 +148,14 @@ export const handlers = [
   }),
 
   // ─── Places ─────────────────────────────────────────────
+  http.get(`${BASE}/places/global`, ({ request }) => {
+    const q = new URL(request.url).searchParams.get('q')?.toLowerCase() ?? ''
+    const results = q.length < 2
+      ? []
+      : mockGlobalPlaces.filter((p) => p.nameLower.includes(q))
+    return HttpResponse.json(results)
+  }),
+
   http.get(`${BASE}/places`, () =>
     HttpResponse.json(mockPlaces.filter((p) => p.active !== false))
   ),

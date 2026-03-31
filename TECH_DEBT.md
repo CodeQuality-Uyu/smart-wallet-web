@@ -86,6 +86,69 @@ Pasar todos los filtros activos a `useExpenses(filters)` y procesarlos en cada b
 
 ---
 
+---
+
+## Migración de locales privados al pool global
+
+**Contexto**
+Los locales creados antes de implementar el modelo comunitario viven en `users/{uid}/places` sin `globalPlaceId` y sin entrada en `/places`. El autocompletado no los muestra para otros usuarios, y el propio usuario no los ve vinculados al pool.
+
+**Solución propuesta**
+Script de migración one-shot (Cloud Function o script Node admin):
+
+```ts
+// scripts/migrate-places.ts
+const usersSnap = await db.collection('users').get()
+const globalIndex = new Map<string, string>() // nameLower → globalPlaceId
+
+for (const user of usersSnap.docs) {
+  const placesSnap = await user.ref
+    .collection('places')
+    .where('active', '==', true)
+    .get()
+
+  for (const place of placesSnap.docs) {
+    const data = place.data()
+    if (data['globalPlaceId']) continue // ya migrado
+
+    const key = (data['name'] as string).toLowerCase().trim()
+
+    let globalId = globalIndex.get(key)
+    if (!globalId) {
+      // Buscar si ya existe en el pool global
+      const existing = await db.collection('places')
+        .where('nameLower', '==', key)
+        .limit(1)
+        .get()
+
+      if (!existing.empty) {
+        globalId = existing.docs[0]!.id
+      } else {
+        // Crear entrada global nueva
+        const ref = await db.collection('places').add({
+          name: data['name'],
+          nameLower: key,
+          ...(data['address'] ? { address: data['address'] } : {}),
+          ...(data['icon'] ? { icon: data['icon'] } : {}),
+          createdAt: new Date().toISOString(),
+        })
+        globalId = ref.id
+      }
+      globalIndex.set(key, globalId)
+    }
+
+    await place.ref.update({ globalPlaceId: globalId })
+  }
+}
+```
+
+**Requisitos previos**
+- Índice en `/places`: campo `nameLower ASC` (necesario para el `where` de deduplicación)
+- Ejecutar con credenciales de admin (Service Account), no desde el cliente
+
+**Impacto estimado**: bajo — script aislado, no toca código existente. Ejecutar una sola vez en producción.
+
+---
+
 - tips y metricas dinamicos
-- locales como comunidad
 - productos separados de linea de producto como comunidad

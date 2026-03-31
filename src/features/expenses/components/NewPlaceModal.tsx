@@ -5,6 +5,7 @@ import { Formik, Form } from 'formik'
 import { Modal } from '@/components/ui/Modal'
 import { useCreatePlace } from '@/features/places/hooks/usePlaces'
 import { placeSchema, type PlaceFormValues } from '@/features/places/schemas/placeSchema'
+import { PlaceNameInput } from '@/features/places/components/PlaceNameInput'
 import { FormField, TextInput } from '@/components/ui/FormField'
 import { Button } from '@/components/ui/Button'
 import type { Place } from '@/types/models'
@@ -35,14 +36,14 @@ export function NewPlaceModal({ onClose, onCreated }: NewPlaceModalProps): React
     <Modal title="Nuevo lugar" onClose={onClose} width={400}>
       <div className={styles.body}>
         <Formik<PlaceFormValues>
-          initialValues={{ name: '', address: '' }}
+          initialValues={{ name: '', address: '', icon: '', globalPlaceId: '' }}
           validationSchema={placeSchema}
           onSubmit={handleSubmit}
         >
           {({ isSubmitting, status }) => (
             <Form>
               <FormField name="name" label="Nombre">
-                <TextInput name="name" placeholder="ej. Disco Pocitos" icon="🏪" />
+                <PlaceNameInput />
               </FormField>
               <FormField name="address" label="Dirección (opcional)">
                 <TextInput name="address" placeholder="ej. Av. Brasil, Pocitos" icon="📍" />

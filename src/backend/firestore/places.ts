@@ -1,5 +1,7 @@
 // src/backend/firestore/places.ts
-// Places backend using Firestore collection: users/{uid}/places
+// Places backend using Firestore:
+//   Global pool: /places/{id}          (readable by all auth users)
+//   Personal copy: users/{uid}/places/{id}  (owned by user)
 
 import {
   collection,
@@ -10,9 +12,11 @@ import {
   doc,
   query,
   orderBy,
+  where,
+  limit,
 } from 'firebase/firestore'
 import { firebaseAuth, firestore } from './config'
-import type { IPlacesBackend, Place, CreatePlacePayload, UpdatePlacePayload } from '../types'
+import type { IPlacesBackend, GlobalPlace, Place, CreatePlacePayload, UpdatePlacePayload } from '../types'
 
 function requireUid(): string {
   const uid = firebaseAuth.currentUser?.uid
@@ -33,10 +37,49 @@ export const firestorePlacesBackend: IPlacesBackend = {
       .map((d) => ({ id: d.id, ...d.data() } as Place))
   },
 
+  async searchGlobal(queryStr: string): Promise<GlobalPlace[]> {
+    if (queryStr.length < 2) return []
+    const lower = queryStr.toLowerCase()
+    const upper = lower + '\uf8ff'
+    const q = query(
+      collection(firestore, 'places'),
+      orderBy('nameLower'),
+      where('nameLower', '>=', lower),
+      where('nameLower', '<=', upper),
+      limit(8),
+    )
+    const snap = await getDocs(q)
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() } as GlobalPlace))
+  },
+
   async create(payload: CreatePlacePayload): Promise<Place> {
     const uid = requireUid()
     const now = new Date().toISOString()
-    const data = { ...payload, visitCount: 0, active: true, createdAt: now, updatedAt: now }
+
+    let globalPlaceId = payload.globalPlaceId
+
+    // If not linking to an existing global place, create one first
+    if (!globalPlaceId) {
+      const globalRef = await addDoc(collection(firestore, 'places'), {
+        name: payload.name,
+        nameLower: payload.name.toLowerCase(),
+        ...(payload.address ? { address: payload.address } : {}),
+        ...(payload.icon ? { icon: payload.icon } : {}),
+        createdAt: now,
+      })
+      globalPlaceId = globalRef.id
+    }
+
+    const data: Omit<Place, 'id'> = {
+      name: payload.name,
+      ...(payload.address ? { address: payload.address } : {}),
+      ...(payload.icon ? { icon: payload.icon } : {}),
+      visitCount: 0,
+      active: true,
+      globalPlaceId,
+      createdAt: now,
+      updatedAt: now,
+    }
     const ref = await addDoc(collection(firestore, 'users', uid, 'places'), data)
     return { id: ref.id, ...data }
   },

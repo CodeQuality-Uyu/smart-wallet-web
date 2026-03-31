@@ -2,13 +2,22 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { placesService } from '@/services/placesService'
-import type { Place, CreatePlacePayload, UpdatePlacePayload } from '@/types/models'
+import type { GlobalPlace, Place, CreatePlacePayload, UpdatePlacePayload } from '@/types/models'
 import { LocaleFilterPeriod } from '@/types/enums'
 
 export const PLACE_KEYS = {
   all: ['places'] as const,
   list: (period?: LocaleFilterPeriod) => ['places', 'list', period] as const,
 } as const
+
+export function useSearchGlobalPlaces(searchQuery: string) {
+  return useQuery<GlobalPlace[]>({
+    queryKey: ['places', 'global', searchQuery],
+    queryFn: () => placesService.searchGlobal(searchQuery),
+    enabled: searchQuery.length >= 2,
+    staleTime: 30_000,
+  })
+}
 
 export function usePlaces(period?: LocaleFilterPeriod) {
   return useQuery({
