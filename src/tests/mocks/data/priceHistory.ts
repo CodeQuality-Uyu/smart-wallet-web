@@ -10,11 +10,11 @@ const d = (daysAgo: number): string => {
 }
 
 export const mockPriceHistory: ProductPriceRecord[] = [
-  // ── prod-1 Papa Blanca en place-2 (Disco Pocitos) ──────────────────
+  // ── gprod-1 Papa Blanca en place-2 (Disco Pocitos) ─────────────────
   // fresh (10 días)
   {
     id: 'ph-1',
-    productId: 'prod-1',
+    productId: 'gprod-1',
     placeId: 'place-2',
     unitPrice: 42,
     currency: Currency.UYU,
@@ -24,7 +24,7 @@ export const mockPriceHistory: ProductPriceRecord[] = [
   // stale (45 días)
   {
     id: 'ph-2',
-    productId: 'prod-1',
+    productId: 'gprod-1',
     placeId: 'place-2',
     unitPrice: 38,
     currency: Currency.UYU,
@@ -34,7 +34,7 @@ export const mockPriceHistory: ProductPriceRecord[] = [
   // old (120 días)
   {
     id: 'ph-3',
-    productId: 'prod-1',
+    productId: 'gprod-1',
     placeId: 'place-2',
     unitPrice: 31,
     currency: Currency.UYU,
@@ -42,11 +42,11 @@ export const mockPriceHistory: ProductPriceRecord[] = [
     createdAt: d(120),
   },
 
-  // ── prod-1 Papa Blanca en place-3 (Farmacia Cruz Verde — sin sentido real, datos demo) ──
+  // ── gprod-1 Papa Blanca en place-3 ─────────────────────────────────
   // fresh (5 días)
   {
     id: 'ph-4',
-    productId: 'prod-1',
+    productId: 'gprod-1',
     placeId: 'place-3',
     unitPrice: 47,
     currency: Currency.UYU,
@@ -56,7 +56,7 @@ export const mockPriceHistory: ProductPriceRecord[] = [
   // stale (60 días)
   {
     id: 'ph-5',
-    productId: 'prod-1',
+    productId: 'gprod-1',
     placeId: 'place-3',
     unitPrice: 40,
     currency: Currency.UYU,
@@ -66,7 +66,7 @@ export const mockPriceHistory: ProductPriceRecord[] = [
   // old (200 días)
   {
     id: 'ph-6',
-    productId: 'prod-1',
+    productId: 'gprod-1',
     placeId: 'place-3',
     unitPrice: 28,
     currency: Currency.UYU,
@@ -74,11 +74,11 @@ export const mockPriceHistory: ProductPriceRecord[] = [
     createdAt: d(200),
   },
 
-  // ── prod-4 Leche Conaprole 1L en place-2 ──────────────────────────
+  // ── gprod-4 Leche Conaprole 1L en place-2 ──────────────────────────
   // fresh (15 días)
   {
     id: 'ph-7',
-    productId: 'prod-4',
+    productId: 'gprod-4',
     placeId: 'place-2',
     unitPrice: 89,
     currency: Currency.UYU,
@@ -88,7 +88,7 @@ export const mockPriceHistory: ProductPriceRecord[] = [
   // fresh (3 días) — mismo local, registro más reciente
   {
     id: 'ph-8',
-    productId: 'prod-4',
+    productId: 'gprod-4',
     placeId: 'place-2',
     unitPrice: 92,
     currency: Currency.UYU,
@@ -96,11 +96,11 @@ export const mockPriceHistory: ProductPriceRecord[] = [
     createdAt: d(3),
   },
 
-  // ── prod-4 Leche Conaprole 1L en place-1 (McDonald's WTC) ─────────
+  // ── gprod-4 Leche Conaprole 1L en place-1 ──────────────────────────
   // stale (50 días)
   {
     id: 'ph-9',
-    productId: 'prod-4',
+    productId: 'gprod-4',
     placeId: 'place-1',
     unitPrice: 95,
     currency: Currency.UYU,
@@ -108,11 +108,11 @@ export const mockPriceHistory: ProductPriceRecord[] = [
     createdAt: d(50),
   },
 
-  // ── prod-3 Queso Dambo en place-2 ────────────────────────────────
+  // ── gprod-3 Queso Dambo en place-2 ─────────────────────────────────
   // old (95 días)
   {
     id: 'ph-10',
-    productId: 'prod-3',
+    productId: 'gprod-3',
     placeId: 'place-2',
     unitPrice: 380,
     currency: Currency.UYU,

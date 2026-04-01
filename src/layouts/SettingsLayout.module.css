@@ -1,0 +1,92 @@
+/* src/layouts/SettingsLayout.module.css */
+
+/* Mobile: show only mobileView */
+.mobileView { display: block; }
+.desktopView { display: none; }
+
+@media (min-width: 768px) {
+  .mobileView { display: none; }
+  .desktopView {
+    display: flex;
+    align-items: flex-start;
+    min-height: 100%;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    border-right: 1.5px solid var(--border);
+    padding: 24px 0 24px;
+    min-height: calc(100vh - 56px); /* account for bottom nav height */
+  }
+
+  .sidebarTitle {
+    font-family: var(--font-head);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    padding: 0 16px 12px;
+  }
+
+  .nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+  }
+
+  .navItem {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 16px;
+    border-radius: 8px;
+    margin: 0 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink);
+    text-decoration: none;
+    transition: background .12s, color .12s;
+  }
+  .navItem:hover { background: var(--g50); }
+  .navItemActive {
+    background: var(--g50);
+    color: var(--g700);
+    font-weight: 600;
+  }
+  .navItemActive .navIcon { filter: none; }
+
+  .navIcon { font-size: 16px; flex-shrink: 0; width: 20px; text-align: center; }
+  .navLabel { flex: 1; }
+
+  .logoutBtn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 16px;
+    margin: 8px 8px 0;
+    border-radius: 8px;
+    border: none;
+    background: none;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--rose);
+    cursor: pointer;
+    font-family: inherit;
+    transition: background .12s;
+  }
+  .logoutBtn:hover { background: var(--rose-lt, #ffe4e6); }
+
+  /* ── Content ── */
+  .content {
+    flex: 1;
+    min-width: 0;
+    padding: 0 32px 44px;
+    overflow: hidden;
+  }
+}

@@ -2,7 +2,7 @@
 
 import { getProductsBackend } from '@/backend'
 import type {
-  Product, CreateProductPayload, UpdateProductPayload,
+  Product, GlobalProductSuggestion, CreateProductPayload, UpdateProductPayload,
   ProductPriceRecord, CreateProductPriceRecordPayload,
 } from '@/types/models'
 import type { ProductsFilter, PriceByPlace } from '@/backend/types'
@@ -14,6 +14,10 @@ export const productsService = {
 
   async getById(id: string): Promise<Product> {
     return (await getProductsBackend()).getById(id)
+  },
+
+  async searchGlobal(query: string): Promise<GlobalProductSuggestion[]> {
+    return (await getProductsBackend()).searchGlobal(query)
   },
 
   async create(payload: CreateProductPayload): Promise<Product> {

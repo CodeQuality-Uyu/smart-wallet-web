@@ -6,6 +6,7 @@ import {
   useProductCategories,
   useCreateProductCategory,
   useUpdateProductCategory,
+  useDeleteProductCategory,
 } from '@/features/products/hooks/useProductCategories'
 import { productCategorySchema, type ProductCategoryFormValues } from '@/features/products/schemas/productCategorySchema'
 import { FormField, TextInput } from '@/components/ui/FormField'
@@ -20,6 +21,7 @@ const ICON_OPTIONS = ['🛒','🥛','🥦','🍎','🍞','🥩','🐟','🧃','�
 export default function ProductCategoriesPage(): React.ReactElement {
   const { data: categories = [], isLoading } = useProductCategories()
   const { mutateAsync: createCat } = useCreateProductCategory()
+  const { mutateAsync: deleteCat } = useDeleteProductCategory()
   const [editing, setEditing] = useState<ProductCategory | null>(null)
   const [showForm, setShowForm] = useState(false)
   const { mutateAsync: updateCat } = useUpdateProductCategory(editing?.id ?? '')
@@ -30,6 +32,14 @@ export default function ProductCategoriesPage(): React.ReactElement {
     values: ProductCategoryFormValues,
     { setStatus }: { setStatus: (s: string) => void },
   ): Promise<void> {
+    const nameLower = values.name.trim().toLowerCase()
+    const duplicate = categories.find(
+      (c) => c.name.toLowerCase() === nameLower && c.id !== editing?.id,
+    )
+    if (duplicate) {
+      setStatus(`Ya existe una categoría llamada "${duplicate.name}"`)
+      return
+    }
     try {
       if (editing) {
         await updateCat(values)
@@ -55,7 +65,7 @@ export default function ProductCategoriesPage(): React.ReactElement {
 
   return (
     <div>
-      <PageHeader title="Categorías de productos" showBack />
+      <PageHeader title="Categorías de productos" />
 
       <div className={styles.body}>
         <button
@@ -120,9 +130,26 @@ export default function ProductCategoriesPage(): React.ReactElement {
                     >
                       Cancelar
                     </Button>
-                    <Button type="submit" variant="secondary" size="sm" loading={isSubmitting}>
-                      Guardar
-                    </Button>
+                    <div className={styles.formActionsRight}>
+                      {editing && (
+                        <Button
+                          type="button"
+                          variant="danger"
+                          size="sm"
+                          onClick={async () => {
+                            if (!window.confirm(`¿Eliminar la categoría "${editing.name}"?`)) return
+                            await deleteCat(editing.id)
+                            setShowForm(false)
+                            setEditing(null)
+                          }}
+                        >
+                          Eliminar
+                        </Button>
+                      )}
+                      <Button type="submit" variant="secondary" size="sm" loading={isSubmitting}>
+                        Guardar
+                      </Button>
+                    </div>
                   </div>
                 </Form>
               )}

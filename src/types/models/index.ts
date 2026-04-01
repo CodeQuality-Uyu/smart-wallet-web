@@ -86,6 +86,7 @@ export interface TicketLine {
   id: string
   name: string
   amount: number
+  productId?: string
 }
 
 export interface Expense extends Timestamps {
@@ -262,6 +263,39 @@ export interface Brand extends Timestamps {
 export type CreateBrandPayload = Pick<Brand, 'name'>
 export type UpdateBrandPayload = Partial<CreateBrandPayload>
 
+// Global pool: /products/{id} — community data, no categoryId
+export interface GlobalProduct {
+  id: string
+  name: string
+  nameLower: string
+  pricingType: ProductPricingType
+  weightUnit?: WeightUnit
+  brandId?: string
+  // Denormalized last price info (updated on each addPriceRecord)
+  lastPlaceId?: string
+  lastPlaceName?: string
+  lastUnitPrice?: number
+  lastCurrency?: Currency
+  lastRecordedAt?: string
+  createdAt: string
+}
+
+// Suggestion returned by searchGlobal
+export interface GlobalProductSuggestion {
+  id: string
+  name: string
+  pricingType: ProductPricingType
+  weightUnit?: WeightUnit
+  brandId?: string
+  brandName?: string
+  lastPlaceId?: string
+  lastPlaceName?: string
+  lastUnitPrice?: number
+  lastCurrency?: Currency
+  lastRecordedAt?: string
+}
+
+// User copy: users/{uid}/products/{id} — personal, links to global via globalProductId
 export interface Product extends Timestamps {
   id: string
   name: string
@@ -269,10 +303,19 @@ export interface Product extends Timestamps {
   weightUnit?: WeightUnit
   productCategoryId: string
   brandId?: string
+  globalProductId: string
+  active: boolean
 }
 
-export type CreateProductPayload = Omit<Product, 'id' | 'createdAt' | 'updatedAt'>
-export type UpdateProductPayload = Partial<CreateProductPayload>
+export interface CreateProductPayload {
+  name: string
+  pricingType: ProductPricingType
+  weightUnit?: WeightUnit
+  productCategoryId: string
+  brandId?: string
+  globalProductId?: string // if set, links to existing global product (no new global created)
+}
+export type UpdateProductPayload = Partial<Omit<CreateProductPayload, 'globalProductId'>>
 
 export interface ProductPriceRecord {
   id: string

@@ -89,4 +89,6 @@
 
 .formError { font-size: 12px; color: var(--red, #dc2626); margin-bottom: 10px; }
 
-.formActions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+.formActions { display: flex; gap: 8px; justify-content: space-between; margin-top: 4px; }
+
+.formActionsRight { display: flex; gap: 8px; }

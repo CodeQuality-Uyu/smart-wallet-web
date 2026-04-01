@@ -10,6 +10,7 @@ import styles from './PriceByPlaceTable.module.css'
 
 interface PriceByPlaceTableProps {
   rows: PriceByPlace[]
+  onEdit?: (row: PriceByPlace) => void
 }
 
 function daysAgo(recordedAt: string): number {
@@ -28,7 +29,7 @@ const CONFIDENCE_CLASS: Record<PriceDataConfidence, string> = {
   [PriceDataConfidence.Old]:   styles.rowOld,
 }
 
-export function PriceByPlaceTable({ rows }: PriceByPlaceTableProps): React.ReactElement {
+export function PriceByPlaceTable({ rows, onEdit }: PriceByPlaceTableProps): React.ReactElement {
   if (rows.length === 0) {
     return <p className={styles.empty}>Sin registros de precios aún.</p>
   }
@@ -44,6 +45,7 @@ export function PriceByPlaceTable({ rows }: PriceByPlaceTableProps): React.React
             <th className={[styles.th, styles.right].join(' ')}>Último precio</th>
             <th className={[styles.th, styles.right].join(' ')}>Actualización</th>
             <th className={[styles.th, styles.right].join(' ')}>vs más barato</th>
+            {onEdit && <th className={styles.th} />}
           </tr>
         </thead>
         <tbody>
@@ -78,6 +80,13 @@ export function PriceByPlaceTable({ rows }: PriceByPlaceTableProps): React.React
                     <span className={styles.diff}>+{row.diffPct.toFixed(1)}%</span>
                   )}
                 </td>
+                {onEdit && (
+                  <td className={styles.td}>
+                    <button className={styles.editBtn} onClick={() => onEdit(row)} type="button">
+                      ✏️
+                    </button>
+                  </td>
+                )}
               </tr>
             )
           })}

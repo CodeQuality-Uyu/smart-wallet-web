@@ -1,0 +1,60 @@
+/* src/pages/NewProductPage.module.css */
+
+.page { display: flex; flex-direction: column; min-height: 100dvh; }
+
+.header {
+  background: linear-gradient(155deg, var(--g800), var(--g600));
+  padding: 18px 20px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.closeBtn {
+  width: 36px; height: 36px;
+  background: rgba(255,255,255,.16);
+  border: none; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; color: #fff;
+  cursor: pointer;
+}
+
+.title {
+  font-family: var(--font-head);
+  font-size: 16px; font-weight: 700; color: #fff;
+}
+
+.body { padding: 16px; }
+
+/* ── Desktop ── */
+.desktopPage {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px 24px;
+  min-height: 100%;
+}
+
+.desktopCard {
+  width: 100%;
+  max-width: 560px;
+  background: #fff;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--border);
+  box-shadow: 0 4px 24px rgba(0,0,0,.06);
+}
+
+.desktopHeader {
+  display: flex;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1.5px solid var(--border);
+}
+
+.desktopTitle {
+  font-family: var(--font-head);
+  font-size: 17px; font-weight: 700; color: var(--ink);
+}
+
+.desktopBody { padding: 20px 24px; }

@@ -3,6 +3,8 @@
 .page {
   min-height: 100vh;
   background: var(--bg, #f5f5f5);
+  display: flex;
+  flex-direction: column;
 }
 
 /* ─── Header ─────────────────────────────────── */
@@ -81,6 +83,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  flex: 1;
 }
 
 .section {
@@ -90,15 +93,146 @@
   border: 1.5px solid var(--border);
 }
 
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
 .sectionTitle {
   font-size: 13px;
   font-weight: 700;
   color: var(--ink);
+  margin: 0;
+}
+
+.addPriceBtn {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--g600);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 4px 0;
+}
+
+/* ─── Add price mini-form ────────────────────── */
+
+.addPriceForm {
+  background: var(--g50);
+  border: 1.5px dashed var(--g200);
+  border-radius: var(--radius-sm, 8px);
+  padding: 12px;
   margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.addPriceRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.addPricePlaceWrap {
+  flex: 1;
+}
+
+.addPriceActions {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 4px;
+}
+
+.editPriceLabel {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.currencyToggle {
+  display: flex;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm, 8px);
+  overflow: hidden;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.currencyBtn {
+  padding: 9px 11px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font-num, monospace);
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background .12s, color .12s;
+}
+
+.currencyBtnActive {
+  background: var(--g800);
+  color: #fff;
+}
+
+.priceInput {
+  width: 100%;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm, 8px);
+  padding: 9px 12px;
+  font-size: 15px;
+  font-family: var(--font-num, monospace);
+  color: var(--ink);
+  background: #fff;
+  outline: none;
+  transition: border-color .15s;
+}
+
+.priceInput:focus { border-color: var(--g500); }
+.priceInputError { border-color: var(--rose); }
+
+.fieldError {
+  font-size: 11px;
+  color: var(--rose);
+  margin-top: 3px;
 }
 
 .deleteWrap {
+  margin-top: auto;
+  padding-top: 8px;
   padding-bottom: 16px;
+}
+
+/* ─── Chart ──────────────────────────────────── */
+
+.chartWrap {
+  margin-top: 4px;
+  overflow: hidden;
+}
+
+/* ─── Add price place hint ───────────────────── */
+
+.addPricePlaceHint {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 5px;
+  padding-left: 2px;
+}
+
+.addPricePlaceLink {
+  color: var(--ind);
+  font-weight: 600;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: inherit;
+  font-family: inherit;
 }
 
 /* ─── Desktop ────────────────────────────────── */
@@ -139,5 +273,6 @@
     max-width: 720px;
     margin: 0 auto;
     padding: 24px;
+    width: 100%;
   }
 }

@@ -118,7 +118,7 @@ if (isLoading) return <LoadingSpinner fullPage />
 
   return (
     <div>
-      <PageHeader title="Recurrentes" subtitle="Suscripciones y gastos fijos" showBack />
+      <PageHeader title="Recurrentes" subtitle="Suscripciones y gastos fijos" />
 
       <div className={styles.body}>
         <button className={styles.addBtn} onClick={() => setShowForm((s) => !s)}>

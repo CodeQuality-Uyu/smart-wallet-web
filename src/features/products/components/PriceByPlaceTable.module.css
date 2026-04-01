@@ -68,6 +68,22 @@
   font-weight: 500;
 }
 
+.editBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  opacity: .6;
+  transition: opacity .15s, background .15s;
+}
+
+.editBtn:hover {
+  opacity: 1;
+  background: var(--g50);
+}
+
 .empty {
   font-size: 13px;
   color: var(--muted);

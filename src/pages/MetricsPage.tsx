@@ -49,8 +49,11 @@ function fmtShort(n: number): string {
   return String(Math.round(n))
 }
 
+type CurrencyFilter = 'both' | 'usd' | 'uyu'
+
 export default function MetricsPage(): React.ReactElement {
   const [period, setPeriod] = useState(MetricsPeriod.Month)
+  const [currencyFilter, setCurrencyFilter] = useState<CurrencyFilter>('both')
   const { data: metrics, isLoading, error, refetch } = useMetrics(period)
   const { data: budget } = useBudget()
 
@@ -88,9 +91,6 @@ export default function MetricsPage(): React.ReactElement {
 
   // ─── Category percentages ─────────────────────────────────
   const catGrandTotal = metrics.byCategory.reduce((s, c) => s + c.usd * 100 + c.uyu, 0)
-
-  // ─── Bar chart scale ──────────────────────────────────────
-  const maxBar = Math.max(...metrics.monthlyHistory.map((m) => Math.max(m.usd, m.uyu / 100)), 1)
 
   const activePeriod = PERIODS.find((p) => p.value === period)
   const periodRange = getPeriodRange(period)
@@ -139,47 +139,93 @@ export default function MetricsPage(): React.ReactElement {
 
         {/* ── 1. Tendencia mensual ────────────────────────── */}
         <div className={styles.card}>
-          <h2 className={styles.cardTitle}>📈 Tendencia mensual</h2>
-          <div className={styles.chartLegend}>
-            <span className={styles.legendDot} style={{ background: '#3b82f6' }} /> USD
-            <span className={styles.legendDot} style={{ background: 'var(--g500)', marginLeft: 10 }} /> UYU
+          <div className={styles.trendHeader}>
+            <h2 className={styles.cardTitle} style={{ margin: 0 }}>📈 Tendencia mensual</h2>
+            <div className={styles.currencyTabs}>
+              {([['both', 'Ambas'], ['usd', 'USD'], ['uyu', 'UYU']] as [CurrencyFilter, string][]).map(([val, lbl]) => (
+                <button
+                  key={val}
+                  className={[styles.currencyTab, currencyFilter === val ? styles.currencyTabActive : ''].join(' ')}
+                  onClick={() => setCurrencyFilter(val)}
+                >{lbl}</button>
+              ))}
+            </div>
           </div>
-          <div className={styles.chart} role="img" aria-label="Gráfico de gasto mensual">
-            {metrics.monthlyHistory.map((m, i) => {
-              const isLast = i === metrics.monthlyHistory.length - 1
-              const usdH = (m.usd / maxBar) * 72
-              const uyuH = ((m.uyu / 100) / maxBar) * 72
-              const usdVal = fmtShort(m.usd)
-              const uyuVal = fmtShort(m.uyu / 100)
-              return (
-                <div key={`${m.year}-${m.month}`} className={styles.barGroup}>
-                  <div className={styles.bars}>
-                    <div
-                      className={styles.bar}
-                      style={{ height: usdH, background: isLast ? '#2563eb' : '#93c5fd' }}
-                    />
-                    <div
-                      className={styles.bar}
-                      style={{ height: uyuH, background: isLast ? 'var(--g600)' : 'var(--g300)' }}
-                    />
-                  </div>
-                  <p className={[styles.barLabel, isLast ? styles.barLabelCurrent : ''].join(' ')}>
-                    {m.label}
-                  </p>
-                  <div className={styles.barBottomVal}>
-                    {usdVal && <span style={{ color: '#2563eb' }}>{usdVal}</span>}
-                    {uyuVal && <span style={{ color: 'var(--g600)' }}>{uyuVal}</span>}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-          <div className={styles.avgRow}>
-            <span className={styles.avgLbl}>Promedio histórico</span>
-            <span className={styles.avgVal}>
-              {formatAmount(avgUsd, Currency.USD)} USD · {formatAmount(avgUyu, Currency.UYU)} UYU
-            </span>
-          </div>
+
+          {metrics.monthlyHistory.length === 0 ? (
+            <p className={styles.trendEmpty}>No hay datos históricos para mostrar.</p>
+          ) : (
+            <>
+              {(() => {
+                const showUsd = currencyFilter === 'both' || currencyFilter === 'usd'
+                const showUyu = currencyFilter === 'both' || currencyFilter === 'uyu'
+                const maxUsd = Math.max(...metrics.monthlyHistory.map((m) => m.usd), 1)
+                const maxUyu = Math.max(...metrics.monthlyHistory.map((m) => m.uyu), 1)
+
+                return metrics.monthlyHistory.map((m, i) => {
+                  const prev = metrics.monthlyHistory[i - 1]
+                  const isLast = i === metrics.monthlyHistory.length - 1
+
+                  const usdPct = prev && prev.usd > 0 ? Math.round(((m.usd - prev.usd) / prev.usd) * 100) : null
+                  const uyuPct = prev && prev.uyu > 0 ? Math.round(((m.uyu - prev.uyu) / prev.uyu) * 100) : null
+
+                  return (
+                    <div key={`${m.year}-${m.month}`} className={[styles.trendRow, isLast ? styles.trendRowCurrent : ''].join(' ')}>
+                      <span className={styles.trendMonth}>{m.label}</span>
+                      <div className={styles.trendBars}>
+                        {showUsd && (
+                          <div className={styles.trendBarWrap}>
+                            <div
+                              className={styles.trendBar}
+                              style={{ width: `${(m.usd / maxUsd) * 100}%`, background: isLast ? '#2563eb' : '#93c5fd' }}
+                            />
+                          </div>
+                        )}
+                        {showUyu && (
+                          <div className={styles.trendBarWrap}>
+                            <div
+                              className={styles.trendBar}
+                              style={{ width: `${(m.uyu / maxUyu) * 100}%`, background: isLast ? 'var(--g600)' : 'var(--g300)' }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                      <div className={styles.trendAmts}>
+                        {showUsd && (
+                          <span className={styles.trendAmt} style={{ color: '#2563eb' }}>
+                            {fmtShort(m.usd) || '—'}{currencyFilter === 'both' && <span className={styles.trendCurrency}>USD</span>}
+                            {usdPct !== null && (
+                              <span className={[styles.trendDelta, usdPct > 0 ? styles.deltaUp : usdPct < 0 ? styles.deltaDown : styles.deltaNeutral].join(' ')}>
+                                {usdPct > 0 ? '↑' : usdPct < 0 ? '↓' : '='}{Math.abs(usdPct)}%
+                              </span>
+                            )}
+                          </span>
+                        )}
+                        {showUyu && (
+                          <span className={styles.trendAmt} style={{ color: 'var(--g600)' }}>
+                            {fmtShort(m.uyu) || '—'}{currencyFilter === 'both' && <span className={styles.trendCurrency}>UYU</span>}
+                            {uyuPct !== null && (
+                              <span className={[styles.trendDelta, uyuPct > 0 ? styles.deltaUp : uyuPct < 0 ? styles.deltaDown : styles.deltaNeutral].join(' ')}>
+                                {uyuPct > 0 ? '↑' : uyuPct < 0 ? '↓' : '='}{Math.abs(uyuPct)}%
+                              </span>
+                            )}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })
+              })()}
+              <div className={styles.avgRow}>
+                <span className={styles.avgLbl}>Promedio histórico</span>
+                <span className={styles.avgVal}>
+                  {(currencyFilter === 'both' || currencyFilter === 'usd') && `${formatAmount(avgUsd, Currency.USD)} USD`}
+                  {currencyFilter === 'both' && ' · '}
+                  {(currencyFilter === 'both' || currencyFilter === 'uyu') && `${formatAmount(avgUyu, Currency.UYU)} UYU`}
+                </span>
+              </div>
+            </>
+          )}
         </div>
 
         {/* ── 2. Comparativas ─────────────────────────────── */}

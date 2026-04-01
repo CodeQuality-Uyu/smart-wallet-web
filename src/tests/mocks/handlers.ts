@@ -1,6 +1,8 @@
 // src/tests/mocks/handlers.ts
 
 import { http, HttpResponse } from 'msw'
+import { Currency, RecurringPaymentStatus } from '@/types/enums'
+
 import { mockExpenses } from './data/expenses'
 import { mockCategories } from './data/categories'
 import { mockGlobalPlaces, mockPlaces } from './data/places'
@@ -12,7 +14,7 @@ import { mockBudget } from './data/budget'
 import { mockMonthClosings } from './data/monthClosings'
 import { mockProductCategories } from './data/productCategories'
 import { mockBrands } from './data/brands'
-import { mockProducts } from './data/products'
+import { mockUserProducts, mockGlobalProductSuggestions } from './data/products'
 import { mockPriceHistory } from './data/priceHistory'
 
 const BASE = '/api'
@@ -96,14 +98,22 @@ export const handlers = [
 
   http.delete(`${BASE}/expenses/:id`, () => new HttpResponse(null, { status: 204 })),
 
-  http.post(`${BASE}/expenses/:id/ticket-lines`, async ({ request }) => {
+  http.post(`${BASE}/expenses/:id/ticket-lines`, async ({ params, request }) => {
     const body = await request.json() as Record<string, unknown>
-    return HttpResponse.json({ ...body, id: crypto.randomUUID() }, { status: 201 })
+    const line = { ...body, id: crypto.randomUUID() }
+    const expense = mockExpenses.find((e) => e.id === params['id'])
+    if (expense) expense.ticketLines.push(line as (typeof expense.ticketLines)[number])
+    return HttpResponse.json(line, { status: 201 })
   }),
 
-  http.delete(`${BASE}/expenses/:id/ticket-lines/:lineId`, () =>
-    new HttpResponse(null, { status: 204 })
-  ),
+  http.delete(`${BASE}/expenses/:id/ticket-lines/:lineId`, ({ params }) => {
+    const expense = mockExpenses.find((e) => e.id === params['id'])
+    if (expense) {
+      const idx = expense.ticketLines.findIndex((l) => l.id === params['lineId'])
+      if (idx !== -1) expense.ticketLines.splice(idx, 1)
+    }
+    return new HttpResponse(null, { status: 204 })
+  }),
 
   http.post(`${BASE}/expenses/:id/duplicate`, ({ params }) => {
     const expense = mockExpenses.find((e) => e.id === params['id'])
@@ -253,17 +263,33 @@ export const handlers = [
 
   http.delete(`${BASE}/recurring/:id`, () => new HttpResponse(null, { status: 204 })),
 
-  http.post(`${BASE}/recurring/:id/confirm-payment`, () =>
-    HttpResponse.json({
+  http.post(`${BASE}/recurring/:id/confirm-payment`, async ({ params, request }) => {
+    const rec = mockRecurring.find((r) => r.id === params['id'])
+    const contentType = request.headers.get('content-type') ?? ''
+    let amount: number = rec?.amount ?? 0
+    if (contentType.includes('multipart/form-data')) {
+      const form = await request.formData()
+      amount = parseFloat(form.get('amount') as string) || amount
+    } else {
+      const body = await request.json() as Record<string, unknown>
+      amount = (body['amount'] as number) ?? amount
+    }
+    const now = new Date()
+    const history = {
       id: crypto.randomUUID(),
-      month: new Date().getMonth() + 1,
-      year: new Date().getFullYear(),
-      amount: 890,
-      currency: 'UYU',
-      paidAt: new Date().toISOString(),
-      status: 'paid',
-    }, { status: 201 })
-  ),
+      month: now.getMonth() + 1,
+      year: now.getFullYear(),
+      amount,
+      currency: rec?.currency ?? Currency.UYU,
+      paidAt: now.toISOString(),
+      status: RecurringPaymentStatus.Paid,
+    }
+    if (rec) {
+      rec.paymentHistory = [history, ...(rec.paymentHistory ?? [])]
+      rec.currentMonthStatus = RecurringPaymentStatus.Paid
+    }
+    return HttpResponse.json(history, { status: 201 })
+  }),
 
   // ─── Budget ──────────────────────────────────────────────
   http.get(`${BASE}/budget`, () => HttpResponse.json(mockBudget)),
@@ -276,7 +302,69 @@ export const handlers = [
   }),
 
   // ─── Metrics ────────────────────────────────────────────
-  http.get(`${BASE}/metrics`, () => HttpResponse.json(mockMetrics)),
+  http.get(`${BASE}/metrics`, ({ request }) => {
+    const yearMonth = new URL(request.url).searchParams.get('yearMonth')
+    if (yearMonth) {
+      const [y, m] = yearMonth.split('-').map(Number) as [number, number]
+      const lastDay = new Date(y, m, 0).getDate()
+      const start = `${yearMonth}-01`
+      const end = `${yearMonth}-${String(lastDay).padStart(2, '0')}`
+      const filtered = mockExpenses.filter((e) => e.date >= start && e.date <= end)
+      const totalUsd = filtered.filter((e) => e.currency === 'USD').reduce((s, e) => s + e.amount, 0)
+      const totalUyu = filtered.filter((e) => e.currency === 'UYU').reduce((s, e) => s + e.amount, 0)
+
+      // Compute byCategory
+      const catMap = new Map(mockCategories.map((c) => [c.id, c]))
+      const byCategoryMap = new Map<string, { usd: number; uyu: number }>()
+      for (const exp of filtered) {
+        for (const catId of exp.categoryIds) {
+          const entry = byCategoryMap.get(catId) ?? { usd: 0, uyu: 0 }
+          if (exp.currency === 'USD') entry.usd += exp.amount
+          else entry.uyu += exp.amount
+          byCategoryMap.set(catId, entry)
+        }
+      }
+      const byCategory = [...byCategoryMap.entries()]
+        .map(([catId, totals]) => {
+          const cat = catMap.get(catId)
+          return {
+            categoryId: catId,
+            categoryName: cat?.name ?? catId,
+            categoryIcon: cat?.icon ?? '📦',
+            ...totals,
+          }
+        })
+        .sort((a, b) => (b.usd + b.uyu) - (a.usd + a.uyu))
+
+      // Fixed from paid recurring in that month
+      const fixedUsd = mockRecurring
+        .filter((r) => r.paymentHistory.some((h) => `${h.year}-${String(h.month).padStart(2,'0')}` === yearMonth) || r.mode === 'auto')
+        .filter((r) => r.currency === 'USD')
+        .reduce((s, r) => s + r.amount, 0)
+      const fixedUyu = mockRecurring
+        .filter((r) => r.paymentHistory.some((h) => `${h.year}-${String(h.month).padStart(2,'0')}` === yearMonth) || r.mode === 'auto')
+        .filter((r) => r.currency === 'UYU')
+        .reduce((s, r) => s + r.amount, 0)
+
+      return HttpResponse.json({
+        ...mockMetrics,
+        period: yearMonth,
+        totalUsd: totalUsd + fixedUsd,
+        totalUyu: totalUyu + fixedUyu,
+        variableUsd: totalUsd,
+        variableUyu: totalUyu,
+        fixedUsd,
+        fixedUyu,
+        previousPeriodUsd: 0,
+        previousPeriodUyu: 0,
+        monthlyHistory: [],
+        byCategory,
+        previousByCategory: [],
+        fixedBreakdown: [],
+      })
+    }
+    return HttpResponse.json(mockMetrics)
+  }),
 
   // ─── Salaries ────────────────────────────────────────────
   http.get(`${BASE}/salaries`, () => HttpResponse.json(mockSalaries)),
@@ -357,13 +445,21 @@ export const handlers = [
   http.delete(`${BASE}/brands/:id`, () => new HttpResponse(null, { status: 204 })),
 
   // ─── Products ─────────────────────────────────────────────
+  http.get(`${BASE}/products/global`, ({ request }) => {
+    const q = new URL(request.url).searchParams.get('q')?.toLowerCase() ?? ''
+    const results = q.length >= 2
+      ? mockGlobalProductSuggestions.filter((p) => p.name.toLowerCase().includes(q))
+      : []
+    return HttpResponse.json(results)
+  }),
+
   http.get(`${BASE}/products`, ({ request }) => {
     const url = new URL(request.url)
     const search     = url.searchParams.get('search')?.toLowerCase() ?? ''
     const categoryId = url.searchParams.get('categoryId') ?? ''
     const brandId    = url.searchParams.get('brandId') ?? ''
 
-    let results = [...mockProducts]
+    let results = [...mockUserProducts]
     if (search)     results = results.filter((p) => p.name.toLowerCase().includes(search))
     if (categoryId) results = results.filter((p) => p.productCategoryId === categoryId)
     if (brandId)    results = results.filter((p) => p.brandId === brandId)
@@ -372,20 +468,29 @@ export const handlers = [
   }),
 
   http.get(`${BASE}/products/:id`, ({ params }) => {
-    const product = mockProducts.find((p) => p.id === params['id'])
+    const product = mockUserProducts.find((p) => p.id === params['id'])
     if (!product) return new HttpResponse(null, { status: 404 })
     return HttpResponse.json(product)
   }),
 
   http.post(`${BASE}/products`, async ({ request }) => {
     const body = await request.json() as Record<string, unknown>
-    const created = { ...body, id: crypto.randomUUID(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
-    mockProducts.push(created as typeof mockProducts[0])
+    // Ensure globalProductId is always set (simulate Firestore creating global product)
+    const globalProductId = (body['globalProductId'] as string | undefined) ?? crypto.randomUUID()
+    const created = {
+      ...body,
+      id: crypto.randomUUID(),
+      globalProductId,
+      active: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+    mockUserProducts.push(created as typeof mockUserProducts[0])
     return HttpResponse.json(created, { status: 201 })
   }),
 
   http.patch(`${BASE}/products/:id`, async ({ params, request }) => {
-    const product = mockProducts.find((p) => p.id === params['id'])
+    const product = mockUserProducts.find((p) => p.id === params['id'])
     if (!product) return new HttpResponse(null, { status: 404 })
     const body = await request.json() as Record<string, unknown>
     Object.assign(product, { ...body, updatedAt: new Date().toISOString() })

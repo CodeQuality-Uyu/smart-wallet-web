@@ -6,10 +6,20 @@ import type { Product, CreateProductPayload, UpdateProductPayload } from '@/type
 import type { ProductsFilter } from '@/backend/types'
 
 export const PRODUCT_KEYS = {
-  all:     ['products'] as const,
-  list:    (filters?: ProductsFilter) => ['products', 'list', filters] as const,
-  detail:  (id: string) => ['products', 'detail', id] as const,
+  all:          ['products'] as const,
+  list:         (filters?: ProductsFilter) => ['products', 'list', filters] as const,
+  detail:       (id: string) => ['products', 'detail', id] as const,
+  globalSearch: (q: string) => ['products', 'global-search', q] as const,
 } as const
+
+export function useSearchGlobalProducts(query: string) {
+  return useQuery({
+    queryKey: PRODUCT_KEYS.globalSearch(query),
+    queryFn: () => productsService.searchGlobal(query),
+    enabled: query.length >= 2,
+    staleTime: 30_000,
+  })
+}
 
 export function useProducts(filters?: ProductsFilter) {
   return useQuery({

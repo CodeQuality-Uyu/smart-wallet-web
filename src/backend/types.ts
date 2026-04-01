@@ -13,6 +13,7 @@ import type {
   MonthClosing, CreateMonthClosingPayload,
   ProductCategory, CreateProductCategoryPayload, UpdateProductCategoryPayload,
   Brand, CreateBrandPayload, UpdateBrandPayload,
+  GlobalProduct, GlobalProductSuggestion,
   Product, CreateProductPayload, UpdateProductPayload,
   ProductPriceRecord, CreateProductPriceRecordPayload,
 } from '@/types/models'
@@ -31,6 +32,7 @@ export type {
   MonthClosing, CreateMonthClosingPayload,
   ProductCategory, CreateProductCategoryPayload, UpdateProductCategoryPayload,
   Brand, CreateBrandPayload, UpdateBrandPayload,
+  GlobalProduct, GlobalProductSuggestion,
   Product, CreateProductPayload, UpdateProductPayload,
   ProductPriceRecord, CreateProductPriceRecordPayload,
 }
@@ -120,7 +122,7 @@ export interface IExpensesBackend {
 // ─── Metrics ──────────────────────────────────────────────
 
 export interface IMetricsBackend {
-  getSummary(period: MetricsPeriod): Promise<MetricsSummary>
+  getSummary(period: MetricsPeriod, yearMonth?: string): Promise<MetricsSummary>
 }
 
 // ─── Month closings ───────────────────────────────────────
@@ -201,10 +203,11 @@ export interface PriceByPlace {
 export interface IProductsBackend {
   list(filters?: ProductsFilter): Promise<Product[]>
   getById(id: string): Promise<Product>
+  searchGlobal(query: string): Promise<GlobalProductSuggestion[]>
   create(payload: CreateProductPayload): Promise<Product>
   update(id: string, payload: UpdateProductPayload): Promise<Product>
   remove(id: string): Promise<void>
-  getPriceHistory(productId: string): Promise<ProductPriceRecord[]>
-  getPriceByPlace(productId: string): Promise<PriceByPlace[]>
+  getPriceHistory(globalProductId: string): Promise<ProductPriceRecord[]>
+  getPriceByPlace(globalProductId: string): Promise<PriceByPlace[]>
   addPriceRecord(payload: CreateProductPriceRecordPayload): Promise<ProductPriceRecord>
 }

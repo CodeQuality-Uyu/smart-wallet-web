@@ -1,12 +1,15 @@
 // src/backend/firestore/products.ts
-// Global collections: /products, /priceHistory — shared by all users
+// Global pool:   /products/{id}               — community, nameLower for search
+// User copy:     users/{uid}/products/{id}     — personal, links via globalProductId
+// Price history: /priceHistory/{id}            — keyed by globalProductId
 
 import {
-  collection, getDocs, addDoc, doc, updateDoc, getDoc, query, orderBy, where,
+  collection, getDocs, addDoc, doc, updateDoc, getDoc, query, orderBy, where, limit,
 } from 'firebase/firestore'
 import { firebaseAuth, firestore } from './config'
 import type {
   IProductsBackend,
+  GlobalProductSuggestion,
   Product,
   CreateProductPayload,
   UpdateProductPayload,
@@ -24,10 +27,12 @@ function requireUid(): string {
 
 export const firestoreProductsBackend: IProductsBackend = {
   async list(filters?: ProductsFilter): Promise<Product[]> {
-    requireUid()
-    const q = query(collection(firestore, 'products'), orderBy('name', 'asc'))
+    const uid = requireUid()
+    const q = query(collection(firestore, 'users', uid, 'products'), orderBy('name', 'asc'))
     const snap = await getDocs(q)
-    let results = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Product))
+    let results = snap.docs
+      .filter((d) => d.data()['active'] === true)
+      .map((d) => ({ id: d.id, ...d.data() } as Product))
 
     if (filters?.categoryId) {
       results = results.filter((p) => p.productCategoryId === filters.categoryId)
@@ -44,48 +49,108 @@ export const firestoreProductsBackend: IProductsBackend = {
   },
 
   async getById(id: string): Promise<Product> {
-    requireUid()
-    const snap = await getDoc(doc(firestore, 'products', id))
+    const uid = requireUid()
+    const snap = await getDoc(doc(firestore, 'users', uid, 'products', id))
     if (!snap.exists()) throw { message: 'Producto no encontrado', statusCode: 404 }
     return { id: snap.id, ...snap.data() } as Product
   },
 
-  async create(payload: CreateProductPayload): Promise<Product> {
+  async searchGlobal(queryStr: string): Promise<GlobalProductSuggestion[]> {
+    if (queryStr.length < 2) return []
     requireUid()
+    const lower = queryStr.toLowerCase()
+    const upper = lower + '\uf8ff'
+    const q = query(
+      collection(firestore, 'products'),
+      orderBy('nameLower'),
+      where('nameLower', '>=', lower),
+      where('nameLower', '<=', upper),
+      limit(8),
+    )
+    const snap = await getDocs(q)
+    return snap.docs.map((d) => {
+      const data = d.data()
+      return {
+        id: d.id,
+        name: data['name'] as string,
+        pricingType: data['pricingType'],
+        weightUnit: data['weightUnit'],
+        brandId: data['brandId'],
+        lastPlaceId: data['lastPlaceId'],
+        lastPlaceName: data['lastPlaceName'],
+        lastUnitPrice: data['lastUnitPrice'],
+        lastCurrency: data['lastCurrency'],
+        lastRecordedAt: data['lastRecordedAt'],
+      } as GlobalProductSuggestion
+    })
+  },
+
+  async create(payload: CreateProductPayload): Promise<Product> {
+    const uid = requireUid()
     const now = new Date().toISOString()
-    const data = { ...payload, createdAt: now, updatedAt: now }
-    const ref = await addDoc(collection(firestore, 'products'), data)
+
+    let globalProductId = payload.globalProductId
+
+    // If not linking to an existing global product, create one first
+    if (!globalProductId) {
+      const globalRef = await addDoc(collection(firestore, 'products'), {
+        name: payload.name,
+        nameLower: payload.name.toLowerCase(),
+        pricingType: payload.pricingType,
+        ...(payload.weightUnit ? { weightUnit: payload.weightUnit } : {}),
+        ...(payload.brandId ? { brandId: payload.brandId } : {}),
+        createdAt: now,
+      })
+      globalProductId = globalRef.id
+    }
+
+    const data: Omit<Product, 'id'> = {
+      name: payload.name,
+      pricingType: payload.pricingType,
+      ...(payload.weightUnit ? { weightUnit: payload.weightUnit } : {}),
+      productCategoryId: payload.productCategoryId,
+      ...(payload.brandId ? { brandId: payload.brandId } : {}),
+      globalProductId,
+      active: true,
+      createdAt: now,
+      updatedAt: now,
+    }
+    const ref = await addDoc(collection(firestore, 'users', uid, 'products'), data)
     return { id: ref.id, ...data }
   },
 
   async update(id: string, payload: UpdateProductPayload): Promise<Product> {
-    requireUid()
-    const ref = doc(firestore, 'products', id)
+    const uid = requireUid()
+    const ref = doc(firestore, 'users', uid, 'products', id)
     await updateDoc(ref, { ...payload, updatedAt: new Date().toISOString() })
     const snap = await getDoc(ref)
     return { id: snap.id, ...snap.data() } as Product
   },
 
-  async remove(_id: string): Promise<void> {
-    // Global products are never deleted — no-op
+  async remove(id: string): Promise<void> {
+    const uid = requireUid()
+    await updateDoc(doc(firestore, 'users', uid, 'products', id), {
+      active: false,
+      updatedAt: new Date().toISOString(),
+    })
   },
 
-  async getPriceHistory(productId: string): Promise<ProductPriceRecord[]> {
+  async getPriceHistory(globalProductId: string): Promise<ProductPriceRecord[]> {
     requireUid()
     const q = query(
       collection(firestore, 'priceHistory'),
-      where('productId', '==', productId),
+      where('productId', '==', globalProductId),
       orderBy('recordedAt', 'desc'),
     )
     const snap = await getDocs(q)
     return snap.docs.map((d) => ({ id: d.id, ...d.data() } as ProductPriceRecord))
   },
 
-  async getPriceByPlace(productId: string): Promise<PriceByPlace[]> {
+  async getPriceByPlace(globalProductId: string): Promise<PriceByPlace[]> {
     requireUid()
     const q = query(
       collection(firestore, 'priceHistory'),
-      where('productId', '==', productId),
+      where('productId', '==', globalProductId),
       orderBy('recordedAt', 'desc'),
     )
     const snap = await getDocs(q)
@@ -122,6 +187,16 @@ export const firestoreProductsBackend: IProductsBackend = {
     const now = new Date().toISOString()
     const data = { ...payload, createdAt: now }
     const ref = await addDoc(collection(firestore, 'priceHistory'), data)
+
+    // Denormalize last price info onto global product for searchGlobal suggestions
+    const globalRef = doc(firestore, 'products', payload.productId)
+    await updateDoc(globalRef, {
+      lastPlaceId: payload.placeId,
+      lastUnitPrice: payload.unitPrice,
+      lastCurrency: payload.currency,
+      lastRecordedAt: payload.recordedAt,
+    }).catch(() => { /* ignore if global product not found */ })
+
     return { id: ref.id, ...data }
   },
 }

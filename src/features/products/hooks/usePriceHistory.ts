@@ -36,7 +36,7 @@ export function useAddPriceRecord() {
         PRICE_HISTORY_KEYS.history(record.productId),
         (prev) => [record, ...(prev ?? [])],
       )
-      // Invalidate by-place so diffPct recalculates
+      // Refetch by-place so place names and diffPct are resolved by the server
       void qc.invalidateQueries({ queryKey: PRICE_HISTORY_KEYS.byPlace(record.productId) })
     },
   })

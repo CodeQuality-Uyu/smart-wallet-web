@@ -1,15 +1,110 @@
 // src/tests/mocks/data/products.ts
-import type { Product } from '@/types/models'
-import { ProductPricingType, WeightUnit } from '@/types/enums'
+import type { GlobalProduct, GlobalProductSuggestion, Product } from '@/types/models'
+import { ProductPricingType, WeightUnit, Currency } from '@/types/enums'
 
-export const mockProducts: Product[] = [
-  // ByWeight — sin marca (genéricos)
+// ─── Global pool (/products) ──────────────────────────────
+
+export const mockGlobalProducts: GlobalProduct[] = [
+  {
+    id: 'gprod-1',
+    name: 'Papa Blanca',
+    nameLower: 'papa blanca',
+    pricingType: ProductPricingType.ByWeight,
+    weightUnit: WeightUnit.Kg,
+    lastPlaceId: 'place-1',
+    lastPlaceName: 'Disco',
+    lastUnitPrice: 85,
+    lastCurrency: Currency.UYU,
+    lastRecordedAt: '2026-01-10',
+    createdAt: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 'gprod-2',
+    name: 'Milanesa de Pollo',
+    nameLower: 'milanesa de pollo',
+    pricingType: ProductPricingType.ByWeight,
+    weightUnit: WeightUnit.Kg,
+    lastPlaceId: 'place-1',
+    lastPlaceName: 'Disco',
+    lastUnitPrice: 320,
+    lastCurrency: Currency.UYU,
+    lastRecordedAt: '2026-01-08',
+    createdAt: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 'gprod-3',
+    name: 'Queso Dambo',
+    nameLower: 'queso dambo',
+    pricingType: ProductPricingType.ByWeight,
+    weightUnit: WeightUnit.Kg,
+    brandId: 'brand-1',
+    lastPlaceId: 'place-2',
+    lastPlaceName: 'Tienda Inglesa',
+    lastUnitPrice: 450,
+    lastCurrency: Currency.UYU,
+    lastRecordedAt: '2026-01-05',
+    createdAt: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 'gprod-4',
+    name: 'Leche Conaprole 1L',
+    nameLower: 'leche conaprole 1l',
+    pricingType: ProductPricingType.Fixed,
+    brandId: 'brand-1',
+    lastPlaceId: 'place-1',
+    lastPlaceName: 'Disco',
+    lastUnitPrice: 75,
+    lastCurrency: Currency.UYU,
+    lastRecordedAt: '2026-01-12',
+    createdAt: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 'gprod-5',
+    name: 'Alfajor Fulbito',
+    nameLower: 'alfajor fulbito',
+    pricingType: ProductPricingType.Fixed,
+    brandId: 'brand-2',
+    lastPlaceId: 'place-1',
+    lastPlaceName: 'Disco',
+    lastUnitPrice: 45,
+    lastCurrency: Currency.UYU,
+    lastRecordedAt: '2026-01-11',
+    createdAt: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 'gprod-6',
+    name: 'Medialunas (x6)',
+    nameLower: 'medialunas (x6)',
+    pricingType: ProductPricingType.Fixed,
+    brandId: 'brand-3',
+    lastPlaceId: 'place-2',
+    lastPlaceName: 'Tienda Inglesa',
+    lastUnitPrice: 120,
+    lastCurrency: Currency.UYU,
+    lastRecordedAt: '2026-01-09',
+    createdAt: '2026-01-01T00:00:00Z',
+  },
+]
+
+// Suggestions shape (used by searchGlobal handler)
+export const mockGlobalProductSuggestions: GlobalProductSuggestion[] = mockGlobalProducts.map(
+  ({ id, name, pricingType, weightUnit, brandId, lastPlaceId, lastPlaceName, lastUnitPrice, lastCurrency, lastRecordedAt }) => ({
+    id, name, pricingType, weightUnit, brandId,
+    lastPlaceId, lastPlaceName, lastUnitPrice, lastCurrency, lastRecordedAt,
+  }),
+)
+
+// ─── User copies (users/{uid}/products) ───────────────────
+
+export const mockUserProducts: Product[] = [
   {
     id: 'prod-1',
     name: 'Papa Blanca',
     pricingType: ProductPricingType.ByWeight,
     weightUnit: WeightUnit.Kg,
     productCategoryId: 'pcat-2',
+    globalProductId: 'gprod-1',
+    active: true,
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: '2026-01-01T00:00:00Z',
   },
@@ -19,10 +114,11 @@ export const mockProducts: Product[] = [
     pricingType: ProductPricingType.ByWeight,
     weightUnit: WeightUnit.Kg,
     productCategoryId: 'pcat-2',
+    globalProductId: 'gprod-2',
+    active: true,
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: '2026-01-01T00:00:00Z',
   },
-  // ByWeight — con marca
   {
     id: 'prod-3',
     name: 'Queso Dambo',
@@ -30,16 +126,19 @@ export const mockProducts: Product[] = [
     weightUnit: WeightUnit.Kg,
     productCategoryId: 'pcat-1',
     brandId: 'brand-1',
+    globalProductId: 'gprod-3',
+    active: true,
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: '2026-01-01T00:00:00Z',
   },
-  // Fixed — con marca
   {
     id: 'prod-4',
     name: 'Leche Conaprole 1L',
     pricingType: ProductPricingType.Fixed,
     productCategoryId: 'pcat-1',
     brandId: 'brand-1',
+    globalProductId: 'gprod-4',
+    active: true,
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: '2026-01-01T00:00:00Z',
   },
@@ -49,17 +148,23 @@ export const mockProducts: Product[] = [
     pricingType: ProductPricingType.Fixed,
     productCategoryId: 'pcat-3',
     brandId: 'brand-2',
+    globalProductId: 'gprod-5',
+    active: true,
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: '2026-01-01T00:00:00Z',
   },
-  // Fixed — sin marca
   {
     id: 'prod-6',
     name: 'Medialunas (x6)',
     pricingType: ProductPricingType.Fixed,
     productCategoryId: 'pcat-3',
     brandId: 'brand-3',
+    globalProductId: 'gprod-6',
+    active: true,
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: '2026-01-01T00:00:00Z',
   },
 ]
+
+// Backward-compat alias used by existing tests
+export const mockProducts = mockUserProducts

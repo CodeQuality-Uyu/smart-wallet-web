@@ -3,15 +3,237 @@
 .form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 4px;
 }
+
+/* ─── Category chips ─────────────────────────────────────── */
+
+.chipsWrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding-bottom: 2px;
+}
+
+.chip {
+  padding: 7px 13px;
+  border-radius: 20px;
+  background: #fff;
+  border: 1.5px solid var(--border);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: background .15s, border-color .15s;
+  font-family: inherit;
+}
+
+.chipSelected {
+  background: var(--g800);
+  border-color: var(--g800);
+  color: #fff;
+}
+
+/* ─── Pricing type selector ──────────────────────────────── */
+
+.fieldGroup {
+  margin-bottom: 14px;
+}
+
+.typeLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  margin-bottom: 8px;
+}
+
+.typeSelector {
+  display: flex;
+  gap: 8px;
+}
+
+.typeOpt {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm, 8px);
+  border: 1.5px solid var(--border);
+  background: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  transition: border-color .15s, background .15s, color .15s;
+}
+
+.typeOptActive {
+  border-color: var(--g700);
+  background: var(--g50);
+  color: var(--g800);
+}
+
+.typeSelectorLocked {
+  opacity: .55;
+  pointer-events: none;
+}
+
+.lockedHint {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+/* ─── Weight unit selector ───────────────────────────────── */
+
+.unitSelector {
+  display: flex;
+  gap: 8px;
+}
+
+.unitOpt {
+  flex: 1;
+  padding: 9px 0;
+  border-radius: var(--radius-sm, 8px);
+  border: 1.5px solid var(--border);
+  background: #fff;
+  font-family: var(--font-num, monospace);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+  text-align: center;
+  transition: border-color .15s, background .15s, color .15s;
+}
+
+.unitOptActive {
+  border-color: var(--g700);
+  background: var(--g50);
+  color: var(--g800);
+}
+
+/* ─── Field error (used below chip/unit selectors) ────────── */
+
+.fieldError {
+  font-size: 11px;
+  color: var(--rose);
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Price section ──────────────────────────────────────── */
+
+.priceSection {
+  background: var(--g50);
+  border: 1.5px dashed var(--g200);
+  border-radius: var(--radius-sm, 8px);
+  padding: 14px;
+  margin-bottom: 14px;
+}
+
+.priceSectionLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  margin-bottom: 10px;
+}
+
+.priceRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.currencyToggle {
+  display: flex;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm, 8px);
+  overflow: hidden;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.currencyBtn {
+  padding: 9px 11px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font-num, monospace);
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background .12s, color .12s;
+}
+
+.currencyBtnActive {
+  background: var(--g800);
+  color: #fff;
+}
+
+.priceInputWrap {
+  flex: 1;
+}
+
+.priceInput {
+  width: 100%;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm, 8px);
+  padding: 9px 12px;
+  font-size: 16px;
+  font-family: var(--font-num, monospace);
+  color: var(--ink);
+  background: #fff;
+  outline: none;
+  transition: border-color .15s;
+}
+
+.priceInput:focus { border-color: var(--g500); }
+
+.priceInput::placeholder { color: var(--muted); }
+
+.priceInputError { border-color: var(--rose); }
+
+/* ─── Create hint ────────────────────────────────────────── */
+
+.createHint {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 5px;
+  padding-left: 2px;
+}
+
+.createLink {
+  color: var(--ind);
+  font-weight: 600;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: inherit;
+  font-family: inherit;
+}
+
+/* ─── Actions ────────────────────────────────────────────── */
 
 .actions {
   display: flex;
+  justify-content: space-between;
   gap: 8px;
   padding-top: 4px;
 }
 
-.actions > :last-child {
+.actions > :only-child {
   flex: 1;
 }

@@ -1,0 +1,14 @@
+/* src/features/products/components/ProductNameInput.module.css */
+
+.suggName {
+  display: block;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.suggMeta {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 1px;
+}

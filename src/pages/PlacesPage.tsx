@@ -60,7 +60,7 @@ export default function PlacesPage(): React.ReactElement {
 
   return (
     <div>
-      <PageHeader title="Locales" showBack rightAction={periodTabs} />
+      <PageHeader title="Locales" rightAction={periodTabs} />
 
       <div className={styles.body}>
         <button className={styles.addBtn} onClick={() => setShowForm((s) => !s)}>

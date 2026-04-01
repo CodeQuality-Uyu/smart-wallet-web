@@ -1,9 +1,9 @@
 // src/pages/MonthClosingPage.tsx
-import React, { useState } from 'react'
+import React from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useMonthClosing, useCreateMonthClosing } from '@/hooks/useMonthClosings'
 import { useMetrics } from '@/hooks/useMetrics'
-import { useRecurringList } from '@/features/recurring/hooks/useRecurring'
+import { useRecurringList, useConfirmRecurringPayment } from '@/features/recurring/hooks/useRecurring'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Button } from '@/components/ui/Button'
 import { formatAmount, formatCurrency } from '@/utils/formatCurrency'
@@ -33,119 +33,160 @@ function ClosingDetail({ closing }: { closing: MonthClosing }): React.ReactEleme
         {/* Totals */}
         <div className={styles.card}>
           <h2 className={styles.cardTitle}>Resumen del mes</h2>
-          <div className={styles.totalGrid}>
-            {closing.totalUsd > 0 && (
-              <div className={styles.totalBlock}>
-                <p className={styles.totalLbl}>🇺🇸 Total USD</p>
-                <p className={styles.totalAmt}>{formatAmount(closing.totalUsd, Currency.USD)}</p>
-              </div>
-            )}
-            {closing.totalUyu > 0 && (
-              <div className={styles.totalBlock}>
-                <p className={styles.totalLbl}>🇺🇾 Total UYU</p>
-                <p className={styles.totalAmt}>{formatAmount(closing.totalUyu, Currency.UYU)}</p>
-              </div>
-            )}
-          </div>
-          <div className={styles.splitRow}>
-            <div className={styles.splitItem}>
-              <span className={styles.splitLbl}>Fijos</span>
-              <span className={styles.splitVal}>
-                {[
-                  closing.fixedUsd > 0 ? `${formatCurrency(closing.fixedUsd, Currency.USD)} USD` : '',
-                  closing.fixedUyu > 0 ? `${formatAmount(closing.fixedUyu, Currency.UYU)} UYU` : '',
-                ].filter(Boolean).join(' · ')}
-              </span>
+          {closing.totalUsd === 0 && closing.totalUyu === 0 ? (
+            <p className={styles.emptySection}>No se registraron gastos este mes.</p>
+          ) : (
+            <div className={styles.totalGrid}>
+              {closing.totalUsd > 0 && (
+                <div className={styles.totalBlock}>
+                  <p className={styles.totalLbl}>🇺🇸 Total USD</p>
+                  <p className={styles.totalAmt}>{formatAmount(closing.totalUsd, Currency.USD)}</p>
+                </div>
+              )}
+              {closing.totalUyu > 0 && (
+                <div className={styles.totalBlock}>
+                  <p className={styles.totalLbl}>🇺🇾 Total UYU</p>
+                  <p className={styles.totalAmt}>{formatAmount(closing.totalUyu, Currency.UYU)}</p>
+                </div>
+              )}
             </div>
-            <div className={styles.splitItem}>
-              <span className={styles.splitLbl}>Variables</span>
-              <span className={styles.splitVal}>
-                {[
-                  closing.variableUsd > 0 ? `${formatCurrency(closing.variableUsd, Currency.USD)} USD` : '',
-                  closing.variableUyu > 0 ? `${formatAmount(closing.variableUyu, Currency.UYU)} UYU` : '',
-                ].filter(Boolean).join(' · ')}
-              </span>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Top categories */}
-        {closing.topCategories.length > 0 && (
-          <div className={styles.card}>
-            <h2 className={styles.cardTitle}>Por categoría</h2>
-            {closing.topCategories.map((cat) => (
-              <div key={cat.categoryId} className={styles.catRow}>
-                <span className={styles.catIcon}>{cat.categoryIcon}</span>
-                <span className={styles.catName}>{cat.categoryName}</span>
-                <span className={styles.catAmt}>
+        <div className={styles.card}>
+          <h2 className={styles.cardTitle}>Por categoría</h2>
+          {closing.topCategories.length === 0 ? (
+            <p className={styles.emptySection}>No se registraron gastos variables este mes.</p>
+          ) : (
+            <>
+              {closing.topCategories.map((cat) => (
+                <div key={cat.categoryId} className={styles.catRow}>
+                  <span className={styles.catIcon}>{cat.categoryIcon}</span>
+                  <span className={styles.catName}>{cat.categoryName}</span>
+                  <span className={styles.catAmt}>
+                    {[
+                      cat.usd > 0 ? `${formatCurrency(cat.usd, Currency.USD)} USD` : '',
+                      cat.uyu > 0 ? `${formatAmount(cat.uyu, Currency.UYU)} UYU` : '',
+                    ].filter(Boolean).join(' + ')}
+                  </span>
+                </div>
+              ))}
+              <div className={styles.cardTotal}>
+                <span className={styles.cardTotalLbl}>Total variables</span>
+                <span className={styles.cardTotalAmt}>
                   {[
-                    cat.usd > 0 ? `${formatCurrency(cat.usd, Currency.USD)} USD` : '',
-                    cat.uyu > 0 ? `${formatAmount(cat.uyu, Currency.UYU)} UYU` : '',
-                  ].filter(Boolean).join(' + ')}
+                    closing.variableUsd > 0 ? `${formatCurrency(closing.variableUsd, Currency.USD)} USD` : '',
+                    closing.variableUyu > 0 ? `${formatAmount(closing.variableUyu, Currency.UYU)} UYU` : '',
+                  ].filter(Boolean).join(' · ') || '—'}
                 </span>
               </div>
-            ))}
-          </div>
-        )}
+            </>
+          )}
+        </div>
 
         {/* Recurring paid */}
-        {closing.recurringPaid.length > 0 && (
-          <div className={styles.card}>
-            <h2 className={styles.cardTitle}>Gastos fijos del mes</h2>
-            {closing.recurringPaid.map((r) => (
-              <div key={r.recurringId} className={styles.recurRow}>
-                <span>{r.icon}</span>
-                <span className={styles.recurName}>{r.name}</span>
-                <span className={[styles.modeBadge, r.mode === RecurringMode.Auto ? styles.modeAuto : styles.modeManual].join(' ')}>
-                  {r.mode === RecurringMode.Auto ? 'Auto' : 'Manual'}
+        <div className={styles.card}>
+          <h2 className={styles.cardTitle}>Gastos fijos del mes</h2>
+          {closing.recurringPaid.length === 0 ? (
+            <p className={styles.emptySection}>No se registraron pagos fijos este mes.</p>
+          ) : (
+            <>
+              {closing.recurringPaid.map((r) => (
+                <div key={r.recurringId} className={styles.recurRow}>
+                  <span>{r.icon}</span>
+                  <span className={styles.recurName}>{r.name}</span>
+                  <span className={[styles.modeBadge, r.mode === RecurringMode.Auto ? styles.modeAuto : styles.modeManual].join(' ')}>
+                    {r.mode === RecurringMode.Auto ? 'Auto' : 'Manual'}
+                  </span>
+                  <span className={styles.recurAmt}>{formatCurrency(r.amount, r.currency)} {r.currency}</span>
+                </div>
+              ))}
+              <div className={styles.cardTotal}>
+                <span className={styles.cardTotalLbl}>Total fijos</span>
+                <span className={styles.cardTotalAmt}>
+                  {[
+                    closing.fixedUsd > 0 ? `${formatCurrency(closing.fixedUsd, Currency.USD)} USD` : '',
+                    closing.fixedUyu > 0 ? `${formatAmount(closing.fixedUyu, Currency.UYU)} UYU` : '',
+                  ].filter(Boolean).join(' · ') || '—'}
                 </span>
-                <span className={styles.recurAmt}>{formatCurrency(r.amount, r.currency)} {r.currency}</span>
               </div>
-            ))}
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   )
 }
 
+// ─── Inline confirm payment row ──────────────────────────────
+
+function RecurringRow({ r, isPastMonth }: { r: ReturnType<typeof useRecurringList>['data'] extends (infer T)[] | undefined ? T : never; isPastMonth: boolean }): React.ReactElement {
+  const { mutateAsync: confirmPayment, isPending } = useConfirmRecurringPayment(r.id)
+  const isPaid = r.currentMonthStatus === RecurringPaymentStatus.Paid || r.mode === RecurringMode.Auto
+
+  return (
+    <div className={styles.recurRow}>
+      <span>{r.icon}</span>
+      <span className={styles.recurName}>{r.name}</span>
+      <span className={[styles.modeBadge, r.mode === RecurringMode.Auto ? styles.modeAuto : styles.modeManual].join(' ')}>
+        {r.mode === RecurringMode.Auto ? 'Auto' : 'Manual'}
+      </span>
+      <span className={styles.recurAmt}>{formatCurrency(r.amount, r.currency)} {r.currency}</span>
+      {!isPaid && (isPastMonth || r.mode === RecurringMode.Manual) && (
+        <button
+          className={styles.markPaidBtn}
+          disabled={isPending}
+          onClick={() => void confirmPayment({ amount: r.amount })}
+        >
+          {isPending ? '...' : 'Marcar pagado'}
+        </button>
+      )}
+      {isPaid && <span className={styles.paidCheck}>✓</span>}
+    </div>
+  )
+}
+
+// ─── Main page ───────────────────────────────────────────────
+
 export default function MonthClosingPage(): React.ReactElement {
   const { yearMonth } = useParams<{ yearMonth: string }>()
   const navigate = useNavigate()
-  const [confirmed, setConfirmed] = useState(false)
 
   const { data: existing, isLoading: loadingExisting } = useMonthClosing(yearMonth ?? '')
-  const { data: metrics, isLoading: loadingMetrics } = useMetrics(MetricsPeriod.Month)
   const { data: recurring = [], isLoading: loadingRecurring } = useRecurringList()
   const { mutateAsync: createClosing, isPending: creating } = useCreateMonthClosing()
 
   const now = new Date()
   const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   const isCurrentMonth = yearMonth === currentYearMonth
+  const isPastMonth = !!yearMonth && !isCurrentMonth
+  const { data: metrics, isLoading: loadingMetrics } = useMetrics(MetricsPeriod.Month, isPastMonth ? yearMonth : undefined)
+
+  const [targetYear, targetMonth] = (yearMonth ?? currentYearMonth).split('-').map(Number) as [number, number]
+  const monthName = `${MONTH_NAMES[targetMonth - 1] ?? ''} ${targetYear}`
 
   if (loadingExisting || loadingMetrics || loadingRecurring) return <LoadingSpinner fullPage />
 
   // Show saved detail if exists
   if (existing) return <ClosingDetail closing={existing} />
 
-  // Not current month and no closing → nothing to show
-  if (!isCurrentMonth || !metrics) {
+  if (!metrics) {
     return (
       <div className={styles.page}>
         <header className={styles.header}>
           <button className={styles.back} onClick={() => navigate(-1)}>←</button>
         </header>
         <div className={styles.body}>
-          <p className={styles.noData}>Este mes no tiene un cierre registrado.</p>
+          <p className={styles.noData}>No se pudieron cargar las métricas del mes.</p>
         </div>
       </div>
     )
   }
 
-  const monthName = `${MONTH_NAMES[now.getMonth()] ?? ''} ${now.getFullYear()}`
-  const pendingRecurring = recurring.filter(
-    (r) => r.mode === RecurringMode.Manual && r.currentMonthStatus === RecurringPaymentStatus.Pending,
-  )
+  const pendingRecurring = isCurrentMonth
+    ? recurring.filter((r) => r.mode === RecurringMode.Manual && r.currentMonthStatus === RecurringPaymentStatus.Pending)
+    : []
   const canClose = pendingRecurring.length === 0
 
   async function handleClose(): Promise<void> {
@@ -168,20 +209,22 @@ export default function MonthClosingPage(): React.ReactElement {
       usd: c.usd,
       uyu: c.uyu,
     }))
+    const fixedUsd = recurringPaid.filter((r) => r.currency === Currency.USD).reduce((s, r) => s + r.amount, 0)
+    const fixedUyu = recurringPaid.filter((r) => r.currency === Currency.UYU).reduce((s, r) => s + r.amount, 0)
     await createClosing({
       id: yearMonth,
-      year: now.getFullYear(),
-      month: now.getMonth() + 1,
-      totalUsd: metrics.totalUsd,
-      totalUyu: metrics.totalUyu,
+      year: targetYear,
+      month: targetMonth,
+      totalUsd: metrics.variableUsd + fixedUsd,
+      totalUyu: metrics.variableUyu + fixedUyu,
       variableUsd: metrics.variableUsd,
       variableUyu: metrics.variableUyu,
-      fixedUsd: metrics.fixedUsd,
-      fixedUyu: metrics.fixedUyu,
+      fixedUsd,
+      fixedUyu,
       recurringPaid,
       topCategories,
     })
-    navigate(`/settings/reports/${yearMonth}`)
+    // Don't navigate — React Query invalidation will set `existing` and render ClosingDetail
   }
 
   return (
@@ -191,11 +234,12 @@ export default function MonthClosingPage(): React.ReactElement {
           <button className={styles.back} onClick={() => navigate(-1)}>←</button>
         </div>
         <h1 className={styles.title}>Cerrar {monthName}</h1>
+        {isPastMonth && <p className={styles.pastBadge}>⚠️ Mes pasado sin cerrar</p>}
         <p className={styles.subtitle}>Esta acción es definitiva y no se puede deshacer.</p>
       </header>
 
       <div className={styles.body}>
-        {/* Pending blocker */}
+        {/* Pending blocker (current month only) */}
         {pendingRecurring.length > 0 && (
           <div className={styles.blocker}>
             <p className={styles.blockerTitle}>⚠️ No podés cerrar el mes todavía</p>
@@ -216,82 +260,97 @@ export default function MonthClosingPage(): React.ReactElement {
         {/* Month summary */}
         <div className={styles.card}>
           <h2 className={styles.cardTitle}>Resumen del mes</h2>
-          <div className={styles.totalGrid}>
-            {metrics.totalUsd > 0 && (
-              <div className={styles.totalBlock}>
-                <p className={styles.totalLbl}>🇺🇸 Total USD</p>
-                <p className={styles.totalAmt}>{formatAmount(metrics.totalUsd, Currency.USD)}</p>
-              </div>
-            )}
-            {metrics.totalUyu > 0 && (
-              <div className={styles.totalBlock}>
-                <p className={styles.totalLbl}>🇺🇾 Total UYU</p>
-                <p className={styles.totalAmt}>{formatAmount(metrics.totalUyu, Currency.UYU)}</p>
-              </div>
-            )}
-          </div>
-          <div className={styles.splitRow}>
-            <div className={styles.splitItem}>
-              <span className={styles.splitLbl}>Fijos</span>
-              <span className={styles.splitVal}>
-                {[
-                  metrics.fixedUsd > 0 ? `${formatCurrency(metrics.fixedUsd, Currency.USD)} USD` : '',
-                  metrics.fixedUyu > 0 ? `${formatAmount(metrics.fixedUyu, Currency.UYU)} UYU` : '',
-                ].filter(Boolean).join(' · ')}
-              </span>
+          {metrics.totalUsd === 0 && metrics.totalUyu === 0 ? (
+            <p className={styles.emptySection}>No se registraron gastos este mes.</p>
+          ) : (
+            <div className={styles.totalGrid}>
+              {metrics.totalUsd > 0 && (
+                <div className={styles.totalBlock}>
+                  <p className={styles.totalLbl}>🇺🇸 Total USD</p>
+                  <p className={styles.totalAmt}>{formatAmount(metrics.totalUsd, Currency.USD)}</p>
+                </div>
+              )}
+              {metrics.totalUyu > 0 && (
+                <div className={styles.totalBlock}>
+                  <p className={styles.totalLbl}>🇺🇾 Total UYU</p>
+                  <p className={styles.totalAmt}>{formatAmount(metrics.totalUyu, Currency.UYU)}</p>
+                </div>
+              )}
             </div>
-            <div className={styles.splitItem}>
-              <span className={styles.splitLbl}>Variables</span>
-              <span className={styles.splitVal}>
-                {[
-                  metrics.variableUsd > 0 ? `${formatCurrency(metrics.variableUsd, Currency.USD)} USD` : '',
-                  metrics.variableUyu > 0 ? `${formatAmount(metrics.variableUyu, Currency.UYU)} UYU` : '',
-                ].filter(Boolean).join(' · ')}
-              </span>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Categories */}
-        {metrics.byCategory.length > 0 && (
-          <div className={styles.card}>
-            <h2 className={styles.cardTitle}>Por categoría</h2>
-            {metrics.byCategory.slice(0, 5).map((cat) => (
-              <div key={cat.categoryId} className={styles.catRow}>
-                <span className={styles.catIcon}>{cat.categoryIcon}</span>
-                <span className={styles.catName}>{cat.categoryName}</span>
-                <span className={styles.catAmt}>
+        <div className={styles.card}>
+          <h2 className={styles.cardTitle}>Por categoría</h2>
+          {metrics.byCategory.length === 0 ? (
+            <p className={styles.emptySection}>No se registraron gastos variables este mes.</p>
+          ) : (
+            <>
+              {metrics.byCategory.slice(0, 5).map((cat) => (
+                <div key={cat.categoryId} className={styles.catRow}>
+                  <span className={styles.catIcon}>{cat.categoryIcon}</span>
+                  <span className={styles.catName}>{cat.categoryName}</span>
+                  <span className={styles.catAmt}>
+                    {[
+                      cat.usd > 0 ? `${formatCurrency(cat.usd, Currency.USD)} USD` : '',
+                      cat.uyu > 0 ? `${formatAmount(cat.uyu, Currency.UYU)} UYU` : '',
+                    ].filter(Boolean).join(' + ')}
+                  </span>
+                </div>
+              ))}
+              <div className={styles.cardTotal}>
+                <span className={styles.cardTotalLbl}>Total variables</span>
+                <span className={styles.cardTotalAmt}>
                   {[
-                    cat.usd > 0 ? `${formatCurrency(cat.usd, Currency.USD)} USD` : '',
-                    cat.uyu > 0 ? `${formatAmount(cat.uyu, Currency.UYU)} UYU` : '',
-                  ].filter(Boolean).join(' + ')}
+                    metrics.variableUsd > 0 ? `${formatCurrency(metrics.variableUsd, Currency.USD)} USD` : '',
+                    metrics.variableUyu > 0 ? `${formatAmount(metrics.variableUyu, Currency.UYU)} UYU` : '',
+                  ].filter(Boolean).join(' · ') || '—'}
                 </span>
               </div>
-            ))}
-          </div>
-        )}
+            </>
+          )}
+        </div>
 
-        {/* Confirm checkbox + button */}
+        {/* Recurring — all of them, markable if unpaid */}
+        <div className={styles.card}>
+          <h2 className={styles.cardTitle}>Gastos fijos del mes</h2>
+          {recurring.length === 0 ? (
+            <p className={styles.emptySection}>No hay gastos fijos configurados.</p>
+          ) : (
+            <>
+              {recurring.map((r) => (
+                <RecurringRow key={r.id} r={r} isPastMonth={isPastMonth} />
+              ))}
+              {(() => {
+                const fUsd = recurring.filter((r) => r.currency === Currency.USD && (r.mode === RecurringMode.Auto || r.currentMonthStatus === RecurringPaymentStatus.Paid)).reduce((s, r) => s + r.amount, 0)
+                const fUyu = recurring.filter((r) => r.currency === Currency.UYU && (r.mode === RecurringMode.Auto || r.currentMonthStatus === RecurringPaymentStatus.Paid)).reduce((s, r) => s + r.amount, 0)
+                return (fUsd > 0 || fUyu > 0) ? (
+                  <div className={styles.cardTotal}>
+                    <span className={styles.cardTotalLbl}>Total fijos</span>
+                    <span className={styles.cardTotalAmt}>
+                      {[
+                        fUsd > 0 ? `${formatCurrency(fUsd, Currency.USD)} USD` : '',
+                        fUyu > 0 ? `${formatAmount(fUyu, Currency.UYU)} UYU` : '',
+                      ].filter(Boolean).join(' · ')}
+                    </span>
+                  </div>
+                ) : null
+              })()}
+            </>
+          )}
+        </div>
+
+        {/* Close button */}
         {canClose && (
-          <div className={styles.confirmSection}>
-            <label className={styles.confirmCheck}>
-              <input
-                type="checkbox"
-                checked={confirmed}
-                onChange={(e) => setConfirmed(e.target.checked)}
-              />
-              <span>Confirmo que los datos del mes son correctos y quiero cerrar definitivamente.</span>
-            </label>
-            <Button
-              variant="secondary"
-              fullWidth
-              disabled={!confirmed}
-              loading={creating}
-              onClick={() => void handleClose()}
-            >
-              Cerrar {monthName}
-            </Button>
-          </div>
+          <Button
+            variant="secondary"
+            fullWidth
+            loading={creating}
+            onClick={() => void handleClose()}
+          >
+            {isPastMonth ? `Registrar cierre de ${monthName}` : `Cerrar ${monthName}`}
+          </Button>
         )}
       </div>
     </div>

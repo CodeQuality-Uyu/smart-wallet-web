@@ -173,6 +173,7 @@ export function BrandAutocomplete({ name = 'brandId' }: BrandAutocompleteProps):
               className={[
                 styles.option,
                 styles.optionCreate,
+                items.length > 0 ? styles.optionCreateSeparated : '',
                 activeIndex === items.length ? styles.optionActive : '',
               ].join(' ')}
               onMouseDown={() => void triggerCreate()}

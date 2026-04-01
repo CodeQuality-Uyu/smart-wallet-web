@@ -4,6 +4,7 @@ import React, { Suspense, lazy } from 'react'
 import { createBrowserRouter, RouterProvider, Navigate, Outlet } from 'react-router-dom'
 import { AppLayout } from '@/layouts/AppLayout'
 import { AuthLayout } from '@/layouts/AuthLayout'
+import { SettingsLayout } from '@/layouts/SettingsLayout'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { useAuth } from '@/app/providers/AuthContext'
 
@@ -40,6 +41,7 @@ const VerifyCodePage = lazy(() => import('@/pages/VerifyCodePage'))
 const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'))
 const ProductCategoriesPage = lazy(() => import('@/pages/ProductCategoriesPage'))
 const ProductsPage = lazy(() => import('@/pages/ProductsPage'))
+const NewProductPage = lazy(() => import('@/pages/NewProductPage'))
 const ProductDetailPage = lazy(() => import('@/pages/ProductDetailPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 
@@ -104,56 +106,24 @@ const router = createBrowserRouter([
         element: <SuspenseWrapper><MetricsPage /></SuspenseWrapper>,
       },
       {
-        path: '/settings/recurring',
-        element: <SuspenseWrapper><RecurringPage /></SuspenseWrapper>,
-      },
-      {
-        path: '/settings/recurring/:id',
-        element: <SuspenseWrapper><RecurringDetailPage /></SuspenseWrapper>,
-      },
-      {
-        path: '/settings/categories',
-        element: <SuspenseWrapper><CategoriesPage /></SuspenseWrapper>,
-      },
-      {
-        path: '/settings/places',
-        element: <SuspenseWrapper><PlacesPage /></SuspenseWrapper>,
-      },
-      {
-        path: '/settings/cards',
-        element: <SuspenseWrapper><CardsPage /></SuspenseWrapper>,
-      },
-      {
         path: '/settings',
-        element: <SuspenseWrapper><SettingsPage /></SuspenseWrapper>,
-      },
-      {
-        path: '/settings/budget',
-        element: <SuspenseWrapper><BudgetSettingsPage /></SuspenseWrapper>,
-      },
-      {
-        path: '/settings/salaries',
-        element: <SuspenseWrapper><SalariesPage /></SuspenseWrapper>,
-      },
-      {
-        path: '/settings/reports',
-        element: <SuspenseWrapper><ReportsPage /></SuspenseWrapper>,
-      },
-      {
-        path: '/settings/reports/:yearMonth',
-        element: <SuspenseWrapper><MonthClosingPage /></SuspenseWrapper>,
-      },
-      {
-        path: '/settings/product-categories',
-        element: <SuspenseWrapper><ProductCategoriesPage /></SuspenseWrapper>,
-      },
-      {
-        path: '/settings/products',
-        element: <SuspenseWrapper><ProductsPage /></SuspenseWrapper>,
-      },
-      {
-        path: '/settings/products/:id',
-        element: <SuspenseWrapper><ProductDetailPage /></SuspenseWrapper>,
+        element: <SettingsLayout />,
+        children: [
+          { index: true, element: <SuspenseWrapper><SettingsPage /></SuspenseWrapper> },
+          { path: 'recurring', element: <SuspenseWrapper><RecurringPage /></SuspenseWrapper> },
+          { path: 'recurring/:id', element: <SuspenseWrapper><RecurringDetailPage /></SuspenseWrapper> },
+          { path: 'categories', element: <SuspenseWrapper><CategoriesPage /></SuspenseWrapper> },
+          { path: 'places', element: <SuspenseWrapper><PlacesPage /></SuspenseWrapper> },
+          { path: 'cards', element: <SuspenseWrapper><CardsPage /></SuspenseWrapper> },
+          { path: 'budget', element: <SuspenseWrapper><BudgetSettingsPage /></SuspenseWrapper> },
+          { path: 'salaries', element: <SuspenseWrapper><SalariesPage /></SuspenseWrapper> },
+          { path: 'reports', element: <SuspenseWrapper><ReportsPage /></SuspenseWrapper> },
+          { path: 'reports/:yearMonth', element: <SuspenseWrapper><MonthClosingPage /></SuspenseWrapper> },
+          { path: 'product-categories', element: <SuspenseWrapper><ProductCategoriesPage /></SuspenseWrapper> },
+          { path: 'products', element: <SuspenseWrapper><ProductsPage /></SuspenseWrapper> },
+          { path: 'products/new', element: <SuspenseWrapper><NewProductPage /></SuspenseWrapper> },
+          { path: 'products/:id', element: <SuspenseWrapper><ProductDetailPage /></SuspenseWrapper> },
+        ],
       },
         ],
       },

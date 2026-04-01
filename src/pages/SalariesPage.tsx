@@ -66,7 +66,7 @@ export default function SalariesPage(): React.ReactElement {
 
   return (
     <div>
-      <PageHeader title="Sueldos" subtitle="Registrá tus ingresos mensuales" showBack />
+      <PageHeader title="Sueldos" subtitle="Registrá tus ingresos mensuales" />
 
       <div className={styles.body}>
         {showForm && (

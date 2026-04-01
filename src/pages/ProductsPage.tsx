@@ -2,20 +2,17 @@
 
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useProducts, useCreateProduct } from '@/features/products/hooks/useProducts'
+import { useProducts } from '@/features/products/hooks/useProducts'
 import { useProductCategories } from '@/features/products/hooks/useProductCategories'
 import { useBrands } from '@/features/products/hooks/useBrands'
 import { ProductListItem } from '@/features/products/components/ProductListItem'
-import { ProductForm } from '@/features/products/components/ProductForm'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
-import type { ProductFormValues } from '@/features/products/schemas/productSchema'
 import type { ProductsFilter } from '@/backend/types'
 import styles from './ProductsPage.module.css'
 
 export default function ProductsPage(): React.ReactElement {
   const navigate = useNavigate()
-  const [showForm, setShowForm] = useState(false)
   const [search, setSearch] = useState('')
   const [selectedCategoryId, setSelectedCategoryId] = useState('')
 
@@ -27,21 +24,9 @@ export default function ProductsPage(): React.ReactElement {
   const { data: products = [], isLoading } = useProducts(filter)
   const { data: categories = [] } = useProductCategories()
   const { data: brands = [] } = useBrands()
-  const { mutateAsync: createProduct } = useCreateProduct()
 
   const brandMap = Object.fromEntries(brands.map((b) => [b.id, b]))
   const categoryMap = Object.fromEntries(categories.map((c) => [c.id, c]))
-
-  async function handleSubmit(values: ProductFormValues): Promise<void> {
-    await createProduct({
-      name: values.name,
-      pricingType: values.pricingType,
-      weightUnit: values.weightUnit ?? undefined,
-      productCategoryId: values.productCategoryId,
-      brandId: values.brandId ?? undefined,
-    })
-    setShowForm(false)
-  }
 
   const filterBar = (
     <div className={styles.filterBar}>
@@ -58,7 +43,7 @@ export default function ProductsPage(): React.ReactElement {
 
   return (
     <div>
-      <PageHeader title="Productos" showBack rightAction={filterBar} />
+      <PageHeader title="Productos" rightAction={filterBar} />
 
       <div className={styles.body}>
         {/* Category filter chips */}
@@ -82,20 +67,9 @@ export default function ProductsPage(): React.ReactElement {
           </div>
         )}
 
-        <button className={styles.addBtn} onClick={() => setShowForm((s) => !s)}>
+        <button className={styles.addBtn} onClick={() => void navigate('/settings/products/new')}>
           ＋ Agregar producto
         </button>
-
-        {showForm && (
-          <div className={styles.form}>
-            <h2 className={styles.formTitle}>Nuevo producto</h2>
-            <ProductForm
-              onSubmit={handleSubmit}
-              submitLabel="Crear producto"
-              onCancel={() => setShowForm(false)}
-            />
-          </div>
-        )}
 
         {isLoading ? (
           <LoadingSpinner />

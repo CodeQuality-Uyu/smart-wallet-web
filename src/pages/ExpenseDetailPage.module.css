@@ -86,17 +86,21 @@
 .ticketTitle { font-family: var(--font-head); font-size: 13px; font-weight: 700; color: var(--ink); }
 
 .addLineForm {
-  display: flex; gap: 8px; align-items: flex-end;
+  display: flex; flex-direction: column; gap: 8px;
   padding: 10px 12px;
   background: #f8fafc; border-radius: 10px;
   border: 1.5px dashed var(--ind-md);
   margin-bottom: 8px;
 }
 
+.addLineRow {
+  display: flex; gap: 8px; align-items: center;
+}
+
 .lineInput {
   border: 1.5px solid var(--border); border-radius: 8px;
   padding: 8px 10px; font-size: 13px; background: #fff;
-  font-family: var(--font-body); outline: none; flex: 1;
+  font-family: var(--font-body); outline: none; width: 100%; min-width: 0;
 }
 
 .lineInput:focus { border-color: var(--g400); }
@@ -114,11 +118,66 @@
   margin-bottom: 6px; border: 1.5px solid var(--border);
 }
 
-.lineName { font-size: 13px; font-weight: 500; color: var(--ink); }
-.lineRight { display: flex; align-items: center; gap: 8px; }
+.lineLeft { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.lineName { font-size: 13px; font-weight: 500; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lineRight { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+.linkedBadge { font-size: 13px; line-height: 1; flex-shrink: 0; }
+
+/* ─── Line product autocomplete ─────────────────────────── */
+
+.lineProductWrap { position: relative; flex: 1; }
+
+.lineDropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0; right: 0;
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 16px rgba(0,0,0,.10);
+  z-index: 200;
+  max-height: 200px;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+}
+
+.lineDropdownItem {
+  padding: 9px 14px;
+  cursor: pointer;
+  transition: background .1s;
+}
+
+.lineDropdownItem:hover { background: var(--g50); }
+
+.lineDropdownName {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+}
 .lineAmt { font-family: var(--font-num); font-size: 13px; font-weight: 600; color: var(--ink); }
 .lineDelete {
   width: 22px; height: 22px;
   background: var(--rose-lt); color: var(--rose);
   border: none; border-radius: 6px; font-size: 14px;
+}
+
+.lineHint {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+  padding-left: 2px;
+}
+
+.lineHintLink {
+  color: var(--ind);
+  font-weight: 600;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: inherit;
+  font-family: inherit;
 }

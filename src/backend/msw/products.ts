@@ -3,6 +3,7 @@
 import { httpClient } from '@/api/httpClient'
 import type {
   IProductsBackend,
+  GlobalProductSuggestion,
   Product,
   CreateProductPayload,
   UpdateProductPayload,
@@ -28,6 +29,13 @@ export const mswProductsBackend: IProductsBackend = {
     return data
   },
 
+  async searchGlobal(query: string): Promise<GlobalProductSuggestion[]> {
+    const { data } = await httpClient.get<GlobalProductSuggestion[]>(
+      `/products/global?q=${encodeURIComponent(query)}`,
+    )
+    return data
+  },
+
   async create(payload: CreateProductPayload): Promise<Product> {
     const { data } = await httpClient.post<Product>('/products', payload)
     return data
@@ -42,13 +50,13 @@ export const mswProductsBackend: IProductsBackend = {
     await httpClient.delete(`/products/${id}`)
   },
 
-  async getPriceHistory(productId: string): Promise<ProductPriceRecord[]> {
-    const { data } = await httpClient.get<ProductPriceRecord[]>(`/products/${productId}/price-history`)
+  async getPriceHistory(globalProductId: string): Promise<ProductPriceRecord[]> {
+    const { data } = await httpClient.get<ProductPriceRecord[]>(`/products/${globalProductId}/price-history`)
     return data
   },
 
-  async getPriceByPlace(productId: string): Promise<PriceByPlace[]> {
-    const { data } = await httpClient.get<PriceByPlace[]>(`/products/${productId}/price-by-place`)
+  async getPriceByPlace(globalProductId: string): Promise<PriceByPlace[]> {
+    const { data } = await httpClient.get<PriceByPlace[]>(`/products/${globalProductId}/price-by-place`)
     return data
   },
 
