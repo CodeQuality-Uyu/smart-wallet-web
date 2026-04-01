@@ -1,0 +1,17 @@
+/* src/features/products/components/ProductForm.module.css */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.actions > :last-child {
+  flex: 1;
+}
