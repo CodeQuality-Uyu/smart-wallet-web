@@ -1,0 +1,92 @@
+/* src/pages/ProductCategoriesPage.module.css */
+
+.body { padding: 16px 20px; }
+
+.addBtn {
+  width: 100%; padding: 13px;
+  border: 2px dashed var(--border); border-radius: var(--radius);
+  background: #fff; color: var(--muted);
+  font-size: 13px; font-weight: 600; margin-bottom: 12px;
+  font-family: inherit; cursor: pointer;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 9px;
+  margin-bottom: 14px;
+}
+
+.tile {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 13px 10px;
+  border: 1.5px solid var(--border);
+  text-align: center;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.tileIcon { font-size: 24px; }
+
+.tileName {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.editBtn {
+  position: absolute;
+  top: 6px; right: 6px;
+  width: 18px; height: 18px;
+  border-radius: 5px;
+  background: var(--g50);
+  color: var(--g500);
+  font-size: 11px;
+  border: none;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+
+/* inline form */
+.form {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 16px;
+  border: 1.5px solid var(--border-g);
+  margin-bottom: 14px;
+}
+
+.formTitle {
+  font-family: var(--font-head);
+  font-size: 13px; font-weight: 700; color: var(--ink);
+  margin-bottom: 12px;
+}
+
+.formRow { display: flex; gap: 10px; align-items: flex-start; }
+
+.iconPicker {
+  display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px;
+}
+
+.icoBtn {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: #fff; border: 1.5px solid var(--border);
+  font-size: 17px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+
+.icoBtnActive {
+  border-color: var(--g500);
+  background: var(--g50);
+  box-shadow: 0 0 0 2px rgba(22,163,74,.18);
+}
+
+.formError { font-size: 12px; color: var(--red, #dc2626); margin-bottom: 10px; }
+
+.formActions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }

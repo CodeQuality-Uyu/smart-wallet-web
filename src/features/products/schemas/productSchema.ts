@@ -5,9 +5,9 @@ import { ProductPricingType, WeightUnit } from '@/types/enums'
 export const productSchema = Yup.object({
   name: Yup.string()
     .trim()
+    .required('El nombre es requerido')
     .min(2, 'Mínimo 2 caracteres')
-    .max(100, 'Máximo 100 caracteres')
-    .required('El nombre es requerido'),
+    .max(100, 'Máximo 100 caracteres'),
 
   pricingType: Yup.mixed<ProductPricingType>()
     .oneOf(Object.values(ProductPricingType), 'Tipo de precio inválido')

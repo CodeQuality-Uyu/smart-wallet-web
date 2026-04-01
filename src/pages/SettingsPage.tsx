@@ -14,6 +14,8 @@ const SECTIONS: SettingItem[] = [
   { icon: '📋', label: 'Reportes', description: 'Cierres mensuales e historial de gastos', path: '/settings/reports' },
   { icon: '🔄', label: 'Pagos recurrentes', description: 'Suscripciones y servicios mensuales', path: '/settings/recurring' },
   { icon: '📍', label: 'Locales', description: 'Lugares donde realizás gastos', path: '/settings/places' },
+  { icon: '🛒', label: 'Productos', description: 'Catálogo de productos del mercado', path: '/settings/products' },
+  { icon: '🏷️', label: 'Categorías de productos', description: 'Tipos de producto para el catálogo', path: '/settings/product-categories' },
   { icon: '🏷️', label: 'Categorías', description: 'Organizá tus gastos por tipo', path: '/settings/categories' },
   { icon: '💳', label: 'Medios de pago', description: 'Tarjetas y formas de pago', path: '/settings/cards' },
   { icon: '💰', label: 'Sueldos', description: 'Registrá tus ingresos mensuales', path: '/settings/salaries' },

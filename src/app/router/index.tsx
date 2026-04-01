@@ -38,6 +38,9 @@ const CategoryPickerPage = lazy(() => import('@/pages/CategoryPickerPage'))
 const LoginPage = lazy(() => import('@/pages/LoginPage'))
 const VerifyCodePage = lazy(() => import('@/pages/VerifyCodePage'))
 const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'))
+const ProductCategoriesPage = lazy(() => import('@/pages/ProductCategoriesPage'))
+const ProductsPage = lazy(() => import('@/pages/ProductsPage'))
+const ProductDetailPage = lazy(() => import('@/pages/ProductDetailPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 
 const SuspenseWrapper = ({ children }: { children: React.ReactNode }): React.ReactElement => (
@@ -139,6 +142,18 @@ const router = createBrowserRouter([
       {
         path: '/settings/reports/:yearMonth',
         element: <SuspenseWrapper><MonthClosingPage /></SuspenseWrapper>,
+      },
+      {
+        path: '/settings/product-categories',
+        element: <SuspenseWrapper><ProductCategoriesPage /></SuspenseWrapper>,
+      },
+      {
+        path: '/settings/products',
+        element: <SuspenseWrapper><ProductsPage /></SuspenseWrapper>,
+      },
+      {
+        path: '/settings/products/:id',
+        element: <SuspenseWrapper><ProductDetailPage /></SuspenseWrapper>,
       },
         ],
       },
