@@ -19,6 +19,12 @@ function isoDate(d: Date): string {
   return d.toISOString().split('T')[0] as string
 }
 
+function getYearMonthBounds(yearMonth: string): { start: string; end: string } {
+  const [y, m] = yearMonth.split('-').map(Number) as [number, number]
+  const last = new Date(y, m, 0).getDate()
+  return { start: `${yearMonth}-01`, end: `${yearMonth}-${String(last).padStart(2, '0')}` }
+}
+
 function getPeriodBounds(period: MPeriod): { start: string; end: string } {
   const now = new Date()
   const today = isoDate(now)
@@ -66,7 +72,7 @@ function sumByCurrency(expenses: Expense[], currency: Currency): number {
 }
 
 export const firestoreMetricsBackend: IMetricsBackend = {
-  async getSummary(period: MPeriod): Promise<MetricsSummary> {
+  async getSummary(period: MPeriod, yearMonth?: string): Promise<MetricsSummary> {
     const uid = requireUid()
 
     // Fetch all expenses, categories, and recurring in parallel
@@ -82,7 +88,7 @@ export const firestoreMetricsBackend: IMetricsBackend = {
       .map((d) => ({ id: d.id, ...d.data() } as Category))
     const recurring = recSnap.docs.map((d) => ({ id: d.id, ...d.data() } as RecurringExpense))
 
-    const bounds = getPeriodBounds(period)
+    const bounds = yearMonth ? getYearMonthBounds(yearMonth) : getPeriodBounds(period)
     const prevBounds = getPreviousPeriodBounds(period)
 
     const currentExpenses = allExpenses.filter((e) => e.date >= bounds.start && e.date <= bounds.end)

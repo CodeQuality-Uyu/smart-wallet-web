@@ -1,7 +1,7 @@
 // src/backend/index.ts
 // Factory: returns the correct backend implementation based on VITE_BACKEND
 
-import type { IAuthBackend, IBudgetBackend, ICardsBackend, ICategoriesBackend, IExpensesBackend, IMetricsBackend, IPlacesBackend, IRecurringBackend, ISalariesBackend, IMonthClosingsBackend } from './types'
+import type { IAuthBackend, IBudgetBackend, ICardsBackend, ICategoriesBackend, IExpensesBackend, IMetricsBackend, IPlacesBackend, IRecurringBackend, ISalariesBackend, IMonthClosingsBackend, IProductCategoriesBackend, IBrandsBackend, IProductsBackend } from './types'
 
 type BackendType = 'msw' | 'firestore' | 'aws'
 
@@ -18,6 +18,9 @@ let _recurringBackend: IRecurringBackend | null = null
 let _budgetBackend: IBudgetBackend | null = null
 let _salariesBackend: ISalariesBackend | null = null
 let _monthClosingsBackend: IMonthClosingsBackend | null = null
+let _productCategoriesBackend: IProductCategoriesBackend | null = null
+let _brandsBackend: IBrandsBackend | null = null
+let _productsBackend: IProductsBackend | null = null
 
 export async function getAuthBackend(): Promise<IAuthBackend> {
   if (_authBackend) return _authBackend
@@ -138,6 +141,42 @@ export async function getMonthClosingsBackend(): Promise<IMonthClosingsBackend> 
     _monthClosingsBackend = mswMonthClosingsBackend
   }
   return _monthClosingsBackend
+}
+
+export async function getProductCategoriesBackend(): Promise<IProductCategoriesBackend> {
+  if (_productCategoriesBackend) return _productCategoriesBackend
+  if (backend === 'firestore') {
+    const { firestoreProductCategoriesBackend } = await import('./firestore/productCategories')
+    _productCategoriesBackend = firestoreProductCategoriesBackend
+  } else {
+    const { mswProductCategoriesBackend } = await import('./msw/productCategories')
+    _productCategoriesBackend = mswProductCategoriesBackend
+  }
+  return _productCategoriesBackend
+}
+
+export async function getBrandsBackend(): Promise<IBrandsBackend> {
+  if (_brandsBackend) return _brandsBackend
+  if (backend === 'firestore') {
+    const { firestoreBrandsBackend } = await import('./firestore/brands')
+    _brandsBackend = firestoreBrandsBackend
+  } else {
+    const { mswBrandsBackend } = await import('./msw/brands')
+    _brandsBackend = mswBrandsBackend
+  }
+  return _brandsBackend
+}
+
+export async function getProductsBackend(): Promise<IProductsBackend> {
+  if (_productsBackend) return _productsBackend
+  if (backend === 'firestore') {
+    const { firestoreProductsBackend } = await import('./firestore/products')
+    _productsBackend = firestoreProductsBackend
+  } else {
+    const { mswProductsBackend } = await import('./msw/products')
+    _productsBackend = mswProductsBackend
+  }
+  return _productsBackend
 }
 
 export { backend as activeBackend }

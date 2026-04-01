@@ -54,7 +54,6 @@ export const mswRecurringBackend: IRecurringBackend = {
     const { data } = await httpClient.post<RecurringPaymentHistory>(
       `/recurring/${id}/confirm-payment`,
       form,
-      { headers: { 'Content-Type': 'multipart/form-data' } },
     )
     return data
   },

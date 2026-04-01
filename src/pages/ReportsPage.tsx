@@ -24,13 +24,28 @@ export default function ReportsPage(): React.ReactElement {
   const currentClosing = closings.find((c) => c.id === currentYearMonth)
   const pastClosings = closings.filter((c) => c.id !== currentYearMonth)
 
+  // Build list of past months without a closing (up to 6 months back)
+  const pendingMonths: { id: string; year: number; month: number; label: string }[] = []
+  for (let i = 1; i <= 6; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const id = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    if (!closings.find((c) => c.id === id)) {
+      pendingMonths.push({
+        id,
+        year: d.getFullYear(),
+        month: d.getMonth() + 1,
+        label: `${MONTH_NAMES[d.getMonth()] ?? ''} ${d.getFullYear()}`,
+      })
+    }
+  }
+
   const pendingRecurring = recurring.filter(
     (r) => r.mode === RecurringMode.Manual && r.currentMonthStatus === RecurringPaymentStatus.Pending,
   )
 
   return (
     <div>
-      <PageHeader title="Reportes" subtitle="Cierres mensuales e historial de gastos" showBack />
+      <PageHeader title="Reportes" subtitle="Cierres mensuales e historial de gastos" />
 
       <div className={styles.body}>
         {/* ── Mes actual ── */}
@@ -63,37 +78,47 @@ export default function ReportsPage(): React.ReactElement {
         {/* ── Historial ── */}
         <div className={styles.section}>
           <p className={styles.sectionLabel}>Historial</p>
-          {pastClosings.length === 0 ? (
+          {pendingMonths.map((pm) => (
+            <button
+              key={pm.id}
+              className={styles.row}
+              onClick={() => navigate(`/settings/reports/${pm.id}`)}
+            >
+              <div className={styles.rowLeft}>
+                <p className={styles.rowMonth}>{pm.label}</p>
+                <p className={styles.statusPending}>⚠️ Pendiente de cierre</p>
+              </div>
+              <span className={styles.arrow}>Generar →</span>
+            </button>
+          ))}
+          {pastClosings.length === 0 && pendingMonths.length === 0 && (
             <p className={styles.empty}>No hay cierres anteriores registrados.</p>
-          ) : (
-            <>
-              {pastClosings.map((closing) => {
-                const monthName = `${MONTH_NAMES[closing.month - 1] ?? ''} ${closing.year}`
-                const closedDate = new Date(closing.closedAt).toLocaleDateString('es-UY', { day: 'numeric', month: 'short', year: 'numeric' })
-                return (
-                  <button
-                    key={closing.id}
-                    className={styles.row}
-                    onClick={() => navigate(`/settings/reports/${closing.id}`)}
-                  >
-                    <div className={styles.rowLeft}>
-                      <p className={styles.rowMonth}>{monthName}</p>
-                      <p className={styles.rowDate}>Cerrado el {closedDate}</p>
-                    </div>
-                    <div className={styles.rowRight}>
-                      {closing.totalUsd > 0 && (
-                        <p className={styles.rowAmt}>{formatAmount(closing.totalUsd, Currency.USD)} USD</p>
-                      )}
-                      {closing.totalUyu > 0 && (
-                        <p className={styles.rowAmt}>{formatAmount(closing.totalUyu, Currency.UYU)} UYU</p>
-                      )}
-                      <span className={styles.arrow}>→</span>
-                    </div>
-                  </button>
-                )
-              })}
-            </>
           )}
+          {pastClosings.map((closing) => {
+            const monthName = `${MONTH_NAMES[closing.month - 1] ?? ''} ${closing.year}`
+            const closedDate = new Date(closing.closedAt).toLocaleDateString('es-UY', { day: 'numeric', month: 'short', year: 'numeric' })
+            return (
+              <button
+                key={closing.id}
+                className={styles.row}
+                onClick={() => navigate(`/settings/reports/${closing.id}`)}
+              >
+                <div className={styles.rowLeft}>
+                  <p className={styles.rowMonth}>{monthName}</p>
+                  <p className={styles.rowDate}>Cerrado el {closedDate}</p>
+                </div>
+                <div className={styles.rowRight}>
+                  {closing.totalUsd > 0 && (
+                    <p className={styles.rowAmt}>{formatAmount(closing.totalUsd, Currency.USD)} USD</p>
+                  )}
+                  {closing.totalUyu > 0 && (
+                    <p className={styles.rowAmt}>{formatAmount(closing.totalUyu, Currency.UYU)} UYU</p>
+                  )}
+                  <span className={styles.arrow}>→</span>
+                </div>
+              </button>
+            )
+          })}
         </div>
       </div>
     </div>

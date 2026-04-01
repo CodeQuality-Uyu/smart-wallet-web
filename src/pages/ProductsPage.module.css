@@ -1,0 +1,118 @@
+/* src/pages/ProductsPage.module.css */
+
+.body { padding: 12px 0; }
+
+/* ─── Filter bar (in PageHeader rightAction) ─── */
+
+.filterBar {
+  display: flex;
+  align-items: center;
+}
+
+.searchInput {
+  border: 1.5px solid rgba(255,255,255,.4);
+  border-radius: 20px;
+  background: rgba(255,255,255,.18);
+  color: #fff;
+  font-size: 12px;
+  font-family: inherit;
+  padding: 5px 12px;
+  outline: none;
+  width: 130px;
+  transition: border-color .15s, background .15s;
+}
+
+.searchInput::placeholder { color: rgba(255,255,255,.6); }
+
+.searchInput:focus {
+  background: rgba(255,255,255,.28);
+  border-color: rgba(255,255,255,.7);
+}
+
+@media (min-width: 768px) {
+  .searchInput {
+    background: #fff;
+    color: var(--ink);
+    border-color: var(--border);
+    width: 160px;
+  }
+  .searchInput::placeholder { color: var(--muted); }
+  .searchInput:focus { border-color: var(--g500); }
+}
+
+/* ─── Category chips ─────────────────────────── */
+
+.catChips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 0 16px 10px;
+  overflow-x: auto;
+}
+
+.catChip {
+  padding: 5px 11px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  background: #fff;
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.catChipActive {
+  background: var(--g50);
+  color: var(--g700);
+  border-color: var(--g300);
+}
+
+/* ─── Add button ─────────────────────────────── */
+
+.addBtn {
+  width: calc(100% - 32px);
+  margin: 0 16px 12px;
+  padding: 13px;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* ─── Inline form ────────────────────────────── */
+
+.form {
+  background: #fff;
+  margin: 0 16px 12px;
+  border-radius: var(--radius);
+  padding: 16px;
+  border: 1.5px solid var(--border-g);
+}
+
+.formTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 14px;
+}
+
+/* ─── List ───────────────────────────────────── */
+
+.list {
+  background: #fff;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.empty {
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+  padding: 32px 16px;
+}

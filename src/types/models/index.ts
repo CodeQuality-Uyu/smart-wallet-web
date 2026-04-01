@@ -7,6 +7,8 @@ import {
   RecurringFrequency,
   RecurringStatus,
   RecurringPaymentStatus,
+  ProductPricingType,
+  WeightUnit,
 } from '@/types/enums'
 
 // ─── Shared ───────────────────────────────────────────────
@@ -84,6 +86,7 @@ export interface TicketLine {
   id: string
   name: string
   amount: number
+  productId?: string
 }
 
 export interface Expense extends Timestamps {
@@ -240,6 +243,93 @@ export interface MonthClosing {
 }
 
 export type CreateMonthClosingPayload = Omit<MonthClosing, 'closedAt'>
+
+// ─── Product catalog ──────────────────────────────────────
+
+export interface ProductCategory extends Timestamps {
+  id: string
+  name: string
+  icon: string
+}
+
+export type CreateProductCategoryPayload = Omit<ProductCategory, 'id' | 'createdAt' | 'updatedAt'>
+export type UpdateProductCategoryPayload = Partial<CreateProductCategoryPayload>
+
+export interface Brand extends Timestamps {
+  id: string
+  name: string
+}
+
+export type CreateBrandPayload = Pick<Brand, 'name'>
+export type UpdateBrandPayload = Partial<CreateBrandPayload>
+
+// Global pool: /products/{id} — community data, no categoryId
+export interface GlobalProduct {
+  id: string
+  name: string
+  nameLower: string
+  pricingType: ProductPricingType
+  weightUnit?: WeightUnit
+  brandId?: string
+  // Denormalized last price info (updated on each addPriceRecord)
+  lastPlaceId?: string
+  lastPlaceName?: string
+  lastUnitPrice?: number
+  lastCurrency?: Currency
+  lastRecordedAt?: string
+  createdAt: string
+}
+
+// Suggestion returned by searchGlobal
+export interface GlobalProductSuggestion {
+  id: string
+  name: string
+  pricingType: ProductPricingType
+  weightUnit?: WeightUnit
+  brandId?: string
+  brandName?: string
+  lastPlaceId?: string
+  lastPlaceName?: string
+  lastUnitPrice?: number
+  lastCurrency?: Currency
+  lastRecordedAt?: string
+}
+
+// User copy: users/{uid}/products/{id} — personal, links to global via globalProductId
+export interface Product extends Timestamps {
+  id: string
+  name: string
+  pricingType: ProductPricingType
+  weightUnit?: WeightUnit
+  productCategoryId: string
+  brandId?: string
+  globalProductId: string
+  active: boolean
+}
+
+export interface CreateProductPayload {
+  name: string
+  pricingType: ProductPricingType
+  weightUnit?: WeightUnit
+  productCategoryId: string
+  brandId?: string
+  globalProductId?: string // if set, links to existing global product (no new global created)
+}
+export type UpdateProductPayload = Partial<Omit<CreateProductPayload, 'globalProductId'>>
+
+export interface ProductPriceRecord {
+  id: string
+  productId: string
+  placeId: string
+  unitPrice: number
+  currency: Currency
+  recordedAt: string
+  expenseId?: string
+  lineItemId?: string
+  createdAt: string
+}
+
+export type CreateProductPriceRecordPayload = Omit<ProductPriceRecord, 'id' | 'createdAt'>
 
 // ─── Auth / User ──────────────────────────────────────────
 

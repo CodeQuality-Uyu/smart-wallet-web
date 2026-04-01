@@ -54,7 +54,7 @@ export default function CategoriesPage(): React.ReactElement {
 
   return (
     <div>
-      <PageHeader title="Categorías" subtitle="Tocá para editar" showBack />
+      <PageHeader title="Categorías" subtitle="Tocá para editar" />
 
       <div className={styles.body}>
         <button

@@ -59,7 +59,7 @@ export default function CardsPage(): React.ReactElement {
 
   return (
     <div>
-      <PageHeader title="Tarjetas" subtitle="Tus métodos de pago" showBack />
+      <PageHeader title="Tarjetas" subtitle="Tus métodos de pago" />
 
       <div className={styles.body}>
         <button className={styles.addBtn} onClick={() => setShowForm((s) => !s)}>
