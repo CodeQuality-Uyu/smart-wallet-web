@@ -148,7 +148,7 @@ export default function ExpenseDetailPage(): React.ReactElement {
     if (isByWeight && weightUnit) {
       const weightValue = parseFloat(newLineWeight)
       unitPrice = calcUnitPrice(weightValue, weightUnit, amount)
-    }
+  }[]
 
     await addLine({
       name: newLineName,
@@ -157,21 +157,21 @@ export default function ExpenseDetailPage(): React.ReactElement {
     })
 
     // Compare with last price for this place and record if changed
-    if (newLineProduct.globalProductId && expense.placeId) {
+    if (newLineProduct.globalProductId && expense!.placeId) {
       try {
         const cached = qc.getQueryData<PriceByPlace[]>(
           PRICE_HISTORY_KEYS.byPlace(newLineProduct.globalProductId)
         )
-        const existingEntry = cached?.find((r) => r.placeId === expense.placeId)
+        const existingEntry = cached?.find((r) => r.placeId === expense!.placeId)
         const shouldRecord = !existingEntry || existingEntry.unitPrice !== unitPrice
 
         if (shouldRecord) {
           await addPriceRecord({
             productId: newLineProduct.globalProductId,
-            placeId: expense.placeId,
+            placeId: expense!.placeId,
             unitPrice,
-            currency: expense.currency as Currency,
-            recordedAt: expense.date,
+            currency: expense!.currency as Currency,
+            recordedAt: expense!.date,
           })
         }
       } catch {
