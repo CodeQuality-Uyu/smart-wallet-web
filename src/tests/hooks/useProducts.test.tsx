@@ -1,6 +1,5 @@
 // src/tests/hooks/useProducts.test.tsx
 
-import React from 'react'
 import { describe, it, expect } from 'vitest'
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -8,7 +7,7 @@ import { useProducts, useProduct, useCreateProduct, useDeleteProduct, useUpdateP
 import { useAddPriceRecord } from '@/features/products/hooks/usePriceHistory'
 import { renderWithProviders, createTestQueryClient } from '../utils/renderWithProviders'
 import { QueryClientProvider } from '@tanstack/react-query'
-import { ProductPricingType, WeightUnit, Currency } from '@/types/enums'
+import { ProductPricingType, Currency } from '@/types/enums'
 
 // ─── useProducts ──────────────────────────────────────────
 

@@ -13,7 +13,7 @@ interface ProductNameInputProps {
 }
 
 export function ProductNameInput({ onSelectGlobal }: ProductNameInputProps): React.ReactElement {
-  const [field, meta, helpers] = useField<string>('name')
+  const [field, _meta, helpers] = useField<string>('name')
   const [searchQuery, setSearchQuery] = useState('')
   const [open, setOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)

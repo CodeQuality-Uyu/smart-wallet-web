@@ -151,4 +151,3 @@ for (const user of usersSnap.docs) {
 ---
 
 - tips y metricas dinamicos
-- productos separados de linea de producto como comunidad

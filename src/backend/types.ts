@@ -17,7 +17,7 @@ import type {
   Product, CreateProductPayload, UpdateProductPayload,
   ProductPriceRecord, CreateProductPriceRecordPayload,
 } from '@/types/models'
-import type { MetricsPeriod, RecurringStatus } from '@/types/enums'
+import type { Currency, MetricsPeriod, RecurringStatus } from '@/types/enums'
 
 export type {
   Card, CreateCardPayload,
@@ -195,7 +195,7 @@ export interface PriceByPlace {
   placeId: string
   placeName: string
   unitPrice: number
-  currency: string
+  currency: Currency
   recordedAt: string
   diffPct: number
 }

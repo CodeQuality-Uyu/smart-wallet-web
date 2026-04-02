@@ -142,7 +142,7 @@ export default function ProductDetailPage(): React.ReactElement {
 
   async function handleDelete(): Promise<void> {
     if (!window.confirm('¿Eliminar este producto?')) return
-    await deleteProduct(product.id)
+    await deleteProduct(product!.id)
     navigate('/settings/products')
   }
 
