@@ -64,7 +64,8 @@ function DesktopLayout(): React.ReactElement {
           <div className={styles.desktopUser}>
             {user && (
               <span className={styles.desktopUserGreeting}>
-                Hola, <strong>{user.name}</strong>
+                <span className={styles.desktopUserGreetingLabel}>Hola,</span>
+                <strong>{user.name}</strong>
               </span>
             )}
             <button className={styles.desktopAvatar} onClick={handleLogout} title="Cerrar sesión">

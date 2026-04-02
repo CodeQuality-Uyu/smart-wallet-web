@@ -73,7 +73,7 @@
 /* Top nav bar */
 .desktopNav {
   background: #fff;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-subtle);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -101,16 +101,16 @@
 .desktopLogoMark {
   width: 36px; height: 36px;
   background: linear-gradient(135deg, var(--gold-dk), var(--gold));
-  border-radius: 50%;
+  border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
   font-family: var(--font-num); font-size: 16px; font-weight: 700;
-  color: var(--ink);
+  color: var(--ink-desktop);
   flex-shrink: 0;
 }
 
 .desktopLogoName {
   font-family: var(--font-head);
-  font-size: 17px; font-weight: 800; color: var(--ink);
+  font-size: 17px; font-weight: 800; color: var(--ink-desktop);
 }
 
 /* Nav links */
@@ -127,15 +127,15 @@
   padding: 6px 14px;
   border-radius: 8px;
   font-size: 14px; font-weight: 500;
-  color: var(--muted);
+  color: var(--muted-desktop);
   text-decoration: none;
   transition: color .12s;
 }
 
-.desktopNavLink:hover { color: var(--ink); }
+.desktopNavLink:hover { color: var(--ink-desktop); }
 
 .desktopNavLinkActive {
-  color: var(--g300);
+  color: #10b981;
   font-weight: 700;
 }
 
@@ -149,12 +149,20 @@
 }
 
 .desktopUserGreeting {
-  font-size: 13px;
-  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.25;
+}
+
+.desktopUserGreetingLabel {
+  font-size: 11px;
+  color: var(--muted-desktop);
 }
 
 .desktopUserGreeting strong {
-  color: var(--ink);
+  font-size: 14px;
+  color: var(--ink-desktop);
   font-weight: 600;
 }
 
@@ -164,7 +172,7 @@
   border-radius: 50%;
   border: none; cursor: pointer;
   font-family: var(--font-head);
-  font-size: 13px; font-weight: 800; color: var(--ink);
+  font-size: 13px; font-weight: 800; color: var(--ink-desktop);
 }
 
 /* Main content */
