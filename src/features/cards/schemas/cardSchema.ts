@@ -10,6 +10,7 @@ export const cardSchema = Yup.object({
   lastFour: Yup.string()
     .matches(/^\d{4}$/, 'Deben ser exactamente 4 dígitos')
     .required('Los últimos 4 dígitos son requeridos'),
+  color: Yup.string().optional(),
 })
 
 export type CardFormValues = Yup.InferType<typeof cardSchema>

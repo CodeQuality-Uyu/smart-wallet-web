@@ -8,7 +8,7 @@
   .mobileView { display: none; }
   .desktopView {
     display: flex;
-    align-items: flex-start;
+    align-items: stretch;
     min-height: 100%;
     background: #fff;
   }
@@ -102,5 +102,7 @@
     min-width: 0;
     padding: 32px 32px 44px;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
 }

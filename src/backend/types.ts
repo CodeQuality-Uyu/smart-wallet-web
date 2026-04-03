@@ -40,6 +40,8 @@ import type {
   ProductPriceRecord,
   CreateProductPriceRecordPayload,
   CategoryLimits,
+  Notification,
+  NotificationPrefs,
 } from '@/types/models'
 import type { Currency, PeriodFilter, RecurringStatus } from '@/types/enums'
 
@@ -82,6 +84,8 @@ export type {
   UpdateProductPayload,
   ProductPriceRecord,
   CreateProductPriceRecordPayload,
+  Notification,
+  NotificationPrefs,
 }
 
 // ─── Auth ──────────────────────────────────────────────────
@@ -118,6 +122,7 @@ export interface IAuthBackend {
 export interface ICardsBackend {
   list(): Promise<Card[]>
   create(payload: CreateCardPayload): Promise<Card>
+  update(id: string, payload: Partial<CreateCardPayload>): Promise<Card>
   remove(id: string): Promise<void>
 }
 
@@ -274,4 +279,14 @@ export interface IProductsBackend {
   getPriceHistory(globalProductId: string): Promise<ProductPriceRecord[]>
   getPriceByPlace(globalProductId: string): Promise<PriceByPlace[]>
   addPriceRecord(payload: CreateProductPriceRecordPayload): Promise<ProductPriceRecord>
+}
+
+// ─── Notifications ────────────────────────────────────────
+
+export interface INotificationsBackend {
+  list(): Promise<Notification[]>
+  markRead(id: string): Promise<Notification>
+  markAllRead(): Promise<void>
+  getPrefs(): Promise<NotificationPrefs>
+  setPrefs(prefs: NotificationPrefs): Promise<NotificationPrefs>
 }

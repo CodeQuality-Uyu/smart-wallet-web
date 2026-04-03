@@ -1,1 +1,3 @@
-export let mockCategoryLimits: Record<string, number> = {}
+import type { CategoryLimits } from '@/types/models'
+
+export let mockCategoryLimits: CategoryLimits = {}

@@ -21,6 +21,7 @@ import {
 } from '@/utils/groupByDate'
 import { formatAmount, formatCurrency } from '@/utils/formatCurrency'
 import { Currency, PeriodFilter, GroupBy } from '@/types/enums'
+import { CURRENCY_OPTIONS } from '@/constants/currencyOptions'
 import styles from './ExpensesPage.module.css'
 
 const MONTH_NAMES = [
@@ -36,12 +37,6 @@ const MONTH_NAMES = [
   'Octubre',
   'Noviembre',
   'Diciembre',
-]
-
-const CURRENCY_OPTIONS = [
-  { value: '' as const, label: 'Todas' },
-  { value: Currency.USD, label: 'USD' },
-  { value: Currency.UYU, label: 'UYU' },
 ]
 
 const GROUP_OPTIONS = [
@@ -72,10 +67,8 @@ export default function ExpensesPage(): React.ReactElement {
   const now = new Date()
   const monthLabel = `${MONTH_NAMES[now.getMonth()] ?? ''} ${now.getFullYear()}`
 
-  const expenses = page?.data ?? []
-
   const filtered = useMemo(() => {
-    let list = expenses
+    let list = page?.data ?? []
     if (search.trim()) {
       const q = search.trim().toLowerCase()
       list = list.filter((e) => e.description.toLowerCase().includes(q))
@@ -87,7 +80,7 @@ export default function ExpensesPage(): React.ReactElement {
       list = list.filter((e) => filterCategoryIds.some((id) => e.categoryIds.includes(id)))
     }
     return list
-  }, [expenses, search, filterCurrency, filterCardId, filterPlaceId, filterCategoryIds])
+  }, [page?.data, search, filterCurrency, filterCardId, filterPlaceId, filterCategoryIds])
 
   const groups = useMemo(() => {
     switch (groupBy) {

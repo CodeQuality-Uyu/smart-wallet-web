@@ -7,9 +7,47 @@
   border: 2px dashed var(--border); border-radius: var(--radius);
   background: #fff; color: var(--muted);
   font-size: 13px; font-weight: 600; margin-bottom: 8px;
+  font-family: inherit; cursor: pointer;
 }
 
-/* card item */
+/* Color picker — shared (mobile + desktop) */
+.colorPreview {
+  border-radius: 12px; padding: 14px 16px;
+  margin-bottom: 12px; min-height: 80px;
+  display: flex; flex-direction: column; justify-content: flex-end; gap: 4px;
+  position: relative; overflow: hidden;
+}
+.colorPreview::before {
+  content: ''; position: absolute;
+  width: 100px; height: 100px; border-radius: 50%;
+  background: rgba(255,255,255,.08); top: -30px; right: -20px;
+}
+.colorPreviewNumber {
+  font-family: var(--font-num);
+  font-size: 13px; color: rgba(255,255,255,.75);
+  letter-spacing: .15em; position: relative; z-index: 1;
+}
+.colorPreviewBank {
+  font-family: var(--font-head);
+  font-size: 12px; font-weight: 700; color: rgba(255,255,255,.9);
+  position: relative; z-index: 1;
+}
+.colorSwatches {
+  display: flex; flex-wrap: wrap; gap: 8px;
+}
+.colorSwatch {
+  width: 28px; height: 28px; border-radius: 8px;
+  border: 2px solid transparent; cursor: pointer;
+  transition: transform .1s, border-color .1s;
+}
+.colorSwatch:hover { transform: scale(1.1); }
+.colorSwatchActive {
+  border-color: #fff;
+  box-shadow: 0 0 0 2px var(--g600);
+  transform: scale(1.1);
+}
+
+/* card item — mobile */
 .card {
   display: flex; align-items: center; gap: 12px;
   padding: 14px 16px; border-radius: var(--radius);
@@ -43,6 +81,7 @@
 }
 .cardDelete:hover { background: rgba(255,80,80,.4); }
 
+
 /* form */
 .form {
   background: #fff; border-radius: var(--radius);
@@ -70,6 +109,7 @@
   text-align: center; cursor: pointer;
   font-size: 12px; font-weight: 600; color: var(--muted);
   display: flex; flex-direction: column; align-items: center; gap: 4px;
+  font-family: inherit;
 }
 
 .typeOpt span { font-size: 18px; }
@@ -84,75 +124,173 @@
   display: flex; gap: 8px; justify-content: space-between; margin-top: 4px;
 }
 
-@media (min-width: 768px) {
-  .body { padding: 0 0 32px; display: flex; flex-direction: column; gap: 20px; }
+/* New button — desktop only */
+.newBtn { display: none; }
 
-  /* Cards grid */
+/* ── Desktop ──────────────────────────────────────────────── */
+@media (min-width: 768px) {
+  .newBtn {
+    display: block;
+    padding: 10px 20px; border-radius: 16px;
+    font-size: 14px; font-weight: 700;
+    font-family: var(--font-head);
+    background: linear-gradient(135deg, #f5b732, #e09422);
+    color: #1a1a0e; border: none; cursor: pointer;
+    box-shadow: 0 4px 14px rgba(245,183,50,.3);
+    white-space: nowrap;
+    transition: box-shadow .15s, transform .15s;
+  }
+  .newBtn:hover {
+    box-shadow: 0 6px 20px rgba(245,183,50,.45);
+    transform: translateY(-1px);
+  }
+
+  .body { padding: 0 0 32px; display: flex; flex-direction: column; gap: 24px; }
+
+  /* Add button — hidden desktop, replaced by header rightAction */
+  .addBtn { display: none; }
+
+  /* ── Cards grid ── */
   .cardsGrid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 14px;
+    gap: 16px;
   }
 
   .card {
     flex-direction: column;
     align-items: flex-start;
-    padding: 20px;
-    border-radius: 20px;
-    margin-bottom: 0;
-    min-height: 140px;
     justify-content: space-between;
+    padding: 24px;
+    border-radius: 24px;
+    margin-bottom: 0;
+    min-height: 180px;
+    gap: 0;
+    cursor: pointer;
+    transition: transform .18s ease, box-shadow .18s ease;
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0,0,0,.18);
   }
 
-  .cardBadge {
-    width: 44px; height: 44px;
-    border-radius: 14px;
-    font-size: 22px;
-    margin-bottom: 8px;
+  /* radial glow in top-right */
+  .card::before {
+    width: 200px; height: 200px;
+    top: -80px; right: -60px;
+    background: radial-gradient(circle, rgba(245,183,50,.15), transparent 70%);
+  }
+
+  .cardTop {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 32px;
+    position: relative; z-index: 1;
+  }
+
+  .cardStatusBadge {
+    font-size: 12px; padding: 4px 10px; border-radius: 99px;
+    font-weight: 600;
+    background: rgba(16,185,129,.2); color: #34d399;
+  }
+
+  .cardStatusBadgeCredit {
+    background: rgba(139,92,246,.2); color: #a78bfa;
+  }
+
+  .cardStatusBadgeDebit {
+    background: rgba(59,130,246,.2); color: #60a5fa;
+  }
+
+  .cardBrandLabel {
+    font-family: var(--font-head);
+    font-size: 14px; font-weight: 700;
+    color: rgba(255,255,255,.7);
+  }
+
+  .cardBadge { display: none; }
+
+  .cardNumber {
+    font-family: var(--font-num);
+    font-size: 18px; color: #fff;
+    letter-spacing: .15em;
+    margin-bottom: 20px;
+    position: relative; z-index: 1;
+  }
+
+  .cardBottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    width: 100%;
+    position: relative; z-index: 1;
+  }
+
+  .cardMeta { display: flex; flex-direction: column; gap: 2px; }
+
+  .cardMetaLabel {
+    font-size: 10px; text-transform: uppercase;
+    letter-spacing: .1em; color: #7fad98;
+    margin-bottom: 2px;
   }
 
   .cardInfo { width: 100%; }
+  .cardName { display: none; }
+  .cardLast4 { display: none; }
+  .cardTypeLbl { display: none; }
 
-  .cardName { font-size: 15px; }
-  .cardLast4 { font-size: 13px; margin-top: 4px; }
-  .cardTypeLbl { font-size: 11px; margin-top: 2px; }
-
-  .cardDelete {
-    position: absolute;
-    top: 12px; right: 12px;
+  .cardHolder {
+    font-size: 14px; color: #fff; font-weight: 500;
   }
 
-  /* Dashed placeholder card */
+  .cardExpiry {
+    font-family: var(--font-num);
+    font-size: 14px; color: #fff;
+  }
+
+  .cardDelete {
+    margin-left: auto;
+  }
+
+  /* Dashed placeholder */
   .cardPlaceholder {
-    border: 2px dashed rgba(16,185,129,.3);
-    border-radius: 20px;
-    min-height: 140px;
+    border: 2px dashed #ddd8cc;
+    border-radius: 24px;
+    min-height: 180px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 12px;
     cursor: pointer;
-    background: var(--g50);
+    background: transparent;
     transition: border-color .15s, background .15s;
   }
   .cardPlaceholder:hover {
     border-color: var(--g400);
-    background: rgba(16,185,129,.06);
+    background: var(--g50);
   }
 
   .cardPlaceholderIcon {
-    font-size: 28px;
-    opacity: 0.5;
+    width: 56px; height: 56px;
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    background: #f5f0e5; color: var(--muted);
   }
 
   .cardPlaceholderText {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--g600);
+    font-family: var(--font-head);
+    font-size: 14px; font-weight: 600; color: var(--muted);
   }
 
-  /* 2-col layout */
+  .cardPlaceholderSub {
+    font-size: 12px; color: #b0a892; margin-top: -8px;
+  }
+
+  /* ── 2-col section ── */
   .twoCol {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -160,70 +298,135 @@
   }
 
   .colSection {
+    background: #faf8f5;
+    border: 1px solid #e8e2d6;
+    border-radius: 24px;
+    padding: 24px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
   }
+
+  .colHeader {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .colHeaderLeft {
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .colHeaderIcon { font-size: 18px; }
 
   .colTitle {
     font-family: var(--font-head);
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: .08em;
-    padding-bottom: 8px;
-    border-bottom: 1.5px solid var(--border);
+    font-size: 16px; font-weight: 700; color: var(--ink);
   }
 
-  /* Footer default method */
-  .defaultFooter {
-    background: var(--g50);
-    border: 1.5px solid var(--g200);
-    border-radius: 14px;
-    padding: 14px 18px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+  .colAddBtn {
+    font-size: 12px; padding: 6px 12px; border-radius: 12px;
+    font-weight: 600; background: rgba(16,185,129,.1); color: var(--g600);
+    border: none; cursor: pointer; font-family: inherit;
   }
+  .colAddBtn:hover { background: rgba(16,185,129,.18); }
+
+  .colItem {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px; border-radius: 16px;
+    background: #fff; border: 1px solid #e8e2d6;
+  }
+
+  .colItemEmoji { font-size: 18px; flex-shrink: 0; }
+
+  .colItemInfo { flex: 1; min-width: 0; }
+
+  .colItemNameRow {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 2px;
+  }
+
+  .colItemName { font-size: 14px; font-weight: 600; color: var(--ink); }
+
+  .colItemBadge {
+    font-size: 10px; padding: 2px 8px; border-radius: 99px;
+    background: #f5f0e5; color: var(--muted);
+  }
+
+  .colItemSub { font-size: 12px; color: var(--muted); }
+
+  .colItemSubLinked { color: var(--g600); }
+
+  .colEmpty { font-size: 13px; color: var(--muted); padding: 8px 0; }
+
+  /* ── Footer ── */
+  .defaultFooter {
+    padding: 20px;
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: linear-gradient(135deg, rgba(245,183,50,.08), rgba(16,185,129,.05));
+    border: 1px solid #e8e2d6;
+  }
+
+  .defaultFooterLeft {
+    display: flex; align-items: center; gap: 12px;
+  }
+
+  .defaultFooterIcon { font-size: 18px; }
 
   .defaultLabel {
-    font-size: 13px;
-    color: var(--ink);
-    font-weight: 600;
+    font-size: 14px; font-weight: 600; color: var(--ink);
+  }
+
+  .defaultSub {
+    font-size: 12px; color: var(--muted); margin-top: 2px;
+  }
+
+  .defaultRight {
+    display: flex; align-items: center; gap: 12px;
+  }
+
+  .defaultCard {
+    font-family: var(--font-num);
+    font-size: 14px; font-weight: 500;
+    padding: 6px 12px; border-radius: 12px;
+    background: #fff; border: 1px solid #e8e2d6; color: var(--ink);
   }
 
   .defaultLink {
-    font-size: 13px;
+    font-size: 12px; font-weight: 600; color: #f5b732;
+    background: none; border: none; cursor: pointer; font-family: inherit;
+  }
+
+  .defaultPicker {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    padding: 16px 20px;
+    background: #fff; border: 1px solid #e8e2d6; border-radius: 16px;
+  }
+
+  .defaultPickerItem {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 14px; border-radius: 12px;
+    border: 1.5px solid #e8e2d6; background: #faf8f5;
+    font-size: 13px; font-weight: 500; color: var(--ink);
+    cursor: pointer; font-family: inherit;
+    transition: border-color .12s, background .12s;
+  }
+  .defaultPickerItem:hover { border-color: var(--g500); background: var(--g50); }
+
+  .defaultPickerItemActive {
+    border-color: var(--g600); background: var(--g50); color: var(--g700);
     font-weight: 600;
-    color: #e09422;
-    background: none;
-    border: none;
-    cursor: pointer;
-    text-decoration: underline;
-    padding: 0;
-    font-family: inherit;
   }
 
-  /* Add button */
-  .addBtn {
-    border-radius: 14px;
-    border-color: var(--g200);
-    color: var(--g600);
-    font-size: 14px;
-    padding: 14px;
-    margin-bottom: 0;
-  }
-  .addBtn:hover {
-    border-color: var(--g400);
-    background: var(--g50);
+  .defaultPickerSwatch {
+    width: 16px; height: 16px; border-radius: 4px; flex-shrink: 0;
   }
 
-  /* Form */
+  /* Form desktop */
   .form {
-    border-radius: 16px;
-    padding: 24px;
+    border-radius: 20px;
+    padding: 28px;
+    border-color: #e8e2d6;
   }
 
-  .formTitle { font-size: 15px; }
+  .formTitle { font-size: 16px; margin-bottom: 20px; }
 }

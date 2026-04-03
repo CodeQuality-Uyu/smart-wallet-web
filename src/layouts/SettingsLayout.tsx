@@ -19,7 +19,7 @@ const SECTIONS: SectionItem[] = [
   { icon: '🏷️', label: 'Categ. productos', path: '/settings/product-categories' },
   { icon: '🏷️', label: 'Categorías', path: '/settings/categories' },
   { icon: '💳', label: 'Medios de pago', path: '/settings/cards' },
-  { icon: '🎯', label: 'Presupuesto', path: '/settings/budget' },
+  { icon: '🔔', label: 'Notificaciones', path: '/settings/notifications' },
 ]
 
 export function SettingsLayout(): React.ReactElement {

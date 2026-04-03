@@ -65,6 +65,12 @@ const SECTIONS: SettingItem[] = [
     description: 'Límite de gasto mensual por moneda',
     path: '/settings/budget',
   },
+  {
+    icon: '🔔',
+    label: 'Notificaciones',
+    description: 'Alertas, canales y horario silencioso',
+    path: '/settings/notifications',
+  },
 ]
 
 export default function SettingsPage(): React.ReactElement {

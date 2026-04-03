@@ -26,7 +26,6 @@ interface ExpenseFormProps {
 const CARD_TYPE_LABEL: Record<CardType, string> = {
   [CardType.Credit]: 'Crédito',
   [CardType.Debit]: 'Débito',
-  [CardType.Transfer]: 'Transferencia',
 }
 
 const DEFAULT_VALUES: ExpenseFormValues = {
@@ -85,10 +84,11 @@ export function ExpenseForm({
     >
       {({ isSubmitting, values, setFieldValue }) => (
         <Form className={styles.form} noValidate>
-
           {/* Amount + currency toggle */}
           <div className={isDesktop ? styles.amountSectionDesktop : styles.amountSection}>
-            <p className={isDesktop ? styles.amountLabelDesktop : styles.amountLabel}>¿Cuánto gastaste?</p>
+            <p className={isDesktop ? styles.amountLabelDesktop : styles.amountLabel}>
+              ¿Cuánto gastaste?
+            </p>
             <div className={styles.amountRow}>
               <span className={isDesktop ? styles.amtSymbolDesktop : styles.amtSymbol}>
                 {values.currency === Currency.USD ? 'U$S' : '$'}
@@ -101,17 +101,27 @@ export function ExpenseForm({
                   placeholder="0.00"
                   className={isDesktop ? styles.amountInputDesktop : styles.amountInput}
                   aria-label="Monto"
-                  onFocus={(e) => { if (Number(e.target.value) === 0) void setFieldValue('amount', '') }}
+                  onFocus={(e) => {
+                    if (Number(e.target.value) === 0) void setFieldValue('amount', '')
+                  }}
                 />
               </FormField>
-              <div className={isDesktop ? styles.currencyToggleDesktop : styles.currencyToggle} role="group" aria-label="Moneda">
+              <div
+                className={isDesktop ? styles.currencyToggleDesktop : styles.currencyToggle}
+                role="group"
+                aria-label="Moneda"
+              >
                 {currencyOptions.map((opt) => (
                   <button
                     key={opt.value}
                     type="button"
                     className={[
                       isDesktop ? styles.currencyBtnDesktop : styles.currencyBtn,
-                      values.currency === opt.value ? (isDesktop ? styles.currencyBtnActiveDesktop : styles.currencyBtnActive) : '',
+                      values.currency === opt.value
+                        ? isDesktop
+                          ? styles.currencyBtnActiveDesktop
+                          : styles.currencyBtnActive
+                        : '',
                     ].join(' ')}
                     onClick={() => void setFieldValue('currency', opt.value)}
                   >
@@ -136,7 +146,11 @@ export function ExpenseForm({
               />
               <p className={styles.createHint}>
                 ¿No encontrás el medio de pago?{' '}
-                <button type="button" className={styles.createLink} onClick={() => setActiveModal('card')}>
+                <button
+                  type="button"
+                  className={styles.createLink}
+                  onClick={() => setActiveModal('card')}
+                >
                   Agregar nueva
                 </button>
               </p>
@@ -176,14 +190,23 @@ export function ExpenseForm({
               />
               <p className={styles.createHint}>
                 ¿No encontrás el lugar?{' '}
-                <button type="button" className={styles.createLink} onClick={() => setActiveModal('place')}>
+                <button
+                  type="button"
+                  className={styles.createLink}
+                  onClick={() => setActiveModal('place')}
+                >
                   Crear nuevo
                 </button>
               </p>
             </FormField>
 
             <FormField name="date" label="Fecha">
-              <TextInput name="date" type="date" icon="📅" max={new Date().toISOString().split('T')[0]} />
+              <TextInput
+                name="date"
+                type="date"
+                icon="📅"
+                max={new Date().toISOString().split('T')[0]}
+              />
             </FormField>
           </div>
 

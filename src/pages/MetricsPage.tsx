@@ -11,7 +11,7 @@ import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { formatAmount, formatCurrency } from '@/utils/formatCurrency'
 import { PeriodFilter, Currency, RecurringFrequency } from '@/types/enums'
 import styles from './MetricsPage.module.css'
-
+import { CURRENCY_OPTIONS } from '../constants/currencyOptions'
 const MONTH_NAMES = [
   'Enero',
   'Febrero',
@@ -35,11 +35,9 @@ function fmtShort(n: number): string {
   return String(Math.round(n))
 }
 
-type CurrencyFilter = 'both' | 'usd' | 'uyu'
-
 export default function MetricsPage(): React.ReactElement {
   const [period, setPeriod] = useState(PeriodFilter.Month)
-  const [currencyFilter, setCurrencyFilter] = useState<CurrencyFilter>('both')
+  const [currencyFilter, setCurrencyFilter] = useState<Currency | ''>('')
   const [activeCatId, setActiveCatId] = useState<string>('')
   const { data: metrics, isLoading, error, refetch } = useMetrics(period)
   const { data: budget } = useBudget()
@@ -107,11 +105,11 @@ export default function MetricsPage(): React.ReactElement {
   const rateUyu = incomeUyu > 0 ? Math.round((savedUyu / incomeUyu) * 100) : 0
 
   // Para filtro moneda única
-  const incomeForFilter = currencyFilter === 'usd' ? incomeUsd : incomeUyu
-  const spentForFilter = currencyFilter === 'usd' ? spentUsd : spentUyu
-  const savedForFilter = currencyFilter === 'usd' ? savedUsd : savedUyu
-  const savingsRatePct = currencyFilter === 'usd' ? rateUsd : rateUyu
-  const displayCurrency = currencyFilter === 'usd' ? Currency.USD : Currency.UYU
+  const incomeForFilter = currencyFilter === Currency.USD ? incomeUsd : incomeUyu
+  const spentForFilter = currencyFilter === Currency.USD ? spentUsd : spentUyu
+  const savedForFilter = currencyFilter === Currency.USD ? savedUsd : savedUyu
+  const savingsRatePct = currencyFilter === Currency.USD ? rateUsd : rateUyu
+  const displayCurrency = currencyFilter === Currency.USD ? Currency.USD : Currency.UYU
 
   return (
     <div className={styles.page}>
@@ -128,24 +126,11 @@ export default function MetricsPage(): React.ReactElement {
 
       {/* Desktop currency + category chips */}
       <div className={styles.desktopCatChips}>
-        {(
-          [
-            ['both', 'Todas'],
-            ['uyu', 'UYU'],
-            ['usd', 'USD'],
-          ] as [CurrencyFilter, string][]
-        ).map(([val, lbl]) => (
-          <button
-            key={val}
-            className={[
-              styles.desktopCatChip,
-              currencyFilter === val ? styles.desktopCatChipActive : '',
-            ].join(' ')}
-            onClick={() => setCurrencyFilter(val)}
-          >
-            {lbl}
-          </button>
-        ))}
+        <PeriodControl
+          options={CURRENCY_OPTIONS}
+          value={currencyFilter}
+          onChange={setCurrencyFilter}
+        />
       </div>
 
       {/* Desktop category chips */}
@@ -176,8 +161,8 @@ export default function MetricsPage(): React.ReactElement {
       </div>
 
       {/* Desktop ring cards row */}
-      <div className={currencyFilter === 'both' ? styles.desktopRingRow2 : styles.desktopRingRow1}>
-        {(currencyFilter === 'both'
+      <div className={currencyFilter === '' ? styles.desktopRingRow2 : styles.desktopRingRow1}>
+        {(currencyFilter === ''
           ? [
               {
                 cur: Currency.UYU,
@@ -290,7 +275,7 @@ export default function MetricsPage(): React.ReactElement {
         <h3 className={styles.desktopCardTitle}>📊 Comparativas</h3>
         <div
           className={
-            currencyFilter === 'both'
+            currencyFilter === ''
               ? styles.desktopComparativasGrid
               : styles.desktopComparativasGridSingle
           }
@@ -316,8 +301,7 @@ export default function MetricsPage(): React.ReactElement {
             ] as const
           )
             .filter(
-              ({ currency }) =>
-                currencyFilter === 'both' || currencyFilter === currency.toLowerCase()
+              ({ currency }) => currencyFilter === '' || currencyFilter === currency.toLowerCase()
             )
             .map(({ currency, total, prevPct, avgPct, bgt, flag }) => {
               const budgetPct =
@@ -397,9 +381,7 @@ export default function MetricsPage(): React.ReactElement {
       <div className={styles.desktopSplitCard}>
         <h3 className={styles.desktopCardTitle}>⚖️ Fijos vs Variables</h3>
         <div
-          className={
-            currencyFilter === 'both' ? styles.desktopSplitInner2 : styles.desktopSplitInner1
-          }
+          className={currencyFilter === '' ? styles.desktopSplitInner2 : styles.desktopSplitInner1}
         >
           {[
             {
@@ -415,46 +397,50 @@ export default function MetricsPage(): React.ReactElement {
               pct: fixedPctUyu,
             },
           ]
-            .filter(({ cur }) => currencyFilter === 'both' || currencyFilter === cur.toLowerCase())
+            .filter(({ cur }) => currencyFilter === '' || currencyFilter === cur.toLowerCase())
             .map(({ cur, fixedAmt, varAmt, pct }) => (
               <div key={cur} className={styles.desktopSplitBlock}>
                 <p className={styles.desktopSplitCurLabel}>{cur}</p>
-                <div className={styles.desktopSplitBars}>
-                  <div className={styles.desktopSplitBarRow}>
-                    <div className={styles.splitBar}>
-                      <div className={styles.splitFixed} style={{ width: `${pct}%` }} />
-                    </div>
-                    <div className={styles.desktopSplitBarRowMeta}>
-                      <div className={styles.splitItem}>
-                        <span className={styles.splitDot} style={{ background: '#7c3aed' }} />
-                        <span className={styles.splitLbl}>
-                          Fijos{' '}
-                          <span className={styles.splitLblNote}>(mensuales + anuales ÷ 12)</span>
+                {fixedAmt === 0 && varAmt === 0 ? (
+                  <p className={styles.trendEmpty}>Sin gastos en {cur} para este período.</p>
+                ) : (
+                  <div className={styles.desktopSplitBars}>
+                    <div className={styles.desktopSplitBarRow}>
+                      <div className={styles.splitBar}>
+                        <div className={styles.splitFixed} style={{ width: `${pct}%` }} />
+                      </div>
+                      <div className={styles.desktopSplitBarRowMeta}>
+                        <div className={styles.splitItem}>
+                          <span className={styles.splitDot} style={{ background: '#7c3aed' }} />
+                          <span className={styles.splitLbl}>
+                            Fijos{' '}
+                            <span className={styles.splitLblNote}>(mensuales + anuales ÷ 12)</span>
+                          </span>
+                          <span className={styles.splitPct}>{pct}%</span>
+                        </div>
+                        <span className={styles.splitAmtVal} style={{ color: '#7c3aed' }}>
+                          {formatAmount(fixedAmt, cur)}
                         </span>
-                        <span className={styles.splitPct}>{pct}%</span>
                       </div>
-                      <span className={styles.splitAmtVal} style={{ color: '#7c3aed' }}>
-                        {formatAmount(fixedAmt, cur)}
-                      </span>
+                    </div>
+                    <div className={styles.desktopSplitBarRow}>
+                      <div className={styles.splitBar}>
+                        <div
+                          className={styles.splitFixed}
+                          style={{ width: `${100 - pct}%`, background: 'var(--g400)' }}
+                        />
+                      </div>
+                      <div className={styles.desktopSplitBarRowMeta}>
+                        <div className={styles.splitItem}>
+                          <span className={styles.splitDot} style={{ background: 'var(--g400)' }} />
+                          <span className={styles.splitLbl}>Variables</span>
+                          <span className={styles.splitPct}>{100 - pct}%</span>
+                        </div>
+                        <span className={styles.splitAmtVal}>{formatAmount(varAmt, cur)}</span>
+                      </div>
                     </div>
                   </div>
-                  <div className={styles.desktopSplitBarRow}>
-                    <div className={styles.splitBar}>
-                      <div
-                        className={styles.splitFixed}
-                        style={{ width: `${100 - pct}%`, background: 'var(--g400)' }}
-                      />
-                    </div>
-                    <div className={styles.desktopSplitBarRowMeta}>
-                      <div className={styles.splitItem}>
-                        <span className={styles.splitDot} style={{ background: 'var(--g400)' }} />
-                        <span className={styles.splitLbl}>Variables</span>
-                        <span className={styles.splitPct}>{100 - pct}%</span>
-                      </div>
-                      <span className={styles.splitAmtVal}>{formatAmount(varAmt, cur)}</span>
-                    </div>
-                  </div>
-                </div>
+                )}
               </div>
             ))}
         </div>
@@ -465,70 +451,74 @@ export default function MetricsPage(): React.ReactElement {
         {/* Col 1: Por categoría */}
         <div className={styles.desktopCatCard}>
           <h3 className={styles.desktopCardTitle}>Gasto por categoría</h3>
-          {filteredByCategory.map((cat) => {
-            const catColor =
-              categories?.find((c) => c.id === cat.categoryId)?.color ?? 'var(--g500)'
-            const maxUsd = Math.max(...filteredByCategory.map((c) => c.usd), 1)
-            const maxUyu = Math.max(...filteredByCategory.map((c) => c.uyu), 1)
-            const pctUsd = Math.round((cat.usd / maxUsd) * 100)
-            const pctUyu = Math.round((cat.uyu / maxUyu) * 100)
-            const showBoth = currencyFilter === 'both'
+          {filteredByCategory.length === 0 ? (
+            <p className={styles.trendEmpty}>Sin datos de categorías para este período.</p>
+          ) : (
+            filteredByCategory.map((cat) => {
+              const catColor =
+                categories?.find((c) => c.id === cat.categoryId)?.color ?? 'var(--g500)'
+              const maxUsd = Math.max(...filteredByCategory.map((c) => c.usd), 1)
+              const maxUyu = Math.max(...filteredByCategory.map((c) => c.uyu), 1)
+              const pctUsd = Math.round((cat.usd / maxUsd) * 100)
+              const pctUyu = Math.round((cat.uyu / maxUyu) * 100)
+              const showBoth = currencyFilter === ''
 
-            return (
-              <div key={cat.categoryId} className={styles.desktopCatRow}>
-                <span className={styles.desktopCatName}>
-                  {cat.categoryIcon} {cat.categoryName}
-                </span>
-                {showBoth ? (
-                  <div className={styles.desktopCatBars}>
-                    <div className={styles.desktopCatBarRow}>
-                      <div className={styles.desktopCatBar}>
-                        <div
-                          className={styles.desktopCatBarFill}
-                          style={{ width: `${pctUyu}%`, background: catColor }}
-                        />
+              return (
+                <div key={cat.categoryId} className={styles.desktopCatRow}>
+                  <span className={styles.desktopCatName}>
+                    {cat.categoryIcon} {cat.categoryName}
+                  </span>
+                  {showBoth ? (
+                    <div className={styles.desktopCatBars}>
+                      <div className={styles.desktopCatBarRow}>
+                        <div className={styles.desktopCatBar}>
+                          <div
+                            className={styles.desktopCatBarFill}
+                            style={{ width: `${pctUyu}%`, background: catColor }}
+                          />
+                        </div>
+                        <span className={styles.desktopCatAmt}>
+                          {formatAmount(cat.uyu, Currency.UYU)}
+                        </span>
+                        <span className={styles.desktopCatCurBadge}>UYU</span>
                       </div>
-                      <span className={styles.desktopCatAmt}>
-                        {formatAmount(cat.uyu, Currency.UYU)}
-                      </span>
-                      <span className={styles.desktopCatCurBadge}>UYU</span>
-                    </div>
-                    <div className={styles.desktopCatBarRow}>
-                      <div className={styles.desktopCatBar}>
-                        <div
-                          className={styles.desktopCatBarFill}
-                          style={{ width: `${pctUsd}%`, background: catColor }}
-                        />
+                      <div className={styles.desktopCatBarRow}>
+                        <div className={styles.desktopCatBar}>
+                          <div
+                            className={styles.desktopCatBarFill}
+                            style={{ width: `${pctUsd}%`, background: catColor }}
+                          />
+                        </div>
+                        <span className={styles.desktopCatAmt}>
+                          {formatAmount(cat.usd, Currency.USD)}
+                        </span>
+                        <span className={styles.desktopCatCurBadge}>USD</span>
                       </div>
-                      <span className={styles.desktopCatAmt}>
-                        {formatAmount(cat.usd, Currency.USD)}
-                      </span>
-                      <span className={styles.desktopCatCurBadge}>USD</span>
                     </div>
-                  </div>
-                ) : (
-                  <div className={styles.desktopCatBars}>
-                    <div className={styles.desktopCatBarRow}>
-                      <div className={styles.desktopCatBar}>
-                        <div
-                          className={styles.desktopCatBarFill}
-                          style={{
-                            width: `${currencyFilter === 'usd' ? pctUsd : pctUyu}%`,
-                            background: catColor,
-                          }}
-                        />
+                  ) : (
+                    <div className={styles.desktopCatBars}>
+                      <div className={styles.desktopCatBarRow}>
+                        <div className={styles.desktopCatBar}>
+                          <div
+                            className={styles.desktopCatBarFill}
+                            style={{
+                              width: `${currencyFilter === Currency.USD ? pctUsd : pctUyu}%`,
+                              background: catColor,
+                            }}
+                          />
+                        </div>
+                        <span className={styles.desktopCatAmt}>
+                          {currencyFilter === Currency.USD
+                            ? formatAmount(cat.usd, Currency.USD)
+                            : formatAmount(cat.uyu, Currency.UYU)}
+                        </span>
                       </div>
-                      <span className={styles.desktopCatAmt}>
-                        {currencyFilter === 'usd'
-                          ? formatAmount(cat.usd, Currency.USD)
-                          : formatAmount(cat.uyu, Currency.UYU)}
-                      </span>
                     </div>
-                  </div>
-                )}
-              </div>
-            )
-          })}
+                  )}
+                </div>
+              )
+            })
+          )}
         </div>
 
         {/* Col 2: Por categoría de producto */}
@@ -545,7 +535,7 @@ export default function MetricsPage(): React.ReactElement {
               const maxUyu = Math.max(...metrics.byProductCategory.map((c) => c.uyu), 1)
               const pctUsd = Math.round((pcat.usd / maxUsd) * 100)
               const pctUyu = Math.round((pcat.uyu / maxUyu) * 100)
-              const showBoth = currencyFilter === 'both'
+              const showBoth = currencyFilter === ''
               return (
                 <div key={pcat.productCategoryId} className={styles.desktopCatRow}>
                   <span className={styles.desktopCatName}>
@@ -585,13 +575,13 @@ export default function MetricsPage(): React.ReactElement {
                           <div
                             className={styles.desktopCatBarFill}
                             style={{
-                              width: `${currencyFilter === 'usd' ? pctUsd : pctUyu}%`,
+                              width: `${currencyFilter === Currency.USD ? pctUsd : pctUyu}%`,
                               background: pcatColor,
                             }}
                           />
                         </div>
                         <span className={styles.desktopCatAmt}>
-                          {currencyFilter === 'usd'
+                          {currencyFilter === Currency.USD
                             ? formatAmount(pcat.usd, Currency.USD)
                             : formatAmount(pcat.uyu, Currency.UYU)}
                         </span>
@@ -612,8 +602,8 @@ export default function MetricsPage(): React.ReactElement {
           ) : (
             <>
               {(() => {
-                const showUsd = currencyFilter === 'both' || currencyFilter === 'usd'
-                const showUyu = currencyFilter === 'both' || currencyFilter === 'uyu'
+                const showUsd = currencyFilter === '' || currencyFilter === Currency.USD
+                const showUyu = currencyFilter === '' || currencyFilter === Currency.UYU
                 const maxUsd = Math.max(...metrics.monthlyHistory.map((m) => m.usd), 1)
                 const maxUyu = Math.max(...metrics.monthlyHistory.map((m) => m.uyu), 1)
 
@@ -659,7 +649,7 @@ export default function MetricsPage(): React.ReactElement {
                         {showUsd && (
                           <span className={styles.trendAmt} style={{ color: '#2563eb' }}>
                             {fmtShort(m.usd) || '—'}
-                            {currencyFilter === 'both' && (
+                            {currencyFilter === '' && (
                               <span className={styles.trendCurrency}>USD</span>
                             )}
                             {usdPct !== null && (
@@ -682,7 +672,7 @@ export default function MetricsPage(): React.ReactElement {
                         {showUyu && (
                           <span className={styles.trendAmt} style={{ color: 'var(--g600)' }}>
                             {fmtShort(m.uyu) || '—'}
-                            {currencyFilter === 'both' && (
+                            {currencyFilter === '' && (
                               <span className={styles.trendCurrency}>UYU</span>
                             )}
                             {uyuPct !== null && (
@@ -710,10 +700,10 @@ export default function MetricsPage(): React.ReactElement {
               <div className={styles.avgRow}>
                 <span className={styles.avgLbl}>Promedio histórico</span>
                 <span className={styles.avgVal}>
-                  {(currencyFilter === 'both' || currencyFilter === 'usd') &&
+                  {(currencyFilter === '' || currencyFilter === Currency.USD) &&
                     `${formatAmount(avgUsd, Currency.USD)} USD`}
-                  {currencyFilter === 'both' && ' · '}
-                  {(currencyFilter === 'both' || currencyFilter === 'uyu') &&
+                  {currencyFilter === '' && ' · '}
+                  {(currencyFilter === '' || currencyFilter === Currency.UYU) &&
                     `${formatAmount(avgUyu, Currency.UYU)} UYU`}
                 </span>
               </div>
@@ -738,24 +728,11 @@ export default function MetricsPage(): React.ReactElement {
               📈 Tendencia mensual
             </h2>
             <div className={styles.currencyTabs}>
-              {(
-                [
-                  ['both', 'Ambas'],
-                  ['usd', 'USD'],
-                  ['uyu', 'UYU'],
-                ] as [CurrencyFilter, string][]
-              ).map(([val, lbl]) => (
-                <button
-                  key={val}
-                  className={[
-                    styles.currencyTab,
-                    currencyFilter === val ? styles.currencyTabActive : '',
-                  ].join(' ')}
-                  onClick={() => setCurrencyFilter(val)}
-                >
-                  {lbl}
-                </button>
-              ))}
+              <PeriodControl
+                options={CURRENCY_OPTIONS}
+                value={currencyFilter}
+                onChange={setCurrencyFilter}
+              />
             </div>
           </div>
 
@@ -764,8 +741,8 @@ export default function MetricsPage(): React.ReactElement {
           ) : (
             <>
               {(() => {
-                const showUsd = currencyFilter === 'both' || currencyFilter === 'usd'
-                const showUyu = currencyFilter === 'both' || currencyFilter === 'uyu'
+                const showUsd = currencyFilter === '' || currencyFilter === Currency.USD
+                const showUyu = currencyFilter === '' || currencyFilter === Currency.UYU
                 const maxUsd = Math.max(...metrics.monthlyHistory.map((m) => m.usd), 1)
                 const maxUyu = Math.max(...metrics.monthlyHistory.map((m) => m.uyu), 1)
 
@@ -812,7 +789,7 @@ export default function MetricsPage(): React.ReactElement {
                         {showUsd && (
                           <span className={styles.trendAmt} style={{ color: '#2563eb' }}>
                             {fmtShort(m.usd) || '—'}
-                            {currencyFilter === 'both' && (
+                            {currencyFilter === '' && (
                               <span className={styles.trendCurrency}>USD</span>
                             )}
                             {usdPct !== null && (
@@ -835,7 +812,7 @@ export default function MetricsPage(): React.ReactElement {
                         {showUyu && (
                           <span className={styles.trendAmt} style={{ color: 'var(--g600)' }}>
                             {fmtShort(m.uyu) || '—'}
-                            {currencyFilter === 'both' && (
+                            {currencyFilter === '' && (
                               <span className={styles.trendCurrency}>UYU</span>
                             )}
                             {uyuPct !== null && (
@@ -863,10 +840,10 @@ export default function MetricsPage(): React.ReactElement {
               <div className={styles.avgRow}>
                 <span className={styles.avgLbl}>Promedio histórico</span>
                 <span className={styles.avgVal}>
-                  {(currencyFilter === 'both' || currencyFilter === 'usd') &&
+                  {(currencyFilter === '' || currencyFilter === Currency.USD) &&
                     `${formatAmount(avgUsd, Currency.USD)} USD`}
-                  {currencyFilter === 'both' && ' · '}
-                  {(currencyFilter === 'both' || currencyFilter === 'uyu') &&
+                  {currencyFilter === '' && ' · '}
+                  {(currencyFilter === '' || currencyFilter === Currency.UYU) &&
                     `${formatAmount(avgUyu, Currency.UYU)} UYU`}
                 </span>
               </div>

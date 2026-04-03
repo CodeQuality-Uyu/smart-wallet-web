@@ -22,7 +22,6 @@ export enum PaymentType {
 }
 
 export enum CardType {
-  Transfer = 'transfer',
   Credit = 'credit',
   Debit = 'debit',
 }
@@ -84,4 +83,12 @@ export enum PriceDataConfidence {
   Fresh = 'fresh',
   Stale = 'stale',
   Old = 'old',
+}
+
+export enum NotificationType {
+  Expense = 'expense',
+  BudgetAlert = 'budget_alert',
+  Income = 'income',
+  WeeklySummary = 'weekly_summary',
+  Recurring = 'recurring',
 }

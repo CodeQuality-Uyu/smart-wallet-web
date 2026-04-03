@@ -43,6 +43,7 @@ const ProductsPage = lazy(() => import('@/pages/ProductsPage'))
 const NewProductPage = lazy(() => import('@/pages/NewProductPage'))
 const ProductDetailPage = lazy(() => import('@/pages/ProductDetailPage'))
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'))
+const NotificationsPage = lazy(() => import('@/pages/NotificationsPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 
 const SuspenseWrapper = ({ children }: { children: React.ReactNode }): React.ReactElement => (
@@ -123,6 +124,7 @@ const router = createBrowserRouter([
           { path: 'products/new', element: <SuspenseWrapper><NewProductPage /></SuspenseWrapper> },
           { path: 'products/:id', element: <SuspenseWrapper><ProductDetailPage /></SuspenseWrapper> },
           { path: 'profile', element: <SuspenseWrapper><ProfilePage /></SuspenseWrapper> },
+          { path: 'notifications', element: <SuspenseWrapper><NotificationsPage /></SuspenseWrapper> },
         ],
       },
         ],

@@ -15,6 +15,10 @@ export const cardsService = {
     return (await getCardsBackend()).create(payload)
   },
 
+  async update(id: string, payload: Partial<CreateCardPayload>): Promise<Card> {
+    return (await getCardsBackend()).update(id, payload)
+  },
+
   async remove(id: string): Promise<void> {
     return (await getCardsBackend()).remove(id)
   },

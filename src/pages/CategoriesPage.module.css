@@ -159,11 +159,22 @@
 
 .colorBtn {
   width: 32px; height: 32px; border-radius: 8px;
-  border: 2px solid transparent; cursor: pointer;
+  border: 2.5px solid transparent; cursor: pointer;
   transition: transform .1s, box-shadow .1s;
+  position: relative; display: flex; align-items: center; justify-content: center;
 }
 .colorBtn:hover { transform: scale(1.15); }
-.colorBtnActive { border-color: var(--ink); box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--ink); }
+.colorBtnActive {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--swatch-color);
+  border-color: var(--swatch-color);
+}
+.colorBtnActive::after {
+  content: '✓';
+  font-size: 13px; font-weight: 800; line-height: 1;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,.35);
+  pointer-events: none;
+}
 
 .iconPicker {
   display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px;

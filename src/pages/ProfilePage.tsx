@@ -9,6 +9,7 @@ import { useAuth } from '@/app/providers/AuthContext'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { salariesService, type Salary, type UpdateSalaryPayload } from '@/services/salariesService'
+import { useCategoryLimits } from '@/hooks/useCategoryLimits'
 import { formatCurrency } from '@/utils/formatCurrency'
 import { Currency } from '@/types/enums'
 import styles from './ProfilePage.module.css'
@@ -83,6 +84,11 @@ export default function ProfilePage(): React.ReactElement {
   const [prefs, setPrefs] = useState<Preferences>(loadPrefs)
   const [showSalaryForm, setShowSalaryForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+
+  const { data: categoryLimits = {} } = useCategoryLimits()
+
+  const budgetUYU = Object.values(categoryLimits).reduce((sum, entry) => sum + (entry[Currency.UYU] ?? 0), 0)
+  const budgetUSD = Object.values(categoryLimits).reduce((sum, entry) => sum + (entry[Currency.USD] ?? 0), 0)
 
   const { data: salaries = [], isLoading: salariesLoading } = useQuery({
     queryKey: ['salaries'],
@@ -301,6 +307,26 @@ export default function ProfilePage(): React.ReactElement {
             )}
           </div>
         )}
+      </div>
+
+      {/* ── Presupuesto global ── */}
+      <div className={styles.budgetSection}>
+        <h3 className={styles.budgetTitle}>Presupuesto global</h3>
+        <p className={styles.budgetDesc}>Suma de los límites configurados por categoría</p>
+        <div className={styles.budgetCards}>
+          <div className={styles.budgetCard}>
+            <span className={styles.budgetCardLabel}>UYU</span>
+            <span className={styles.budgetCardAmount}>
+              {budgetUYU > 0 ? `$ ${budgetUYU.toLocaleString('es-UY')}` : <span className={styles.budgetCardEmpty}>Sin límite</span>}
+            </span>
+          </div>
+          <div className={styles.budgetCard}>
+            <span className={styles.budgetCardLabel}>USD</span>
+            <span className={styles.budgetCardAmount}>
+              {budgetUSD > 0 ? `U$S ${budgetUSD.toLocaleString('es-UY')}` : <span className={styles.budgetCardEmpty}>Sin límite</span>}
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* ── Danger zone ── */}

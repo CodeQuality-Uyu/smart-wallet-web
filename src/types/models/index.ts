@@ -9,6 +9,7 @@ import {
   RecurringPaymentStatus,
   ProductPricingType,
   WeightUnit,
+  NotificationType,
 } from '@/types/enums'
 
 // ─── Shared ───────────────────────────────────────────────
@@ -75,6 +76,7 @@ export interface Card extends Timestamps {
   type: CardType
   bank: string
   lastFour?: string
+  color?: string
   active?: boolean
 }
 
@@ -220,8 +222,8 @@ export interface BudgetSettings {
 // ─── Category limits ──────────────────────────────────────
 
 export interface CategoryLimitEntry {
-  uyu?: number
-  usd?: number
+  [Currency.UYU]?: number
+  [Currency.USD]?: number
 }
 
 export interface CategoryLimits {
@@ -367,4 +369,41 @@ export interface Income {
   name: string
   amount: number
   currency: Currency
+}
+
+// ─── Notifications ────────────────────────────────────────
+
+export interface Notification {
+  id: string
+  title: string
+  body: string
+  type: NotificationType
+  read: boolean
+  createdAt: string
+}
+
+export interface NotificationAlertPrefs {
+  expenses: boolean
+  budgetLimit: boolean
+  income: boolean
+  weeklySummary: boolean
+  recurring: boolean
+}
+
+export interface NotificationChannelPrefs {
+  push: boolean
+  email: boolean
+  whatsapp: boolean
+}
+
+export interface NotificationQuietHours {
+  enabled: boolean
+  from: string
+  to: string
+}
+
+export interface NotificationPrefs {
+  alerts: NotificationAlertPrefs
+  channels: NotificationChannelPrefs
+  quietHours: NotificationQuietHours
 }

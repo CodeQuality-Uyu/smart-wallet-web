@@ -6,7 +6,6 @@ import {
   useCategories,
   useCreateCategory,
   useUpdateCategory,
-
 } from '@/features/categories/hooks/useCategories'
 import {
   categorySchema,
@@ -24,18 +23,57 @@ import type { Category } from '@/types/models'
 import styles from './CategoriesPage.module.css'
 
 const ICON_OPTIONS = [
-  '🍔', '🚌', '🏠', '💊', '🎬', '☕', '✈️', '🎓',
-  '🛒', '💄', '🐾', '🎮', '⚡', '🛠', '📚', '🎵',
-  '🏖', '🍕', '🐶', '🧘', '💻', '🎁', '🔧', '🧾',
+  '🍔',
+  '🚌',
+  '🏠',
+  '💊',
+  '🎬',
+  '☕',
+  '✈️',
+  '🎓',
+  '🛒',
+  '💄',
+  '🐾',
+  '🎮',
+  '⚡',
+  '🛠',
+  '📚',
+  '🎵',
+  '🏖',
+  '🍕',
+  '🐶',
+  '🧘',
+  '💻',
+  '🎁',
+  '🔧',
+  '🧾',
 ]
 
 const COLOR_OPTIONS = [
-  '#ef4444', '#f97316', '#f5b732', '#10b981',
-  '#3b82f6', '#8b5cf6', '#ec4899', '#6b7280',
-  '#14b8a6', '#84cc16', '#f43f5e', '#a855f7',
-  '#0ea5e9', '#fb923c', '#22c55e', '#64748b',
-  '#e11d48', '#7c3aed', '#0d9488', '#ca8a04',
-  '#1d4ed8', '#be185d', '#15803d', '#374151',
+  '#ef4444',
+  '#f97316',
+  '#f5b732',
+  '#10b981',
+  '#3b82f6',
+  '#8b5cf6',
+  '#ec4899',
+  '#6b7280',
+  '#14b8a6',
+  '#84cc16',
+  '#f43f5e',
+  '#a855f7',
+  '#0ea5e9',
+  '#fb923c',
+  '#22c55e',
+  '#64748b',
+  '#e11d48',
+  '#7c3aed',
+  '#0d9488',
+  '#ca8a04',
+  '#1d4ed8',
+  '#be185d',
+  '#15803d',
+  '#374151',
 ]
 
 export default function CategoriesPage(): React.ReactElement {
@@ -72,11 +110,18 @@ export default function CategoriesPage(): React.ReactElement {
     { setStatus }: { setStatus: (status: string) => void }
   ): Promise<void> {
     try {
-      if (editing) {
-        await updateCat(values)
-      } else {
-        await createCat({ ...values, active: true })
-      }
+      const catId = editing
+        ? (await updateCat(values), editing.id)
+        : (await createCat({ ...values, active: true })).id
+      const prev = categoryLimits[catId] ?? {}
+      await setLimits({
+        ...categoryLimits,
+        [catId]: {
+          ...prev,
+          [Currency.UYU]: values.limitUYU ?? undefined,
+          [Currency.USD]: values.limitUSD ?? undefined,
+        },
+      })
       setShowForm(false)
       setEditing(null)
     } catch (err) {
@@ -97,12 +142,8 @@ export default function CategoriesPage(): React.ReactElement {
     name: editing?.name ?? '',
     icon: editing?.icon ?? '',
     color: editing?.color ?? '',
-  }
-
-  async function handleSaveLimit(catId: string, currency: 'uyu' | 'usd', value: string): Promise<void> {
-    const num = parseFloat(value)
-    const prev = categoryLimits[catId] ?? {}
-    await setLimits({ ...categoryLimits, [catId]: { ...prev, [currency]: isNaN(num) ? undefined : num } })
+    limitUYU: editing ? (categoryLimits[editing.id]?.[Currency.UYU] ?? undefined) : undefined,
+    limitUSD: editing ? (categoryLimits[editing.id]?.[Currency.USD] ?? undefined) : undefined,
   }
 
   const periodControl = <PeriodControl value={period} onChange={setPeriod} />
@@ -181,12 +222,19 @@ export default function CategoriesPage(): React.ReactElement {
                   <div className={styles.formPickersRow}>
                     <div className={styles.formPickerGroup}>
                       <p className={styles.formPickerLabel}>Ícono</p>
-                      <div className={styles.iconPicker} role="group" aria-label="Seleccionar ícono">
+                      <div
+                        className={styles.iconPicker}
+                        role="group"
+                        aria-label="Seleccionar ícono"
+                      >
                         {ICON_OPTIONS.map((ico) => (
                           <button
                             key={ico}
                             type="button"
-                            className={[styles.icoBtn, values.icon === ico ? styles.icoBtnActive : ''].join(' ')}
+                            className={[
+                              styles.icoBtn,
+                              values.icon === ico ? styles.icoBtnActive : '',
+                            ].join(' ')}
                             onClick={() => void setFieldValue('icon', ico)}
                             aria-label={ico}
                             aria-pressed={values.icon === ico}
@@ -198,13 +246,20 @@ export default function CategoriesPage(): React.ReactElement {
                     </div>
                     <div className={styles.formPickerGroup}>
                       <p className={styles.formPickerLabel}>Color</p>
-                      <div className={styles.colorPicker} role="group" aria-label="Seleccionar color">
+                      <div
+                        className={styles.colorPicker}
+                        role="group"
+                        aria-label="Seleccionar color"
+                      >
                         {COLOR_OPTIONS.map((col) => (
                           <button
                             key={col}
                             type="button"
-                            className={[styles.colorBtn, values.color === col ? styles.colorBtnActive : ''].join(' ')}
-                            style={{ background: col }}
+                            className={[
+                              styles.colorBtn,
+                              values.color === col ? styles.colorBtnActive : '',
+                            ].join(' ')}
+                            style={{ background: col, '--swatch-color': col } as React.CSSProperties}
                             onClick={() => void setFieldValue('color', col)}
                             aria-label={col}
                             aria-pressed={values.color === col}
@@ -215,53 +270,40 @@ export default function CategoriesPage(): React.ReactElement {
                   </div>
 
                   {/* Nombre */}
-                  <div className={styles.formRow}>
-                    <div style={{ flex: 1 }}>
-                      <FormField name="name" label="Nombre">
-                        <TextInput name="name" placeholder="ej. Comida" />
-                      </FormField>
-                    </div>
-                  </div>
+                  <FormField name="name" label="Nombre">
+                    <TextInput name="name" placeholder="ej. Comida" />
+                  </FormField>
 
                   {/* Límites */}
-                  {editing && (
-                    <div className={styles.limitInputsStack}>
-                      <div className={styles.limitInputRow}>
-                        <label className={styles.formPickerLabel}>Límite UYU</label>
-                        <input
-                          className={styles.limitInput}
-                          type="number" min={0} placeholder="Sin límite"
-                          defaultValue={categoryLimits[editing.id]?.uyu ?? ''}
-                          onBlur={(e) => void handleSaveLimit(editing.id, 'uyu', e.target.value)}
-                        />
-                      </div>
-                      <div className={styles.limitInputRow}>
-                        <label className={styles.formPickerLabel}>Límite USD</label>
-                        <input
-                          className={styles.limitInput}
-                          type="number" min={0} placeholder="Sin límite"
-                          defaultValue={categoryLimits[editing.id]?.usd ?? ''}
-                          onBlur={(e) => void handleSaveLimit(editing.id, 'usd', e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  )}
+                  <FormField name="limitUYU" label="Límite UYU">
+                    <TextInput name="limitUYU" type="number" min={0} placeholder="Sin límite" />
+                  </FormField>
+                  <FormField name="limitUSD" label="Límite USD">
+                    <TextInput name="limitUSD" type="number" min={0} placeholder="Sin límite" />
+                  </FormField>
 
                   {status && <p className={styles.formError}>{status}</p>}
 
                   <div className={styles.formActions}>
-                      <button
-                        type="button"
-                        className={styles.formCancelBtn}
-                        onClick={() => { setShowForm(false); setEditing(null) }}
-                      >
-                        Cancelar
+                    <button
+                      type="button"
+                      className={styles.formCancelBtn}
+                      onClick={() => {
+                        setShowForm(false)
+                        setEditing(null)
+                      }}
+                    >
+                      Cancelar
+                    </button>
+                    <div className={styles.formActionsRight}>
+                      <button type="submit" className={styles.formSaveBtn} disabled={isSubmitting}>
+                        {isSubmitting
+                          ? 'Guardando…'
+                          : editing
+                            ? 'Guardar cambios'
+                            : 'Crear categoría'}
                       </button>
-                      <div className={styles.formActionsRight}>
-                        <button type="submit" className={styles.formSaveBtn} disabled={isSubmitting}>
-                          {isSubmitting ? 'Guardando…' : editing ? 'Guardar cambios' : 'Crear categoría'}
-                        </button>
-                      </div>
+                    </div>
                   </div>
                 </Form>
               )}
@@ -323,7 +365,7 @@ export default function CategoriesPage(): React.ReactElement {
           const byCategory = metrics?.byCategory ?? []
           const configuredIds = Object.keys(categoryLimits).filter((id) => {
             const e = categoryLimits[id]
-            return (e?.uyu ?? 0) > 0 || (e?.usd ?? 0) > 0
+            return (e?.[Currency.UYU] ?? 0) > 0 || (e?.[Currency.USD] ?? 0) > 0
           })
           const configuredCount = configuredIds.length
           const catsWithLimit = byCategory.filter((c) => configuredIds.includes(c.categoryId))
@@ -342,7 +384,9 @@ export default function CategoriesPage(): React.ReactElement {
                 <div className={styles.limitsEmptyState}>
                   <span className={styles.limitsEmptyIcon}>🎯</span>
                   <p className={styles.limitsEmptyTitle}>Sin límites configurados</p>
-                  <p className={styles.limitsEmptyHint}>Hacé click en ✏ de cualquier categoría para configurar tu primer límite mensual.</p>
+                  <p className={styles.limitsEmptyHint}>
+                    Hacé click en ✏ de cualquier categoría para configurar tu primer límite mensual.
+                  </p>
                 </div>
               )}
               {catsWithLimit.map((c, idx) => {
@@ -350,12 +394,14 @@ export default function CategoriesPage(): React.ReactElement {
                 const totalCats = catsWithLimit.length
                 const colorPct = idx / (totalCats - 1 || 1)
                 const color = colorPct < 0.33 ? '#10b981' : colorPct < 0.66 ? '#f5b732' : '#ef4444'
-                const limitUyu = entry.uyu ?? 0
-                const limitUsd = entry.usd ?? 0
+                const limitUyu = entry[Currency.UYU] ?? 0
+                const limitUsd = entry[Currency.USD] ?? 0
                 const spentUyu = c.uyu
                 const spentUsd = c.usd
-                const pctUyu = limitUyu > 0 ? Math.min(Math.round((spentUyu / limitUyu) * 100), 100) : 0
-                const pctUsd = limitUsd > 0 ? Math.min(Math.round((spentUsd / limitUsd) * 100), 100) : 0
+                const pctUyu =
+                  limitUyu > 0 ? Math.min(Math.round((spentUyu / limitUyu) * 100), 100) : 0
+                const pctUsd =
+                  limitUsd > 0 ? Math.min(Math.round((spentUsd / limitUsd) * 100), 100) : 0
                 return (
                   <div key={c.categoryId} className={styles.limitRow}>
                     <span className={styles.limitIcon}>{c.categoryIcon}</span>
@@ -364,22 +410,38 @@ export default function CategoriesPage(): React.ReactElement {
                       {limitUyu > 0 && (
                         <>
                           <div className={styles.limitTopRow}>
-                            <span className={styles.limitAmt}>UYU: {formatCurrency(spentUyu, Currency.UYU)} / {formatCurrency(limitUyu, Currency.UYU)}</span>
-                            <span className={styles.limitPct} style={{ color }}>{pctUyu}%</span>
+                            <span className={styles.limitAmt}>
+                              UYU: {formatCurrency(spentUyu, Currency.UYU)} /{' '}
+                              {formatCurrency(limitUyu, Currency.UYU)}
+                            </span>
+                            <span className={styles.limitPct} style={{ color }}>
+                              {pctUyu}%
+                            </span>
                           </div>
                           <div className={styles.limitBarTrack}>
-                            <div className={styles.limitBarFill} style={{ width: `${pctUyu}%`, background: color }} />
+                            <div
+                              className={styles.limitBarFill}
+                              style={{ width: `${pctUyu}%`, background: color }}
+                            />
                           </div>
                         </>
                       )}
                       {limitUsd > 0 && (
                         <>
                           <div className={styles.limitTopRow}>
-                            <span className={styles.limitAmt}>USD: {formatCurrency(spentUsd, Currency.USD)} / {formatCurrency(limitUsd, Currency.USD)}</span>
-                            <span className={styles.limitPct} style={{ color }}>{pctUsd}%</span>
+                            <span className={styles.limitAmt}>
+                              USD: {formatCurrency(spentUsd, Currency.USD)} /{' '}
+                              {formatCurrency(limitUsd, Currency.USD)}
+                            </span>
+                            <span className={styles.limitPct} style={{ color }}>
+                              {pctUsd}%
+                            </span>
                           </div>
                           <div className={styles.limitBarTrack}>
-                            <div className={styles.limitBarFill} style={{ width: `${pctUsd}%`, background: color }} />
+                            <div
+                              className={styles.limitBarFill}
+                              style={{ width: `${pctUsd}%`, background: color }}
+                            />
                           </div>
                         </>
                       )}
@@ -388,7 +450,9 @@ export default function CategoriesPage(): React.ReactElement {
                 )
               })}
               {configuredCount > 0 && catsWithLimit.length === 0 && (
-                <p className={styles.limitsEmpty}>Sin gastos en las categorías configuradas para este período.</p>
+                <p className={styles.limitsEmpty}>
+                  Sin gastos en las categorías configuradas para este período.
+                </p>
               )}
             </div>
           )
