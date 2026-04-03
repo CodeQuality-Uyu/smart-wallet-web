@@ -28,8 +28,7 @@ export function SettingsLayout(): React.ReactElement {
   const location = useLocation()
 
   useEffect(() => {
-    const isDesktop = window.innerWidth >= 768
-    if (isDesktop && location.pathname === '/settings') {
+    if (location.pathname === '/settings') {
       void navigate('/settings/profile', { replace: true })
     }
   }, [location.pathname, navigate])
@@ -40,38 +39,30 @@ export function SettingsLayout(): React.ReactElement {
   }
 
   return (
-    <>
-      {/* Mobile: just render content */}
-      <div className={styles.mobileView}>
+    <div className={styles.desktopView}>
+      <aside className={styles.sidebar}>
+        <nav className={styles.nav}>
+          {SECTIONS.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={({ isActive }) =>
+                [styles.navItem, isActive ? styles.navItemActive : ''].join(' ')
+              }
+            >
+              <span className={styles.navIcon}>{item.icon}</span>
+              <span className={styles.navLabel}>{item.label}</span>
+            </NavLink>
+          ))}
+        </nav>
+        <button className={styles.logoutBtn} onClick={handleLogout}>
+          <span>🚪</span>
+          <span>Cerrar sesión</span>
+        </button>
+      </aside>
+      <main className={styles.content}>
         <Outlet />
-      </div>
-
-      {/* Desktop: sidebar + content */}
-      <div className={styles.desktopView}>
-        <aside className={styles.sidebar}>
-          <nav className={styles.nav}>
-            {SECTIONS.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={({ isActive }) =>
-                  [styles.navItem, isActive ? styles.navItemActive : ''].join(' ')
-                }
-              >
-                <span className={styles.navIcon}>{item.icon}</span>
-                <span className={styles.navLabel}>{item.label}</span>
-              </NavLink>
-            ))}
-          </nav>
-          <button className={styles.logoutBtn} onClick={handleLogout}>
-            <span>🚪</span>
-            <span>Cerrar sesión</span>
-          </button>
-        </aside>
-        <main className={styles.content}>
-          <Outlet />
-        </main>
-      </div>
-    </>
+      </main>
+    </div>
   )
 }
