@@ -445,10 +445,9 @@ export const handlers = [
         fixedUyu: 0,
         previousPeriodUsd: 0,
         previousPeriodUyu: 0,
-        monthlyHistory: [],
+        monthlyHistory: mockMetrics.monthlyHistory,
         byCategory,
         previousByCategory: [],
-        fixedBreakdown: [],
         byProductCategory: [],
       })
     }

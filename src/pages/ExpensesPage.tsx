@@ -96,8 +96,6 @@ export default function ExpensesPage(): React.ReactElement {
 
   if (isLoading) return <LoadingSpinner fullPage />
 
-  const activeCatId = filterCategoryIds[0] ?? ''
-
   return (
       <div className={styles.desktopPage}>
         {/* Header row */}
@@ -177,7 +175,7 @@ export default function ExpensesPage(): React.ReactElement {
           <button
             className={[
               styles.desktopCatChip,
-              activeCatId === '' ? styles.desktopCatChipActive : '',
+              filterCategoryIds.length === 0 ? styles.desktopCatChipActive : '',
             ].join(' ')}
             onClick={() => setFilterCategoryIds([])}
           >
@@ -188,9 +186,14 @@ export default function ExpensesPage(): React.ReactElement {
               key={cat.id}
               className={[
                 styles.desktopCatChip,
-                activeCatId === cat.id ? styles.desktopCatChipActive : '',
+                filterCategoryIds.includes(cat.id) ? styles.desktopCatChipActive : '',
               ].join(' ')}
-              onClick={() => setFilterCategoryIds(activeCatId === cat.id ? [] : [cat.id])}
+              onClick={() => {
+                const next = filterCategoryIds.includes(cat.id)
+                  ? filterCategoryIds.filter((id) => id !== cat.id)
+                  : [...filterCategoryIds, cat.id]
+                setFilterCategoryIds(next.length === categories.length ? [] : next)
+              }}
             >
               {cat.icon} {cat.name}
             </button>
@@ -264,7 +267,7 @@ export default function ExpensesPage(): React.ReactElement {
                           <tr
                             key={expense.id}
                             className={styles.desktopRow}
-                            onClick={() => void navigate(`/expenses/${expense.id}`)}
+                            onClick={() => void navigate(`/expenses/${expense.id}`, { state: { period, filterCurrency, filterCategoryIds } })}
                           >
                             <td className={styles.desktopTdDesc}>
                               <span className={styles.desktopRowEmoji}>

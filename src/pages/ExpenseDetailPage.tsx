@@ -1,8 +1,8 @@
 // src/pages/ExpenseDetailPage.tsx
 
-import React, { useRef, useState, useEffect, useCallback } from 'react'
+import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react'
 import ReactDOM from 'react-dom'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { useExpenses, useExpense, useDeleteExpense, useAddTicketLine, useRemoveTicketLine, useUploadExpenseReceipt } from '@/features/expenses/hooks/useExpenses'
 import { useCategories } from '@/features/categories/hooks/useCategories'
@@ -14,7 +14,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { Button } from '@/components/ui/Button'
 import { formatCurrency } from '@/utils/formatCurrency'
-import { Currency, ProductPricingType, WeightUnit } from '@/types/enums'
+import { Currency, PeriodFilter, ProductPricingType, WeightUnit } from '@/types/enums'
 import type { Product } from '@/types/models'
 import type { PriceByPlace } from '@/backend/types'
 import styles from './ExpenseDetailPage.module.css'
@@ -109,8 +109,10 @@ function calcUnitPrice(weightValue: number, weightUnit: WeightUnit, pricePaid: n
 export default function ExpenseDetailPage(): React.ReactElement {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
+  const navState = location.state as { period?: PeriodFilter; filterCurrency?: Currency | ''; filterCategoryIds?: string[] } | null
   const qc = useQueryClient()
-  const { data: expensesPage } = useExpenses()
+  const { data: expensesPage } = useExpenses(navState?.period ? { period: navState.period } : undefined)
   const { data: expense, isLoading, error } = useExpense(id ?? '')
   const { data: categories = [] } = useCategories()
   const { data: cards = [] } = useCards()
@@ -129,6 +131,15 @@ export default function ExpenseDetailPage(): React.ReactElement {
   // ByWeight product: weight input + price paid
   const [newLineWeight, setNewLineWeight] = useState('')
   const [newLinePricePaid, setNewLinePricePaid] = useState('')
+
+  const allExpenses = useMemo(() => {
+    let list = expensesPage?.data ?? []
+    if (navState?.filterCurrency) list = list.filter((e) => e.currency === navState.filterCurrency)
+    if (navState?.filterCategoryIds?.length) {
+      list = list.filter((e) => navState.filterCategoryIds!.some((cid) => e.categoryIds.includes(cid)))
+    }
+    return list
+  }, [expensesPage?.data, navState?.filterCurrency, navState?.filterCategoryIds])
 
   if (isLoading) return <LoadingSpinner fullPage />
   if (error || !expense) return <ErrorMessage message="No se pudo cargar el gasto." />
@@ -212,8 +223,6 @@ export default function ExpenseDetailPage(): React.ReactElement {
     await deleteExpense(expense.id)
     navigate('/expenses')
   }
-
-  const allExpenses = expensesPage?.data ?? []
 
   return (
     <div className={styles.layout}>
@@ -426,9 +435,11 @@ export default function ExpenseDetailPage(): React.ReactElement {
 
       {/* Delete */}
       <div className={styles.deleteArea}>
-        <Button variant="danger" fullWidth onClick={() => void handleDelete()}>
-          Eliminar gasto
-        </Button>
+        <div className={styles.deleteAreaInner}>
+          <Button variant="danger" fullWidth onClick={() => void handleDelete()}>
+            Eliminar gasto
+          </Button>
+        </div>
       </div>
 
       </div>{/* end .page */}
