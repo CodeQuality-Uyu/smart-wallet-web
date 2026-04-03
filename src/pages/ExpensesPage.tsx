@@ -2,17 +2,12 @@
 
 import React, { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useExpenses, useDuplicateExpense } from '@/features/expenses/hooks/useExpenses'
+import { useExpenses } from '@/features/expenses/hooks/useExpenses'
 import { useCategories } from '@/features/categories/hooks/useCategories'
 import { useCards } from '@/features/cards/hooks/useCards'
 import { usePlaces } from '@/features/places/hooks/usePlaces'
-import { ExpenseListItem } from '@/features/expenses/components/ExpenseListItem'
-import { CategoryChips } from '@/features/expenses/components/CategoryChips'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
-import { ErrorMessage } from '@/components/ui/ErrorMessage'
-import { useIsDesktop } from '@/hooks/useIsDesktop'
 import { PeriodControl, PeriodDescription } from '@/components/ui/PeriodControl'
-import { PERIODS } from '@/components/ui/PeriodControl.constants'
 import {
   groupExpensesByDate,
   groupExpensesByWeek,
@@ -47,22 +42,19 @@ const GROUP_OPTIONS = [
 ]
 
 export default function ExpensesPage(): React.ReactElement {
-  const isDesktop = useIsDesktop()
   const navigate = useNavigate()
   const [period, setPeriod] = useState(PeriodFilter.Month)
   const [search, setSearch] = useState('')
   const [filterCurrency, setFilterCurrency] = useState<Currency | ''>('')
-  const [filterCardId, setFilterCardId] = useState('')
-  const [filterPlaceId, setFilterPlaceId] = useState('')
+  const [filterCardId] = useState('')
+  const [filterPlaceId] = useState('')
   const [filterCategoryIds, setFilterCategoryIds] = useState<string[]>([])
   const [groupBy, setGroupBy] = useState<GroupBy>(GroupBy.Day)
-  const [showFilters, setShowFilters] = useState(false)
 
-  const { data: page, isLoading, error, refetch } = useExpenses({ period })
+  const { data: page, isLoading } = useExpenses({ period })
   const { data: categories = [] } = useCategories()
   const { data: cards = [] } = useCards()
   const { data: places = [] } = usePlaces()
-  const { mutateAsync: duplicate } = useDuplicateExpense()
 
   const now = new Date()
   const monthLabel = `${MONTH_NAMES[now.getMonth()] ?? ''} ${now.getFullYear()}`
@@ -102,20 +94,11 @@ export default function ExpensesPage(): React.ReactElement {
     .filter((e) => e.currency === Currency.UYU)
     .reduce((s, e) => s + e.amount, 0)
 
-  const activeFilterCount = [
-    filterCurrency !== '',
-    filterCardId !== '',
-    filterPlaceId !== '',
-    filterCategoryIds.length > 0,
-  ].filter(Boolean).length
-
   if (isLoading) return <LoadingSpinner fullPage />
 
-  // ── Desktop render ────────────────────────────────────
-  if (isDesktop) {
-    const activeCatId = filterCategoryIds[0] ?? ''
+  const activeCatId = filterCategoryIds[0] ?? ''
 
-    return (
+  return (
       <div className={styles.desktopPage}>
         {/* Header row */}
         <div className={styles.desktopHeader}>
@@ -324,222 +307,4 @@ export default function ExpensesPage(): React.ReactElement {
         </div>
       </div>
     )
-  }
-
-  function clearFilters(): void {
-    setFilterCurrency('')
-    setFilterCardId('')
-    setFilterPlaceId('')
-    setFilterCategoryIds([])
-  }
-
-  async function handleDuplicate(id: string): Promise<void> {
-    await duplicate(id)
-  }
-
-  return (
-    <div className={styles.page}>
-      {/* Sticky top section */}
-      <div className={styles.stickyTop}>
-        {/* Month + range header */}
-        <div className={styles.mobileHeader}>
-          <p className={styles.mobileMonthLabel}>{monthLabel}</p>
-          <PeriodDescription period={period} />
-        </div>
-
-        {/* Search bar */}
-        <div className={styles.searchWrap}>
-          <span className={styles.searchIcon}>🔍</span>
-          <input
-            className={styles.searchInput}
-            placeholder="Buscar gastos..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          {search && (
-            <button
-              className={styles.clearSearch}
-              onClick={() => setSearch('')}
-              aria-label="Limpiar búsqueda"
-            >
-              ✕
-            </button>
-          )}
-        </div>
-
-        {/* Period tabs + filter toggle */}
-        <div className={styles.topBar}>
-          <div className={styles.tabs} role="tablist" aria-label="Período">
-            {PERIODS.map((p) => (
-              <button
-                key={p.value}
-                role="tab"
-                aria-selected={period === p.value}
-                className={[styles.tab, period === p.value ? styles.tabActive : ''].join(' ')}
-                onClick={() => setPeriod(p.value)}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-          <button
-            className={[styles.filterBtn, activeFilterCount > 0 ? styles.filterBtnActive : ''].join(
-              ' '
-            )}
-            onClick={() => setShowFilters((v) => !v)}
-          >
-            ⚙{activeFilterCount > 0 ? ` ${activeFilterCount}` : ''}
-          </button>
-        </div>
-      </div>
-
-      {/* Filter panel */}
-      {showFilters && (
-        <div className={styles.filterPanel}>
-          <div className={styles.filterRow}>
-            <span className={styles.filterLbl}>Moneda</span>
-            <div className={styles.filterChips}>
-              {(['', Currency.USD, Currency.UYU] as const).map((c) => (
-                <button
-                  key={c || 'all'}
-                  className={[styles.chip, filterCurrency === c ? styles.chipActive : ''].join(' ')}
-                  onClick={() => setFilterCurrency(c)}
-                >
-                  {c || 'Todas'}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className={styles.filterRow}>
-            <span className={styles.filterLbl}>Medio de pago</span>
-            <select
-              className={styles.filterSelect}
-              value={filterCardId}
-              onChange={(e) => setFilterCardId(e.target.value)}
-            >
-              <option value="">Todos</option>
-              {cards.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.bank} ···· {c.lastFour ?? '—'}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className={styles.filterRow}>
-            <span className={styles.filterLbl}>Comercio</span>
-            <select
-              className={styles.filterSelect}
-              value={filterPlaceId}
-              onChange={(e) => setFilterPlaceId(e.target.value)}
-            >
-              <option value="">Todos</option>
-              {places.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className={styles.filterRow}>
-            <span className={styles.filterLbl}>Categoría</span>
-            <CategoryChips
-              categories={categories}
-              selected={filterCategoryIds}
-              onChange={setFilterCategoryIds}
-            />
-          </div>
-
-          {activeFilterCount > 0 && (
-            <button className={styles.clearBtn} onClick={clearFilters}>
-              Limpiar filtros
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Group by selector */}
-      <div className={styles.groupByBar}>
-        <PeriodControl options={GROUP_OPTIONS} value={groupBy} onChange={setGroupBy} />
-      </div>
-
-      {/* Totals */}
-      <div className={styles.totals}>
-        <div className={styles.totalChip}>
-          <div className={styles.totalLabelRow}>
-            <span className={styles.totalCurrBadge}>USD</span>
-          </div>
-          <p className={styles.totalAmt}>
-            <span className={styles.totalSymbol}>U$S </span>
-            {formatAmount(totalUsd, Currency.USD).replace(/^\$/, '')}
-          </p>
-        </div>
-        <div className={styles.totalChip}>
-          <div className={styles.totalLabelRow}>
-            <span className={styles.totalCurrBadge}>UYU</span>
-          </div>
-          <p className={styles.totalAmt}>
-            <span className={styles.totalSymbol}>$ </span>
-            {formatAmount(totalUyu, Currency.UYU).replace(/^\$/, '')}
-          </p>
-        </div>
-      </div>
-
-      {error && <ErrorMessage onRetry={() => void refetch()} />}
-
-      {!error && groups.length === 0 && (
-        <p className={styles.empty}>
-          {search || activeFilterCount > 0
-            ? 'No hay gastos con esos filtros.'
-            : 'No hay gastos en este período.'}
-        </p>
-      )}
-
-      {/* Expense groups */}
-      {groups.map((group) => {
-        const gUsd = group.expenses
-          .filter((e) => e.currency === Currency.USD)
-          .reduce((s, e) => s + e.amount, 0)
-        const gUyu = group.expenses
-          .filter((e) => e.currency === Currency.UYU)
-          .reduce((s, e) => s + e.amount, 0)
-        return (
-          <div key={group.date}>
-            <div className={styles.groupHeader}>
-              <span className={styles.groupLabel}>{group.label}</span>
-              <span className={styles.groupTotal}>
-                {gUsd > 0 && (
-                  <span className={styles.groupTotalItem}>
-                    <span className={styles.groupTotalAmt}>
-                      U$S {formatAmount(gUsd, Currency.USD).replace(/^[^\d]*/, '')}
-                    </span>
-                    <span className={styles.groupTotalBadge}>USD</span>
-                  </span>
-                )}
-                {gUsd > 0 && gUyu > 0 && <span className={styles.dot}>·</span>}
-                {gUyu > 0 && (
-                  <span className={styles.groupTotalItem}>
-                    <span className={styles.groupTotalAmt}>
-                      $ {formatAmount(gUyu, Currency.UYU).replace(/^[^\d]*/, '')}
-                    </span>
-                    <span className={styles.groupTotalBadge}>UYU</span>
-                  </span>
-                )}
-              </span>
-            </div>
-            {group.expenses.map((expense) => (
-              <ExpenseListItem
-                key={expense.id}
-                expense={expense}
-                categories={categories}
-                onDuplicate={(id) => void handleDuplicate(id)}
-              />
-            ))}
-          </div>
-        )
-      })}
-    </div>
-  )
 }
