@@ -4,74 +4,11 @@
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
-  max-width: 480px;
-  margin: 0 auto;
-  position: relative;
-  background: var(--cream);
-}
-
-.main {
-  flex: 1;
-  overflow-y: auto;
-  padding-bottom: calc(72px + env(safe-area-inset-bottom));
-}
-
-/* ── Bottom nav ── */
-.nav {
-  position: fixed;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 480px;
-  display: flex;
-  background: #fff;
-  border-top: 1px solid var(--border);
-  padding: 10px 0 calc(18px + env(safe-area-inset-bottom));
-  z-index: 100;
-}
-
-.navItem {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  text-decoration: none;
-  color: var(--muted);
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  font-family: inherit;
-}
-
-.navItemActive .navLabel { color: var(--gold-dk); font-weight: 700; }
-
-.navIcon { font-size: 21px; line-height: 1; }
-
-.navLabel {
-  font-size: 10px;
-  font-weight: 500;
-  color: inherit;
-}
-
-/* Empty slot that holds space for the FAB in the middle */
-.navSpacer { flex: 1; }
-
-/* ─────────────────────────────────────────────────────────
-   Desktop layout
-   ───────────────────────────────────────────────────────── */
-
-.desktopShell {
-  display: flex;
-  flex-direction: column;
-  min-height: 100dvh;
   background: #fff;
 }
 
 /* Top nav bar */
-.desktopNav {
+.nav {
   background: #fff;
   border-bottom: 1px solid var(--border-subtle);
   position: sticky;
@@ -79,7 +16,7 @@
   z-index: 100;
 }
 
-.desktopNavInner {
+.navInner {
   max-width: 1280px;
   margin: 0 auto;
   padding: 0 28px;
@@ -91,14 +28,14 @@
 }
 
 /* Logo */
-.desktopLogo {
+.logo {
   display: flex;
   align-items: center;
   gap: 9px;
   flex-shrink: 0;
 }
 
-.desktopLogoMark {
+.logoMark {
   width: 36px; height: 36px;
   background: linear-gradient(135deg, var(--gold-dk), var(--gold));
   border-radius: 10px;
@@ -108,13 +45,13 @@
   flex-shrink: 0;
 }
 
-.desktopLogoName {
+.logoName {
   font-family: var(--font-head);
   font-size: 17px; font-weight: 800; color: var(--ink-desktop);
 }
 
 /* Nav links */
-.desktopNavLinks {
+.navLinks {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -123,7 +60,7 @@
   transform: translateX(-50%);
 }
 
-.desktopNavLink {
+.navLink {
   padding: 6px 14px;
   border-radius: 8px;
   font-size: 14px; font-weight: 500;
@@ -132,15 +69,15 @@
   transition: color .12s;
 }
 
-.desktopNavLink:hover { color: var(--ink-desktop); }
+.navLink:hover { color: var(--ink-desktop); }
 
-.desktopNavLinkActive {
+.navLinkActive {
   color: #10b981;
   font-weight: 700;
 }
 
 /* User area */
-.desktopUser {
+.user {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -148,25 +85,25 @@
   margin-left: auto;
 }
 
-.desktopUserGreeting {
+.userGreeting {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   line-height: 1.25;
 }
 
-.desktopUserGreetingLabel {
+.userGreetingLabel {
   font-size: 11px;
   color: var(--muted-desktop);
 }
 
-.desktopUserGreeting strong {
+.userGreeting strong {
   font-size: 14px;
   color: var(--ink-desktop);
   font-weight: 600;
 }
 
-.desktopAvatar {
+.avatar {
   width: 36px; height: 36px;
   background: linear-gradient(135deg, var(--gold-dk), var(--gold));
   border-radius: 50%;
@@ -176,36 +113,15 @@
 }
 
 /* Main content */
-.desktopMain {
+.main {
   flex: 1;
   overflow-y: auto;
   background: var(--bg-desktop);
 }
 
-.desktopContent {
+.content {
   max-width: 1280px;
   margin: 0 auto;
   padding: 32px;
   background: #fff;
-}
-
-/* ── FAB (positioned between expense and metrics slots) ── */
-.fab {
-  position: fixed;
-  bottom: calc(22px + env(safe-area-inset-bottom));
-  left: 50%;
-  transform: translateX(-50%) translateX(0px);
-  /* Center FAB in the middle nav slot — adjust translateX if nav changes */
-  width: 56px;
-  height: 56px;
-  background: linear-gradient(145deg, var(--gold), var(--gold-dk));
-  border-radius: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 28px;
-  color: var(--ink);
-  box-shadow: 0 6px 22px rgba(196,125,16,.45);
-  z-index: 101;
-  text-decoration: none;
 }
