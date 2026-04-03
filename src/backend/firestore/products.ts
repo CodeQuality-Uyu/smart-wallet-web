@@ -190,8 +190,11 @@ export const firestoreProductsBackend: IProductsBackend = {
 
     // Denormalize last price info onto global product for searchGlobal suggestions
     const globalRef = doc(firestore, 'products', payload.productId)
+    const placeSnap = await getDoc(doc(firestore, 'places', payload.placeId)).catch(() => null)
+    const placeName = placeSnap?.data()?.['name'] as string | undefined
     await updateDoc(globalRef, {
       lastPlaceId: payload.placeId,
+      lastPlaceName: placeName ?? payload.placeId,
       lastUnitPrice: payload.unitPrice,
       lastCurrency: payload.currency,
       lastRecordedAt: payload.recordedAt,

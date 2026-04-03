@@ -4,6 +4,7 @@
 import {
   collection,
   getDocs,
+  getDoc,
   addDoc,
   updateDoc,
   deleteDoc,
@@ -42,9 +43,8 @@ export const firestoreSalariesBackend: ISalariesBackend = {
     const uid = requireUid()
     const ref = doc(firestore, 'users', uid, 'salaries', id)
     await updateDoc(ref, { ...payload })
-    const snap = await getDocs(query(collection(firestore, 'users', uid, 'salaries'), orderBy('createdAt', 'desc')))
-    const d = snap.docs.find((x) => x.id === id)
-    return { id, ...d!.data() } as Salary
+    const snap = await getDoc(ref)
+    return { id, ...snap.data() } as Salary
   },
 
   async remove(id: string): Promise<void> {
