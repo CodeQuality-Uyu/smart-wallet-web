@@ -13,12 +13,12 @@ export const mockMetrics: MetricsSummary = {
   fixedUsd: 12.98,
   fixedUyu: 7180,
   monthlyHistory: [
-    { month: 10, year: 2025, label: 'Oct', usd: 480, uyu: 18000 },
-    { month: 11, year: 2025, label: 'Nov', usd: 520, uyu: 21000 },
-    { month: 12, year: 2025, label: 'Dic', usd: 710, uyu: 28000 },
-    { month: 1, year: 2026, label: 'Ene', usd: 390, uyu: 19000 },
-    { month: 2, year: 2026, label: 'Feb', usd: 430, uyu: 22000 },
-    { month: 3, year: 2026, label: 'Mar', usd: 560, uyu: 24800 },
+    { month: 10, year: 2025, label: 'Oct', usd: 480,  uyu: 18000, fixedUsd: 12.98, fixedUyu: 3290, variableUsd: 467.02, variableUyu: 14710 },
+    { month: 11, year: 2025, label: 'Nov', usd: 520,  uyu: 21000, fixedUsd: 12.98, fixedUyu: 3290, variableUsd: 507.02, variableUyu: 17710 },
+    { month: 12, year: 2025, label: 'Dic', usd: 710,  uyu: 28000, fixedUsd: 12.98, fixedUyu: 3290, variableUsd: 697.02, variableUyu: 24710 },
+    { month: 1,  year: 2026, label: 'Ene', usd: 390,  uyu: 19000, fixedUsd: 12.98, fixedUyu: 3290, variableUsd: 377.02, variableUyu: 15710 },
+    { month: 2,  year: 2026, label: 'Feb', usd: 430,  uyu: 22000, fixedUsd: 12.98, fixedUyu: 3290, variableUsd: 417.02, variableUyu: 18710 },
+    { month: 3,  year: 2026, label: 'Mar', usd: 560,  uyu: 24800, fixedUsd: 12.98, fixedUyu: 3290, variableUsd: 547.02, variableUyu: 21510 },
   ],
   byCategory: [
     { categoryId: 'cat-1', categoryName: 'Comida', categoryIcon: '🍔', usd: 186, uyu: 3200, expenseCount: 8 },

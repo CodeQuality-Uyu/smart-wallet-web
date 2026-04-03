@@ -147,12 +147,20 @@ export const firestoreMetricsBackend: IMetricsBackend = {
       const mo = d.getMonth() + 1
       const prefix = `${y}-${String(mo).padStart(2, '0')}`
       const monthExpenses = allExpenses.filter((e) => e.date.startsWith(prefix))
+      const totalUsdMonth = sumByCurrency(monthExpenses, Currency.USD)
+      const totalUyuMonth = sumByCurrency(monthExpenses, Currency.UYU)
+      const fixedUsdMonth = Math.min(fixedUsd, totalUsdMonth)
+      const fixedUyuMonth = Math.min(fixedUyu, totalUyuMonth)
       return {
         month: mo,
         year: y,
         label: MONTH_SHORT[mo - 1] as string,
-        usd: sumByCurrency(monthExpenses, Currency.USD),
-        uyu: sumByCurrency(monthExpenses, Currency.UYU),
+        usd: totalUsdMonth,
+        uyu: totalUyuMonth,
+        fixedUsd: fixedUsdMonth,
+        fixedUyu: fixedUyuMonth,
+        variableUsd: totalUsdMonth - fixedUsdMonth,
+        variableUyu: totalUyuMonth - fixedUyuMonth,
       }
     })
 

@@ -166,6 +166,10 @@ export interface MonthlySpend {
   label: string
   usd: number
   uyu: number
+  fixedUsd: number
+  fixedUyu: number
+  variableUsd: number
+  variableUyu: number
 }
 
 export interface CategorySpend {
