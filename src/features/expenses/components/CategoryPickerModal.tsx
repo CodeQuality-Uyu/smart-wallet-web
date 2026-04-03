@@ -79,13 +79,14 @@ export function CategoryPickerModal({
 
   const visibleCategories = filtered.slice(0, visibleCount)
 
-  const createBtn = (
+  const createBtn = showCreateForm ? null : (
     <button
       type="button"
       className={styles.headerCreateBtn}
-      onClick={() => setShowCreateForm((s) => !s)}
+      onClick={() => setShowCreateForm(true)}
+      title="Crear categoría"
     >
-      {showCreateForm ? 'Cancelar' : '＋ Crear categoría'}
+      ＋
     </button>
   )
 

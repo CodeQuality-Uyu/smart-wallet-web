@@ -7,7 +7,7 @@ import { useExpense, useUpdateExpense } from '@/features/expenses/hooks/useExpen
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import type { ExpenseFormValues } from '@/features/expenses/schemas/expenseSchema'
-import styles from './NewExpensePage.module.css' // reuse same header styles
+import styles from './NewExpensePage.module.css'
 
 export default function EditExpensePage(): React.ReactElement {
   const { id } = useParams<{ id: string }>()
@@ -34,20 +34,19 @@ export default function EditExpensePage(): React.ReactElement {
   }
 
   return (
-    <div className={styles.page}>
-      <header className={styles.header}>
-        <button className={styles.closeBtn} onClick={() => navigate(-1)} aria-label="Cancelar">
-          ←
-        </button>
-        <h1 className={styles.title}>Editar gasto</h1>
-        <div style={{ width: 36 }} />
-      </header>
-
-      <ExpenseForm
-        initialValues={initialValues}
-        onSubmit={handleSubmit}
-        submitLabel="Guardar cambios"
-      />
+    <div className={styles.desktopPage}>
+      <div className={styles.desktopCard}>
+        <div className={styles.desktopHeader}>
+          <h1 className={styles.desktopTitle}>Editar gasto</h1>
+        </div>
+        <ExpenseForm
+          initialValues={initialValues}
+          onSubmit={handleSubmit}
+          submitLabel="Guardar cambios"
+          variant="desktop"
+          onCancel={() => navigate(-1)}
+        />
+      </div>
     </div>
   )
 }

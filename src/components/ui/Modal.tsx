@@ -35,8 +35,10 @@ export function Modal({ title, onClose, children, width = 520, titleAction }: Mo
         onClick={(e) => e.stopPropagation()}
       >
         <div className={styles.header}>
-          <h2 className={styles.title}>{title}</h2>
-          {titleAction && <span className={styles.titleAction}>{titleAction}</span>}
+          <div className={styles.titleGroup}>
+            <h2 className={styles.title}>{title}</h2>
+            {titleAction && <span className={styles.titleAction}>{titleAction}</span>}
+          </div>
           <button className={styles.closeBtn} onClick={onClose} aria-label="Cerrar">✕</button>
         </div>
         {children}
