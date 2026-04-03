@@ -122,38 +122,77 @@ export default function CardsPage(): React.ReactElement {
           </div>
         )}
 
-        {/* Existing cards */}
-        {cards.map((card) => (
-          <div
-            key={card.id}
-            className={styles.card}
-            style={{ background: cardGradient(card.type, card.bank) }}
-          >
-            <div className={styles.cardBadge}>
-              {card.type === CardType.Transfer ? '↔' : card.type === CardType.Credit ? '💳' : '💵'}
-            </div>
-            <div className={styles.cardInfo}>
-              <p className={styles.cardName}>{card.name}</p>
-              <p className={styles.cardLast4}>
-                {card.lastFour ? `•••• •••• •••• ${card.lastFour}` : 'Sin número'}
-              </p>
-              <p className={styles.cardTypeLbl}>
-                {card.type === CardType.Transfer ? 'Transferencia' : card.type === CardType.Credit ? 'Crédito' : 'Débito'} · {card.bank}
-              </p>
-            </div>
-            <button
-              className={styles.cardDelete}
-              onClick={() => {
-                setDeletingId(card.id)
-                void deleteCard(card.id).finally(() => setDeletingId(null))
-              }}
-              disabled={deletingId === card.id}
-              aria-label="Eliminar tarjeta"
+        {/* Existing cards — grid desktop */}
+        <div className={styles.cardsGrid}>
+          {cards.map((card) => (
+            <div
+              key={card.id}
+              className={styles.card}
+              style={{ background: cardGradient(card.type, card.bank) }}
             >
-              {deletingId === card.id ? '…' : '✕'}
-            </button>
+              <div className={styles.cardBadge}>
+                {card.type === CardType.Transfer ? '↔' : card.type === CardType.Credit ? '💳' : '💵'}
+              </div>
+              <div className={styles.cardInfo}>
+                <p className={styles.cardName}>{card.name}</p>
+                <p className={styles.cardLast4}>
+                  {card.lastFour ? `•••• •••• •••• ${card.lastFour}` : 'Sin número'}
+                </p>
+                <p className={styles.cardTypeLbl}>
+                  {card.type === CardType.Transfer ? 'Transferencia' : card.type === CardType.Credit ? 'Crédito' : 'Débito'} · {card.bank}
+                </p>
+              </div>
+              <button
+                className={styles.cardDelete}
+                onClick={() => {
+                  setDeletingId(card.id)
+                  void deleteCard(card.id).finally(() => setDeletingId(null))
+                }}
+                disabled={deletingId === card.id}
+                aria-label="Eliminar tarjeta"
+              >
+                {deletingId === card.id ? '…' : '✕'}
+              </button>
+            </div>
+          ))}
+          {/* Placeholder dashed card */}
+          <button className={styles.cardPlaceholder} onClick={() => setShowForm((s) => !s)}>
+            <span className={styles.cardPlaceholderIcon}>＋</span>
+            <span className={styles.cardPlaceholderText}>Nueva tarjeta</span>
+          </button>
+        </div>
+
+        {/* 2-col section */}
+        <div className={styles.twoCol}>
+          <div className={styles.colSection}>
+            <span className={styles.colTitle}>Cuentas Bancarias</span>
+            {cards.filter(c => c.type === CardType.Credit || c.type === CardType.Debit).map(c => (
+              <div key={`b-${c.id}`} style={{ fontSize: 13, color: 'var(--ink)', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
+                {c.bank} · {c.type === CardType.Credit ? 'Crédito' : 'Débito'}
+              </div>
+            ))}
+            {cards.filter(c => c.type === CardType.Credit || c.type === CardType.Debit).length === 0 && (
+              <p style={{ fontSize: 12, color: 'var(--muted)' }}>Sin cuentas bancarias</p>
+            )}
           </div>
-        ))}
+          <div className={styles.colSection}>
+            <span className={styles.colTitle}>Billeteras Digitales</span>
+            {cards.filter(c => c.type === CardType.Transfer).map(c => (
+              <div key={`w-${c.id}`} style={{ fontSize: 13, color: 'var(--ink)', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
+                {c.name}
+              </div>
+            ))}
+            {cards.filter(c => c.type === CardType.Transfer).length === 0 && (
+              <p style={{ fontSize: 12, color: 'var(--muted)' }}>Sin billeteras digitales</p>
+            )}
+          </div>
+        </div>
+
+        {/* Footer default method */}
+        <div className={styles.defaultFooter}>
+          <span className={styles.defaultLabel}>Método por defecto: {cards[0]?.name ?? 'Sin configurar'}</span>
+          <button className={styles.defaultLink}>Cambiar</button>
+        </div>
 
       </div>
     </div>

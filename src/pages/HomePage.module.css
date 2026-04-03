@@ -229,16 +229,17 @@
    Desktop view
    ───────────────────────────────────────────────────────── */
 
-/* Root two-column grid: pending payments | right column */
+/* Root two-column grid: main content | sidebar */
 .desktopGrid {
   display: grid;
-  grid-template-columns: 300px 1fr;
-  gap: 16px;
+  grid-template-columns: 1fr 320px;
+  gap: 24px;
   align-items: start;
 }
 
-/* Right column: flex column of independent cards */
+/* Main content column */
 .desktopRightCol {
+  grid-column: 1;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -249,8 +250,7 @@
 .desktopMainBox {
   background: #fff;
   border-radius: var(--radius);
-  border: 1.5px solid var(--border);
-  padding: 24px;
+  padding: 0 24px 24px;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -258,17 +258,21 @@
 
 .desktopSubtitle {
   font-family: var(--font-head);
-  font-size: 16px; color: var(--ink);
-  font-weight: 700; text-transform: capitalize;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink-desktop);
+  text-transform: capitalize;
 }
 
 /* Stat cards row inside the box */
 .desktopStatRow { display: flex; gap: 14px; }
 .desktopStatCard {
-  flex: 1; background: var(--cream); border-radius: 12px;
+  flex: 1; border-radius: 16px;
   padding: 16px 18px; border: 1.5px solid var(--border);
   display: flex; flex-direction: column;
+  background: #fff;
 }
+
 .desktopStatLabel {
   font-size: 10px; font-weight: 700; color: var(--muted);
   text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px;
@@ -301,8 +305,17 @@
   display: flex; align-items: center; justify-content: space-between;
 }
 .desktopSectionTitle {
-  font-family: var(--font-head); font-size: 15px; font-weight: 700; color: var(--ink);
+  font-family: var(--font-head); font-size: 15px; font-weight: 700; color: var(--ink-desktop);
   margin-bottom: 8px;
+}
+.desktopSidebar .desktopSectionTitle {
+  padding: 0 16px;
+  color: var(--muted-desktop);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-bottom: 10px;
 }
 .desktopMovHeaderLeft { display: flex; align-items: center; gap: 8px; }
 .desktopMovHeaderLeft .desktopSectionTitle { margin-bottom: 0; }
@@ -331,7 +344,7 @@
 .desktopMovRow:last-child { border-radius: 0 0 var(--radius) var(--radius); }
 
 .desktopMovIcon {
-  width: 38px; height: 38px; border-radius: 50%;
+  width: 38px; height: 38px; border-radius: 10px;
   background: var(--cream); border: 1.5px solid var(--border);
   display: flex; align-items: center; justify-content: center;
   font-size: 17px; flex-shrink: 0;
@@ -353,14 +366,25 @@
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: .1em;
-  background: var(--cream);
+  background: var(--bg-desktop);
 }
 
 .desktopEmpty { text-align: center; padding: 40px; font-size: 13px; color: var(--muted); }
 
 /* Right sidebar */
-.desktopSidebar { display: flex; flex-direction: column; }
-.desktopCard { background: #fff; border-radius: var(--radius); border: 1.5px solid var(--border); overflow: hidden; }
+.desktopSidebar {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-desktop);
+  border-left: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  padding: 20px 0;
+  position: sticky;
+  top: 24px;
+}
+.desktopCard { background: #fff; border-radius: var(--radius); border: 1.5px solid var(--border); overflow: hidden; margin: 0 16px; }
 
 .desktopAllPaid { display: flex; align-items: center; gap: 10px; padding: 14px 16px; font-size: 13px; color: var(--muted); }
 
@@ -395,11 +419,9 @@
 .desktopCatName { flex: 1; font-size: 13px; font-weight: 600; color: var(--ink); }
 .desktopCatDelta { font-family: var(--font-num); font-size: 12px; font-weight: 700; }
 
-/* Independent side-by-side cards: tips + categories */
-.desktopBottomRow {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+/* Sidebar section spacing */
+.desktopSidebarSection {
+  margin-top: 20px;
 }
 
 /* Currency symbol prefix in stat card amount */

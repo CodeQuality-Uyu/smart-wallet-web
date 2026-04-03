@@ -1,6 +1,6 @@
 // src/layouts/SettingsLayout.tsx
-import React from 'react'
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import React, { useEffect } from 'react'
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/app/providers/AuthContext'
 import styles from './SettingsLayout.module.css'
 
@@ -11,6 +11,7 @@ interface SectionItem {
 }
 
 const SECTIONS: SectionItem[] = [
+  { icon: '👤', label: 'Perfil', path: '/settings/profile' },
   { icon: '📋', label: 'Reportes', path: '/settings/reports' },
   { icon: '🔄', label: 'Pagos recurrentes', path: '/settings/recurring' },
   { icon: '📍', label: 'Locales', path: '/settings/places' },
@@ -18,13 +19,20 @@ const SECTIONS: SectionItem[] = [
   { icon: '🏷️', label: 'Categ. productos', path: '/settings/product-categories' },
   { icon: '🏷️', label: 'Categorías', path: '/settings/categories' },
   { icon: '💳', label: 'Medios de pago', path: '/settings/cards' },
-  { icon: '💰', label: 'Sueldos', path: '/settings/salaries' },
   { icon: '🎯', label: 'Presupuesto', path: '/settings/budget' },
 ]
 
 export function SettingsLayout(): React.ReactElement {
   const { logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+
+  useEffect(() => {
+    const isDesktop = window.innerWidth >= 768
+    if (isDesktop && location.pathname === '/settings') {
+      void navigate('/settings/profile', { replace: true })
+    }
+  }, [location.pathname, navigate])
 
   function handleLogout(): void {
     logout()
@@ -41,7 +49,6 @@ export function SettingsLayout(): React.ReactElement {
       {/* Desktop: sidebar + content */}
       <div className={styles.desktopView}>
         <aside className={styles.sidebar}>
-          <p className={styles.sidebarTitle}>Configuración</p>
           <nav className={styles.nav}>
             {SECTIONS.map((item) => (
               <NavLink

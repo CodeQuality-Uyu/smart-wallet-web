@@ -3,26 +3,48 @@ import React from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useMonthClosing, useCreateMonthClosing } from '@/hooks/useMonthClosings'
 import { useMetrics } from '@/hooks/useMetrics'
-import { useRecurringList, useConfirmRecurringPayment } from '@/features/recurring/hooks/useRecurring'
+import {
+  useRecurringList,
+  useConfirmRecurringPayment,
+} from '@/features/recurring/hooks/useRecurring'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Button } from '@/components/ui/Button'
 import { formatAmount, formatCurrency } from '@/utils/formatCurrency'
-import { MetricsPeriod, Currency, RecurringMode, RecurringPaymentStatus } from '@/types/enums'
+import { PeriodFilter, Currency, RecurringMode, RecurringPaymentStatus } from '@/types/enums'
 import type { MonthClosing } from '@/types/models'
 import styles from './MonthClosingPage.module.css'
 
-const MONTH_NAMES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+const MONTH_NAMES = [
+  'Enero',
+  'Febrero',
+  'Marzo',
+  'Abril',
+  'Mayo',
+  'Junio',
+  'Julio',
+  'Agosto',
+  'Septiembre',
+  'Octubre',
+  'Noviembre',
+  'Diciembre',
+]
 
 function ClosingDetail({ closing }: { closing: MonthClosing }): React.ReactElement {
   const navigate = useNavigate()
-  const closedDate = new Date(closing.closedAt).toLocaleDateString('es-UY', { day: 'numeric', month: 'long', year: 'numeric' })
+  const closedDate = new Date(closing.closedAt).toLocaleDateString('es-UY', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
   const monthName = `${MONTH_NAMES[closing.month - 1] ?? ''} ${closing.year}`
 
   return (
     <div className={styles.page}>
       <header className={styles.header}>
         <div className={styles.headerTop}>
-          <button className={styles.back} onClick={() => navigate(-1)}>←</button>
+          <button className={styles.back} onClick={() => navigate(-1)}>
+            ←
+          </button>
           <span className={styles.closedBadge}>✓ Cerrado</span>
         </div>
         <h1 className={styles.title}>Reporte {monthName}</h1>
@@ -68,7 +90,9 @@ function ClosingDetail({ closing }: { closing: MonthClosing }): React.ReactEleme
                     {[
                       cat.usd > 0 ? `${formatCurrency(cat.usd, Currency.USD)} USD` : '',
                       cat.uyu > 0 ? `${formatAmount(cat.uyu, Currency.UYU)} UYU` : '',
-                    ].filter(Boolean).join(' + ')}
+                    ]
+                      .filter(Boolean)
+                      .join(' + ')}
                   </span>
                 </div>
               ))}
@@ -76,9 +100,15 @@ function ClosingDetail({ closing }: { closing: MonthClosing }): React.ReactEleme
                 <span className={styles.cardTotalLbl}>Total variables</span>
                 <span className={styles.cardTotalAmt}>
                   {[
-                    closing.variableUsd > 0 ? `${formatCurrency(closing.variableUsd, Currency.USD)} USD` : '',
-                    closing.variableUyu > 0 ? `${formatAmount(closing.variableUyu, Currency.UYU)} UYU` : '',
-                  ].filter(Boolean).join(' · ') || '—'}
+                    closing.variableUsd > 0
+                      ? `${formatCurrency(closing.variableUsd, Currency.USD)} USD`
+                      : '',
+                    closing.variableUyu > 0
+                      ? `${formatAmount(closing.variableUyu, Currency.UYU)} UYU`
+                      : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' · ') || '—'}
                 </span>
               </div>
             </>
@@ -96,19 +126,32 @@ function ClosingDetail({ closing }: { closing: MonthClosing }): React.ReactEleme
                 <div key={r.recurringId} className={styles.recurRow}>
                   <span>{r.icon}</span>
                   <span className={styles.recurName}>{r.name}</span>
-                  <span className={[styles.modeBadge, r.mode === RecurringMode.Auto ? styles.modeAuto : styles.modeManual].join(' ')}>
+                  <span
+                    className={[
+                      styles.modeBadge,
+                      r.mode === RecurringMode.Auto ? styles.modeAuto : styles.modeManual,
+                    ].join(' ')}
+                  >
                     {r.mode === RecurringMode.Auto ? 'Auto' : 'Manual'}
                   </span>
-                  <span className={styles.recurAmt}>{formatCurrency(r.amount, r.currency)} {r.currency}</span>
+                  <span className={styles.recurAmt}>
+                    {formatCurrency(r.amount, r.currency)} {r.currency}
+                  </span>
                 </div>
               ))}
               <div className={styles.cardTotal}>
                 <span className={styles.cardTotalLbl}>Total fijos</span>
                 <span className={styles.cardTotalAmt}>
                   {[
-                    closing.fixedUsd > 0 ? `${formatCurrency(closing.fixedUsd, Currency.USD)} USD` : '',
-                    closing.fixedUyu > 0 ? `${formatAmount(closing.fixedUyu, Currency.UYU)} UYU` : '',
-                  ].filter(Boolean).join(' · ') || '—'}
+                    closing.fixedUsd > 0
+                      ? `${formatCurrency(closing.fixedUsd, Currency.USD)} USD`
+                      : '',
+                    closing.fixedUyu > 0
+                      ? `${formatAmount(closing.fixedUyu, Currency.UYU)} UYU`
+                      : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' · ') || '—'}
                 </span>
               </div>
             </>
@@ -121,18 +164,32 @@ function ClosingDetail({ closing }: { closing: MonthClosing }): React.ReactEleme
 
 // ─── Inline confirm payment row ──────────────────────────────
 
-function RecurringRow({ r, isPastMonth }: { r: ReturnType<typeof useRecurringList>['data'] extends (infer T)[] | undefined ? T : never; isPastMonth: boolean }): React.ReactElement {
+function RecurringRow({
+  r,
+  isPastMonth,
+}: {
+  r: ReturnType<typeof useRecurringList>['data'] extends (infer T)[] | undefined ? T : never
+  isPastMonth: boolean
+}): React.ReactElement {
   const { mutateAsync: confirmPayment, isPending } = useConfirmRecurringPayment(r.id)
-  const isPaid = r.currentMonthStatus === RecurringPaymentStatus.Paid || r.mode === RecurringMode.Auto
+  const isPaid =
+    r.currentMonthStatus === RecurringPaymentStatus.Paid || r.mode === RecurringMode.Auto
 
   return (
     <div className={styles.recurRow}>
       <span>{r.icon}</span>
       <span className={styles.recurName}>{r.name}</span>
-      <span className={[styles.modeBadge, r.mode === RecurringMode.Auto ? styles.modeAuto : styles.modeManual].join(' ')}>
+      <span
+        className={[
+          styles.modeBadge,
+          r.mode === RecurringMode.Auto ? styles.modeAuto : styles.modeManual,
+        ].join(' ')}
+      >
         {r.mode === RecurringMode.Auto ? 'Auto' : 'Manual'}
       </span>
-      <span className={styles.recurAmt}>{formatCurrency(r.amount, r.currency)} {r.currency}</span>
+      <span className={styles.recurAmt}>
+        {formatCurrency(r.amount, r.currency)} {r.currency}
+      </span>
       {!isPaid && (isPastMonth || r.mode === RecurringMode.Manual) && (
         <button
           className={styles.markPaidBtn}
@@ -161,9 +218,15 @@ export default function MonthClosingPage(): React.ReactElement {
   const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   const isCurrentMonth = yearMonth === currentYearMonth
   const isPastMonth = !!yearMonth && !isCurrentMonth
-  const { data: metrics, isLoading: loadingMetrics } = useMetrics(MetricsPeriod.Month, isPastMonth ? yearMonth : undefined)
+  const { data: metrics, isLoading: loadingMetrics } = useMetrics(
+    PeriodFilter.Month,
+    isPastMonth ? yearMonth : undefined
+  )
 
-  const [targetYear, targetMonth] = (yearMonth ?? currentYearMonth).split('-').map(Number) as [number, number]
+  const [targetYear, targetMonth] = (yearMonth ?? currentYearMonth).split('-').map(Number) as [
+    number,
+    number,
+  ]
   const monthName = `${MONTH_NAMES[targetMonth - 1] ?? ''} ${targetYear}`
 
   if (loadingExisting || loadingMetrics || loadingRecurring) return <LoadingSpinner fullPage />
@@ -175,7 +238,9 @@ export default function MonthClosingPage(): React.ReactElement {
     return (
       <div className={styles.page}>
         <header className={styles.header}>
-          <button className={styles.back} onClick={() => navigate(-1)}>←</button>
+          <button className={styles.back} onClick={() => navigate(-1)}>
+            ←
+          </button>
         </header>
         <div className={styles.body}>
           <p className={styles.noData}>No se pudieron cargar las métricas del mes.</p>
@@ -185,14 +250,19 @@ export default function MonthClosingPage(): React.ReactElement {
   }
 
   const pendingRecurring = isCurrentMonth
-    ? recurring.filter((r) => r.mode === RecurringMode.Manual && r.currentMonthStatus === RecurringPaymentStatus.Pending)
+    ? recurring.filter(
+        (r) =>
+          r.mode === RecurringMode.Manual && r.currentMonthStatus === RecurringPaymentStatus.Pending
+      )
     : []
   const canClose = pendingRecurring.length === 0
 
   async function handleClose(): Promise<void> {
     if (!metrics || !yearMonth) return
     const recurringPaid = recurring
-      .filter((r) => r.currentMonthStatus === RecurringPaymentStatus.Paid || r.mode === RecurringMode.Auto)
+      .filter(
+        (r) => r.currentMonthStatus === RecurringPaymentStatus.Paid || r.mode === RecurringMode.Auto
+      )
       .map((r) => ({
         recurringId: r.id,
         name: r.name,
@@ -209,8 +279,12 @@ export default function MonthClosingPage(): React.ReactElement {
       usd: c.usd,
       uyu: c.uyu,
     }))
-    const fixedUsd = recurringPaid.filter((r) => r.currency === Currency.USD).reduce((s, r) => s + r.amount, 0)
-    const fixedUyu = recurringPaid.filter((r) => r.currency === Currency.UYU).reduce((s, r) => s + r.amount, 0)
+    const fixedUsd = recurringPaid
+      .filter((r) => r.currency === Currency.USD)
+      .reduce((s, r) => s + r.amount, 0)
+    const fixedUyu = recurringPaid
+      .filter((r) => r.currency === Currency.UYU)
+      .reduce((s, r) => s + r.amount, 0)
     await createClosing({
       id: yearMonth,
       year: targetYear,
@@ -231,7 +305,9 @@ export default function MonthClosingPage(): React.ReactElement {
     <div className={styles.page}>
       <header className={styles.header}>
         <div className={styles.headerTop}>
-          <button className={styles.back} onClick={() => navigate(-1)}>←</button>
+          <button className={styles.back} onClick={() => navigate(-1)}>
+            ←
+          </button>
         </div>
         <h1 className={styles.title}>Cerrar {monthName}</h1>
         {isPastMonth && <p className={styles.pastBadge}>⚠️ Mes pasado sin cerrar</p>}
@@ -250,8 +326,12 @@ export default function MonthClosingPage(): React.ReactElement {
                 className={styles.blockerItem}
                 onClick={() => navigate(`/settings/recurring/${r.id}`)}
               >
-                <span>{r.icon} {r.name}</span>
-                <span className={styles.blockerAmt}>{formatCurrency(r.amount, r.currency)} {r.currency} →</span>
+                <span>
+                  {r.icon} {r.name}
+                </span>
+                <span className={styles.blockerAmt}>
+                  {formatCurrency(r.amount, r.currency)} {r.currency} →
+                </span>
               </button>
             ))}
           </div>
@@ -295,7 +375,9 @@ export default function MonthClosingPage(): React.ReactElement {
                     {[
                       cat.usd > 0 ? `${formatCurrency(cat.usd, Currency.USD)} USD` : '',
                       cat.uyu > 0 ? `${formatAmount(cat.uyu, Currency.UYU)} UYU` : '',
-                    ].filter(Boolean).join(' + ')}
+                    ]
+                      .filter(Boolean)
+                      .join(' + ')}
                   </span>
                 </div>
               ))}
@@ -303,9 +385,15 @@ export default function MonthClosingPage(): React.ReactElement {
                 <span className={styles.cardTotalLbl}>Total variables</span>
                 <span className={styles.cardTotalAmt}>
                   {[
-                    metrics.variableUsd > 0 ? `${formatCurrency(metrics.variableUsd, Currency.USD)} USD` : '',
-                    metrics.variableUyu > 0 ? `${formatAmount(metrics.variableUyu, Currency.UYU)} UYU` : '',
-                  ].filter(Boolean).join(' · ') || '—'}
+                    metrics.variableUsd > 0
+                      ? `${formatCurrency(metrics.variableUsd, Currency.USD)} USD`
+                      : '',
+                    metrics.variableUyu > 0
+                      ? `${formatAmount(metrics.variableUyu, Currency.UYU)} UYU`
+                      : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' · ') || '—'}
                 </span>
               </div>
             </>
@@ -323,16 +411,32 @@ export default function MonthClosingPage(): React.ReactElement {
                 <RecurringRow key={r.id} r={r} isPastMonth={isPastMonth} />
               ))}
               {(() => {
-                const fUsd = recurring.filter((r) => r.currency === Currency.USD && (r.mode === RecurringMode.Auto || r.currentMonthStatus === RecurringPaymentStatus.Paid)).reduce((s, r) => s + r.amount, 0)
-                const fUyu = recurring.filter((r) => r.currency === Currency.UYU && (r.mode === RecurringMode.Auto || r.currentMonthStatus === RecurringPaymentStatus.Paid)).reduce((s, r) => s + r.amount, 0)
-                return (fUsd > 0 || fUyu > 0) ? (
+                const fUsd = recurring
+                  .filter(
+                    (r) =>
+                      r.currency === Currency.USD &&
+                      (r.mode === RecurringMode.Auto ||
+                        r.currentMonthStatus === RecurringPaymentStatus.Paid)
+                  )
+                  .reduce((s, r) => s + r.amount, 0)
+                const fUyu = recurring
+                  .filter(
+                    (r) =>
+                      r.currency === Currency.UYU &&
+                      (r.mode === RecurringMode.Auto ||
+                        r.currentMonthStatus === RecurringPaymentStatus.Paid)
+                  )
+                  .reduce((s, r) => s + r.amount, 0)
+                return fUsd > 0 || fUyu > 0 ? (
                   <div className={styles.cardTotal}>
                     <span className={styles.cardTotalLbl}>Total fijos</span>
                     <span className={styles.cardTotalAmt}>
                       {[
                         fUsd > 0 ? `${formatCurrency(fUsd, Currency.USD)} USD` : '',
                         fUyu > 0 ? `${formatAmount(fUyu, Currency.UYU)} UYU` : '',
-                      ].filter(Boolean).join(' · ')}
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
                     </span>
                   </div>
                 ) : null

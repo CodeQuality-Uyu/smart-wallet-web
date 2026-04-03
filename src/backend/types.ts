@@ -2,39 +2,86 @@
 // Shared interfaces for all backend implementations (msw, firestore, aws)
 
 import type {
-  Card, CreateCardPayload,
-  Category, CreateCategoryPayload, UpdateCategoryPayload,
-  GlobalPlace, Place, CreatePlacePayload, UpdatePlacePayload,
-  RecurringExpense, CreateRecurringPayload, UpdateRecurringPayload,
-  ConfirmRecurringPaymentPayload, RecurringPaymentHistory,
-  Expense, CreateExpensePayload, UpdateExpensePayload,
-  TicketLine, PaginatedResponse, ExpenseFilters,
-  MetricsSummary, BudgetSettings,
-  MonthClosing, CreateMonthClosingPayload,
-  ProductCategory, CreateProductCategoryPayload, UpdateProductCategoryPayload,
-  Brand, CreateBrandPayload, UpdateBrandPayload,
-  GlobalProduct, GlobalProductSuggestion,
-  Product, CreateProductPayload, UpdateProductPayload,
-  ProductPriceRecord, CreateProductPriceRecordPayload,
+  Card,
+  CreateCardPayload,
+  Category,
+  CreateCategoryPayload,
+  UpdateCategoryPayload,
+  GlobalPlace,
+  Place,
+  CreatePlacePayload,
+  UpdatePlacePayload,
+  RecurringExpense,
+  CreateRecurringPayload,
+  UpdateRecurringPayload,
+  ConfirmRecurringPaymentPayload,
+  RecurringPaymentHistory,
+  Expense,
+  CreateExpensePayload,
+  UpdateExpensePayload,
+  TicketLine,
+  PaginatedResponse,
+  ExpenseFilters,
+  MetricsSummary,
+  BudgetSettings,
+  MonthClosing,
+  CreateMonthClosingPayload,
+  ProductCategory,
+  CreateProductCategoryPayload,
+  UpdateProductCategoryPayload,
+  Brand,
+  CreateBrandPayload,
+  UpdateBrandPayload,
+  GlobalProduct,
+  GlobalProductSuggestion,
+  Product,
+  CreateProductPayload,
+  UpdateProductPayload,
+  ProductPriceRecord,
+  CreateProductPriceRecordPayload,
+  CategoryLimits,
 } from '@/types/models'
-import type { Currency, MetricsPeriod, RecurringStatus } from '@/types/enums'
+import type { Currency, PeriodFilter, RecurringStatus } from '@/types/enums'
 
 export type {
-  Card, CreateCardPayload,
-  Category, CreateCategoryPayload, UpdateCategoryPayload,
-  GlobalPlace, Place, CreatePlacePayload, UpdatePlacePayload,
-  RecurringExpense, CreateRecurringPayload, UpdateRecurringPayload,
-  ConfirmRecurringPaymentPayload, RecurringPaymentHistory,
+  Card,
+  CreateCardPayload,
+  Category,
+  CreateCategoryPayload,
+  UpdateCategoryPayload,
+  GlobalPlace,
+  Place,
+  CreatePlacePayload,
+  UpdatePlacePayload,
+  RecurringExpense,
+  CreateRecurringPayload,
+  UpdateRecurringPayload,
+  ConfirmRecurringPaymentPayload,
+  RecurringPaymentHistory,
   RecurringStatus,
-  Expense, CreateExpensePayload, UpdateExpensePayload,
-  TicketLine, PaginatedResponse, ExpenseFilters,
-  MetricsSummary, MetricsPeriod,
-  MonthClosing, CreateMonthClosingPayload,
-  ProductCategory, CreateProductCategoryPayload, UpdateProductCategoryPayload,
-  Brand, CreateBrandPayload, UpdateBrandPayload,
-  GlobalProduct, GlobalProductSuggestion,
-  Product, CreateProductPayload, UpdateProductPayload,
-  ProductPriceRecord, CreateProductPriceRecordPayload,
+  Expense,
+  CreateExpensePayload,
+  UpdateExpensePayload,
+  TicketLine,
+  PaginatedResponse,
+  ExpenseFilters,
+  MetricsSummary,
+  PeriodFilter as MetricsPeriod,
+  MonthClosing,
+  CreateMonthClosingPayload,
+  ProductCategory,
+  CreateProductCategoryPayload,
+  UpdateProductCategoryPayload,
+  Brand,
+  CreateBrandPayload,
+  UpdateBrandPayload,
+  GlobalProduct,
+  GlobalProductSuggestion,
+  Product,
+  CreateProductPayload,
+  UpdateProductPayload,
+  ProductPriceRecord,
+  CreateProductPriceRecordPayload,
 }
 
 // ─── Auth ──────────────────────────────────────────────────
@@ -102,7 +149,10 @@ export interface IRecurringBackend {
   update(id: string, payload: UpdateRecurringPayload): Promise<RecurringExpense>
   remove(id: string): Promise<void>
   setStatus(id: string, status: RecurringStatus): Promise<RecurringExpense>
-  confirmPayment(id: string, payload: ConfirmRecurringPaymentPayload): Promise<RecurringPaymentHistory>
+  confirmPayment(
+    id: string,
+    payload: ConfirmRecurringPaymentPayload
+  ): Promise<RecurringPaymentHistory>
 }
 
 // ─── Expenses ─────────────────────────────────────────────
@@ -122,7 +172,7 @@ export interface IExpensesBackend {
 // ─── Metrics ──────────────────────────────────────────────
 
 export interface IMetricsBackend {
-  getSummary(period: MetricsPeriod, yearMonth?: string): Promise<MetricsSummary>
+  getSummary(period: PeriodFilter, yearMonth?: string): Promise<MetricsSummary>
 }
 
 // ─── Month closings ───────────────────────────────────────
@@ -138,6 +188,13 @@ export interface IMonthClosingsBackend {
 export interface IBudgetBackend {
   get(): Promise<BudgetSettings>
   set(settings: BudgetSettings): Promise<BudgetSettings>
+}
+
+// ─── Category limits ──────────────────────────────────────
+
+export interface ICategoryLimitsBackend {
+  get(): Promise<CategoryLimits>
+  set(limits: CategoryLimits): Promise<CategoryLimits>
 }
 
 // ─── Salaries ─────────────────────────────────────────────
@@ -158,9 +215,16 @@ export interface CreateSalaryPayload {
   notes: string
 }
 
+export interface UpdateSalaryPayload {
+  amount: number
+  currency: string
+  notes: string
+}
+
 export interface ISalariesBackend {
   list(): Promise<Salary[]>
   create(payload: CreateSalaryPayload): Promise<Salary>
+  update(id: string, payload: UpdateSalaryPayload): Promise<Salary>
   remove(id: string): Promise<void>
 }
 

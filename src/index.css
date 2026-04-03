@@ -38,6 +38,10 @@
     --shadow: var(--shadow-card);
     --border: var(--border-card);
   }
+
+  body {
+    background: #fff;
+  }
 }
 
 html { font-size: 16px; -webkit-font-smoothing: antialiased; }

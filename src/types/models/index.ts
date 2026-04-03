@@ -172,6 +172,7 @@ export interface CategorySpend {
   categoryIcon: string
   usd: number
   uyu: number
+  expenseCount: number
 }
 
 export interface FixedExpenseBreakdown {
@@ -182,6 +183,14 @@ export interface FixedExpenseBreakdown {
   amount: number
   currency: Currency
   frequency: RecurringFrequency
+}
+
+export interface ProductCategorySpend {
+  productCategoryId: string
+  productCategoryName: string
+  productCategoryIcon: string
+  usd: number
+  uyu: number
 }
 
 export interface MetricsSummary {
@@ -198,6 +207,7 @@ export interface MetricsSummary {
   byCategory: CategorySpend[]
   previousByCategory: CategorySpend[]
   fixedBreakdown: FixedExpenseBreakdown[]
+  byProductCategory: ProductCategorySpend[]
 }
 
 // ─── Budget ───────────────────────────────────────────────
@@ -205,6 +215,17 @@ export interface MetricsSummary {
 export interface BudgetSettings {
   usd?: number
   uyu?: number
+}
+
+// ─── Category limits ──────────────────────────────────────
+
+export interface CategoryLimitEntry {
+  uyu?: number
+  usd?: number
+}
+
+export interface CategoryLimits {
+  [categoryId: string]: CategoryLimitEntry
 }
 
 // ─── Month closings ───────────────────────────────────────
@@ -250,6 +271,7 @@ export interface ProductCategory extends Timestamps {
   id: string
   name: string
   icon: string
+  color?: string
 }
 
 export type CreateProductCategoryPayload = Omit<ProductCategory, 'id' | 'createdAt' | 'updatedAt'>

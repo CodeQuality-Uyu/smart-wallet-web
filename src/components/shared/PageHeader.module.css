@@ -35,7 +35,14 @@
   margin-top: 2px;
 }
 
-.right {
+.left {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Mobile: right inside .top (rightMobile), desktop right hidden */
+.right { display: none; }
+.rightMobile {
   margin-left: auto;
   flex-shrink: 0;
 }
@@ -47,6 +54,9 @@
     padding: 0 0 20px;
     border-bottom: 1.5px solid var(--border);
     margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
   }
 
   .backBtn {
@@ -58,11 +68,20 @@
   .title {
     color: var(--ink);
     font-size: 24px;
+    font-weight: 700;
   }
 
   .subtitle {
     color: var(--muted);
-    font-size: 13px;
+    font-size: 12px;
     margin-top: 0;
   }
+
+  /* Desktop: mostrar right externo, ocultar el que está dentro del top */
+  .right {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .rightMobile { display: none; }
 }

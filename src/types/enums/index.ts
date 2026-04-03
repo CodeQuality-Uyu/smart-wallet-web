@@ -1,6 +1,13 @@
 // src/types/enums/index.ts
 // All application enums — never use string unions for domain concepts
 
+export enum GroupBy {
+  Day = 'day',
+  Week = 'week',
+  Place = 'place',
+  Category = 'category',
+}
+
 export enum Currency {
   USD = 'USD',
   UYU = 'UYU',
@@ -41,13 +48,6 @@ export enum RecurringPaymentStatus {
   NotDue = 'not_due',
 }
 
-export enum ExpenseFilterPeriod {
-  SevenDays = '7d',
-  Month = 'month',
-  ThreeMonths = '3m',
-  Year = 'year',
-}
-
 export enum LocaleFilterPeriod {
   SevenDays = '7d',
   CurrentMonth = 'month',
@@ -55,7 +55,7 @@ export enum LocaleFilterPeriod {
   AllTime = 'all',
 }
 
-export enum MetricsPeriod {
+export enum PeriodFilter {
   SevenDays = '7d',
   Month = 'month',
   ThreeMonths = '3m',
@@ -69,19 +69,19 @@ export enum AppEnv {
 }
 
 export enum ProductPricingType {
-  Fixed    = 'fixed',
+  Fixed = 'fixed',
   ByWeight = 'by_weight',
 }
 
 export enum WeightUnit {
   Kg = 'kg',
-  G  = 'g',
-  L  = 'l',
+  G = 'g',
+  L = 'l',
   Ml = 'ml',
 }
 
 export enum PriceDataConfidence {
   Fresh = 'fresh',
   Stale = 'stale',
-  Old   = 'old',
+  Old = 'old',
 }

@@ -1,0 +1,515 @@
+/* src/pages/ProfilePage.module.css */
+
+/* ── Mobile ───────────────────────────────────────── */
+
+.body {
+  padding: 14px 20px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: calc(100vh - 120px);
+}
+
+/* Banner */
+.banner {
+  background: linear-gradient(135deg, #0c1f1a, #0a2a1f);
+  border-radius: 20px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.avatarWrap {
+  width: 60px;
+  height: 60px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #f5b732, #e09422);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(245, 183, 50, .4);
+}
+
+.avatarInitials {
+  font-family: var(--font-head);
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a0e;
+}
+
+.bannerInfo { flex: 1; min-width: 0; }
+
+.bannerName {
+  font-family: var(--font-head);
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bannerEmail {
+  font-size: 13px;
+  color: #7fad98;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bannerSince {
+  font-size: 11px;
+  color: #5a8a6e;
+  margin-top: 2px;
+}
+
+.editPhotoBtn {
+  display: none; /* hidden on mobile to save space */
+}
+
+/* Fields */
+.fieldsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  color: var(--muted);
+}
+
+.input {
+  width: 100%;
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 11px 14px;
+  font-size: 14px;
+  color: var(--ink);
+  outline: none;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+.input:focus { border-color: var(--g400); box-shadow: 0 0 0 3px rgba(76, 217, 106, .12); }
+
+.inputReadonly {
+  background: #faf8f5;
+  color: var(--muted);
+  cursor: default;
+}
+.inputReadonly:focus { border-color: var(--border); box-shadow: none; }
+
+.fieldError {
+  font-size: 12px;
+  color: var(--rose);
+}
+
+.profileFormActions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 14px;
+}
+
+/* Preferences */
+.prefsSection { display: flex; flex-direction: column; }
+
+.prefsTitle {
+  font-family: var(--font-head);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.prefRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid #f0ebe0;
+}
+
+.prefRowLast { border-bottom: none; }
+
+.prefInfo { flex: 1; min-width: 0; padding-right: 12px; }
+
+.prefLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.prefDesc {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* Toggle */
+.toggle {
+  width: 40px;
+  height: 22px;
+  border-radius: 11px;
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+  border: none;
+  padding: 0;
+  transition: background .2s;
+}
+
+.toggleOn { background: #10b981; }
+.toggleOff { background: #ddd8cc; }
+
+.toggleKnob {
+  position: absolute;
+  top: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .15);
+  transition: left .2s;
+}
+
+.toggleOn .toggleKnob { left: 21px; }
+.toggleOff .toggleKnob { left: 3px; }
+
+/* ── Ingresos ── */
+
+.incomesSection {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.incomesHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.incomesTitle {
+  font-family: var(--font-head);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.addIncomeBtn {
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--font-head);
+  background: linear-gradient(135deg, #f5b732, #e09422);
+  color: #1a1a0e;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(245, 183, 50, .3);
+  transition: opacity .15s;
+}
+.addIncomeBtn:hover { opacity: .88; }
+
+.incomeFormActions {
+  margin-top: 4px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.incomeFormCancel {
+  padding: 9px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  background: #f5f2ea;
+  color: var(--muted);
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.incomeFormSave {
+  padding: 9px 18px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--font-head);
+  background: linear-gradient(135deg, #f5b732, #e09422);
+  color: #1a1a0e;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(245, 183, 50, .3);
+}
+.incomeFormSave:disabled { opacity: .6; cursor: default; }
+
+.inputError { border-color: var(--rose) !important; }
+
+/* List */
+.incomeList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.incomeEmpty {
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  padding: 16px 0;
+}
+
+.incomeItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.incomeItemIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.incomeItemIconUYU { background: var(--g50); }
+.incomeItemIconUSD { background: #eff6ff; }
+
+.incomeItemInfo { flex: 1; min-width: 0; }
+
+.incomeItemName {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.incomeItemAmount {
+  font-family: var(--font-num);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--g600);
+  margin-top: 2px;
+}
+
+.incomeItemActions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.incomeEditBtn,
+.incomeDeleteBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  padding: 4px;
+  opacity: 0.5;
+  line-height: 1;
+}
+.incomeEditBtn:hover,
+.incomeDeleteBtn:hover { opacity: 1; }
+
+/* Danger zone */
+.dangerZone {
+  margin-top: auto;
+  border: 1.5px solid #fecaca;
+  border-radius: 16px;
+  padding: 20px;
+  background: #fff5f5;
+}
+
+.dangerTitle {
+  font-family: var(--font-head);
+  font-size: 15px;
+  font-weight: 700;
+  color: #c0392b;
+  margin-bottom: 4px;
+}
+
+.dangerDesc {
+  font-size: 12px;
+  color: #e55a5a;
+  margin-bottom: 16px;
+}
+
+.dangerActions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dangerItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dangerItemLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.dangerItemDesc {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.dangerBtnRed {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  background: #fff;
+  color: #e55a5a;
+  border: 1.5px solid #fca5a5;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .15s, color .15s;
+}
+.dangerBtnRed:hover { background: #e55a5a; color: #fff; }
+
+/* ── Desktop ──────────────────────────────────────── */
+
+@media (min-width: 768px) {
+  .body {
+    padding: 0 0 44px;
+    gap: 24px;
+  }
+
+  /* Banner */
+  .banner {
+    border-radius: 24px;
+    padding: 24px 28px;
+    gap: 24px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, .12);
+  }
+
+  .avatarWrap {
+    width: 80px;
+    height: 80px;
+    border-radius: 24px;
+  }
+
+  .avatarInitials {
+    font-size: 24px;
+  }
+
+  .bannerName { font-size: 20px; }
+  .bannerEmail { font-size: 14px; }
+  .bannerSince { font-size: 12px; }
+
+  .editPhotoBtn {
+    display: block;
+    padding: 10px 20px;
+    border-radius: 16px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: var(--font-head);
+    background: rgba(245, 183, 50, .15);
+    color: #f5b732;
+    border: 1px solid rgba(245, 183, 50, .25);
+    cursor: pointer;
+    transition: background .15s;
+    flex-shrink: 0;
+  }
+  .editPhotoBtn:hover {
+    background: rgba(245, 183, 50, .25);
+  }
+
+  /* Fields grid */
+  .fieldsGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .input {
+    border-radius: 16px;
+    padding: 12px 16px;
+  }
+
+  /* Preferences */
+  .prefsTitle { font-size: 18px; margin-bottom: 8px; }
+
+  .prefRow { padding: 16px 0; }
+
+  /* Ingresos desktop */
+  .incomesTitle { font-size: 18px; }
+
+  .addIncomeBtn {
+    border-radius: 14px;
+    padding: 9px 18px;
+  }
+
+  .incomeItem {
+    padding: 14px 18px;
+    border-radius: 14px;
+    gap: 14px;
+  }
+
+  .incomeItemIcon {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    font-size: 20px;
+  }
+
+  .incomeItemAmount { font-size: 15px; }
+
+  .incomeEditBtn,
+  .incomeDeleteBtn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--g50);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .incomeFormActions { margin-top: 8px; }
+
+  /* Danger zone */
+  .dangerZone {
+    border-radius: 20px;
+    padding: 24px 28px;
+  }
+
+  .dangerTitle { font-size: 16px; }
+
+  .dangerBtnRed {
+    border-radius: 14px;
+    padding: 9px 18px;
+    font-size: 13px;
+  }
+}

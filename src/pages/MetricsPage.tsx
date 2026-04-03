@@ -3,45 +3,31 @@
 import React, { useState } from 'react'
 import { useMetrics } from '@/hooks/useMetrics'
 import { useBudget } from '@/hooks/useBudget'
+import { useCategories } from '@/features/categories/hooks/useCategories'
+import { useProductCategories } from '@/features/products/hooks/useProductCategories'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { PeriodControl, PeriodDescription } from '@/components/ui/PeriodControl'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { formatAmount, formatCurrency } from '@/utils/formatCurrency'
-import { MetricsPeriod, Currency, RecurringFrequency } from '@/types/enums'
+import { PeriodFilter, Currency, RecurringFrequency } from '@/types/enums'
 import styles from './MetricsPage.module.css'
 
-const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+const MONTH_NAMES = [
+  'Enero',
+  'Febrero',
+  'Marzo',
+  'Abril',
+  'Mayo',
+  'Junio',
+  'Julio',
+  'Agosto',
+  'Septiembre',
+  'Octubre',
+  'Noviembre',
+  'Diciembre',
+]
 const _now = new Date()
 const _monthLabel = `${MONTH_NAMES[_now.getMonth()]} ${_now.getFullYear()}`
-
-const PERIODS = [
-  { value: MetricsPeriod.SevenDays, label: '7d', sublabel: 'Últimos 7 días' },
-  { value: MetricsPeriod.Month, label: 'Mes', sublabel: _monthLabel },
-  { value: MetricsPeriod.ThreeMonths, label: '3m', sublabel: 'Últimos 3 meses' },
-  { value: MetricsPeriod.Year, label: 'Año', sublabel: 'Último año' },
-]
-
-function getPeriodRange(p: MetricsPeriod): string {
-  const now = new Date()
-  const fmt = (d: Date) => d.toLocaleDateString('es-UY', { day: 'numeric', month: 'short' })
-  switch (p) {
-    case MetricsPeriod.SevenDays: {
-      const from = new Date(now); from.setDate(from.getDate() - 6)
-      return `${fmt(from)} – ${fmt(now)}`
-    }
-    case MetricsPeriod.Month: {
-      const from = new Date(now.getFullYear(), now.getMonth(), 1)
-      return `${fmt(from)} – ${fmt(now)}`
-    }
-    case MetricsPeriod.ThreeMonths: {
-      const from = new Date(now); from.setMonth(from.getMonth() - 3)
-      return `${fmt(from)} – ${fmt(now)}`
-    }
-    case MetricsPeriod.Year: {
-      const from = new Date(now.getFullYear(), 0, 1)
-      return `${fmt(from)} – ${fmt(now)}`
-    }
-  }
-}
 
 function fmtShort(n: number): string {
   if (n === 0) return ''
@@ -52,10 +38,13 @@ function fmtShort(n: number): string {
 type CurrencyFilter = 'both' | 'usd' | 'uyu'
 
 export default function MetricsPage(): React.ReactElement {
-  const [period, setPeriod] = useState(MetricsPeriod.Month)
+  const [period, setPeriod] = useState(PeriodFilter.Month)
   const [currencyFilter, setCurrencyFilter] = useState<CurrencyFilter>('both')
+  const [activeCatId, setActiveCatId] = useState<string>('')
   const { data: metrics, isLoading, error, refetch } = useMetrics(period)
   const { data: budget } = useBudget()
+  const { data: categories } = useCategories()
+  const { data: productCategories } = useProductCategories()
 
   if (isLoading) return <LoadingSpinner fullPage />
   if (error || !metrics) return <ErrorMessage onRetry={() => void refetch()} />
@@ -66,12 +55,18 @@ export default function MetricsPage(): React.ReactElement {
   const avgUyu = history.length > 0 ? history.reduce((s, m) => s + m.uyu, 0) / history.length : 0
 
   // ─── vs previous period ───────────────────────────────────
-  const usdDeltaPct = metrics.previousPeriodUsd > 0
-    ? Math.round(((metrics.totalUsd - metrics.previousPeriodUsd) / metrics.previousPeriodUsd) * 100)
-    : 0
-  const uyuDeltaPct = metrics.previousPeriodUyu > 0
-    ? Math.round(((metrics.totalUyu - metrics.previousPeriodUyu) / metrics.previousPeriodUyu) * 100)
-    : 0
+  const usdDeltaPct =
+    metrics.previousPeriodUsd > 0
+      ? Math.round(
+          ((metrics.totalUsd - metrics.previousPeriodUsd) / metrics.previousPeriodUsd) * 100
+        )
+      : 0
+  const uyuDeltaPct =
+    metrics.previousPeriodUyu > 0
+      ? Math.round(
+          ((metrics.totalUyu - metrics.previousPeriodUyu) / metrics.previousPeriodUyu) * 100
+        )
+      : 0
 
   // ─── vs historical average ────────────────────────────────
   const usdVsAvgPct = avgUsd > 0 ? Math.round(((metrics.totalUsd - avgUsd) / avgUsd) * 100) : 0
@@ -89,65 +84,677 @@ export default function MetricsPage(): React.ReactElement {
   const totalAll = totalMonthlyFixed + totalVar
   const fixedPct = totalAll > 0 ? Math.round((totalMonthlyFixed / totalAll) * 100) : 0
 
-  // ─── Category percentages ─────────────────────────────────
-  const catGrandTotal = metrics.byCategory.reduce((s, c) => s + c.usd * 100 + c.uyu, 0)
+  // Por moneda
+  const totalUsdAll = monthlyFixedUsd + metrics.variableUsd
+  const fixedPctUsd = totalUsdAll > 0 ? Math.round((monthlyFixedUsd / totalUsdAll) * 100) : 0
+  const totalUyuAll = monthlyFixedUyu + metrics.variableUyu
+  const fixedPctUyu = totalUyuAll > 0 ? Math.round((monthlyFixedUyu / totalUyuAll) * 100) : 0
 
-  const activePeriod = PERIODS.find((p) => p.value === period)
-  const periodRange = getPeriodRange(period)
+  // ─── Category percentages ─────────────────────────────────
+  const filteredByCategory = activeCatId
+    ? metrics.byCategory.filter((c) => c.categoryId === activeCatId)
+    : metrics.byCategory
+  const catGrandTotal = filteredByCategory.reduce((s, c) => s + c.usd * 100 + c.uyu, 0)
+
+  // ─── Desktop stat values por moneda ──────────────────
+  const incomeUsd = budget?.usd ?? 0
+  const incomeUyu = budget?.uyu ?? 0
+  const spentUsd = metrics.totalUsd
+  const spentUyu = metrics.totalUyu
+  const savedUsd = Math.max(0, incomeUsd - spentUsd)
+  const savedUyu = Math.max(0, incomeUyu - spentUyu)
+  const rateUsd = incomeUsd > 0 ? Math.round((savedUsd / incomeUsd) * 100) : 0
+  const rateUyu = incomeUyu > 0 ? Math.round((savedUyu / incomeUyu) * 100) : 0
+
+  // Para filtro moneda única
+  const incomeForFilter = currencyFilter === 'usd' ? incomeUsd : incomeUyu
+  const spentForFilter = currencyFilter === 'usd' ? spentUsd : spentUyu
+  const savedForFilter = currencyFilter === 'usd' ? savedUsd : savedUyu
+  const savingsRatePct = currencyFilter === 'usd' ? rateUsd : rateUyu
+  const displayCurrency = currencyFilter === 'usd' ? Currency.USD : Currency.UYU
 
   return (
     <div className={styles.page}>
-
       {/* Desktop header */}
       <div className={styles.desktopHeader}>
-        <div>
-          <p className={styles.desktopMonthLabel}>{_monthLabel}</p>
-          <p className={styles.desktopRange}>Desde {periodRange.split('–')[0].trim()} hasta {periodRange.split('–')[1].trim()}</p>
+        <div className={styles.desktopHeaderLeft}>
+          <p className={styles.desktopTitle}>{_monthLabel}</p>
+          <PeriodDescription period={period} />
         </div>
-        <div className={styles.desktopTabs} role="tablist">
-          {PERIODS.map((p) => (
+        <div className={styles.desktopHeaderControls}>
+          <PeriodControl value={period} onChange={setPeriod} />
+        </div>
+      </div>
+
+      {/* Desktop currency + category chips */}
+      <div className={styles.desktopCatChips}>
+        {(
+          [
+            ['both', 'Todas'],
+            ['uyu', 'UYU'],
+            ['usd', 'USD'],
+          ] as [CurrencyFilter, string][]
+        ).map(([val, lbl]) => (
+          <button
+            key={val}
+            className={[
+              styles.desktopCatChip,
+              currencyFilter === val ? styles.desktopCatChipActive : '',
+            ].join(' ')}
+            onClick={() => setCurrencyFilter(val)}
+          >
+            {lbl}
+          </button>
+        ))}
+      </div>
+
+      {/* Desktop category chips */}
+      <div className={styles.desktopCatChips}>
+        <button
+          className={[
+            styles.desktopCatChip,
+            activeCatId === '' ? styles.desktopCatChipActive : '',
+          ].join(' ')}
+          onClick={() => setActiveCatId('')}
+        >
+          Todas
+        </button>
+        {(categories ?? [])
+          .filter((c) => c.active)
+          .map((cat) => (
             <button
-              key={p.value}
-              role="tab"
-              aria-selected={period === p.value}
-              className={[styles.desktopTab, period === p.value ? styles.desktopTabActive : ''].join(' ')}
-              onClick={() => setPeriod(p.value)}
-            >{p.label}</button>
+              key={cat.id}
+              className={[
+                styles.desktopCatChip,
+                activeCatId === cat.id ? styles.desktopCatChipActive : '',
+              ].join(' ')}
+              onClick={() => setActiveCatId(activeCatId === cat.id ? '' : cat.id)}
+            >
+              {cat.icon} {cat.name}
+            </button>
           ))}
+      </div>
+
+      {/* Desktop ring cards row */}
+      <div className={currencyFilter === 'both' ? styles.desktopRingRow2 : styles.desktopRingRow1}>
+        {(currencyFilter === 'both'
+          ? [
+              {
+                cur: Currency.UYU,
+                income: incomeUyu,
+                spent: spentUyu,
+                saved: savedUyu,
+                rate: rateUyu,
+                gradId: 'mgUyu',
+              },
+              {
+                cur: Currency.USD,
+                income: incomeUsd,
+                spent: spentUsd,
+                saved: savedUsd,
+                rate: rateUsd,
+                gradId: 'mgUsd',
+              },
+            ]
+          : [
+              {
+                cur: displayCurrency,
+                income: incomeForFilter,
+                spent: spentForFilter,
+                saved: savedForFilter,
+                rate: savingsRatePct,
+                gradId: 'mgSingle',
+              },
+            ]
+        ).map(({ cur, income, spent, saved, rate, gradId }) => (
+          <div key={cur} className={styles.desktopRingCardLight}>
+            <div className={styles.desktopRingLightHeader}>
+              <p className={styles.desktopRingLightTitle}>🐷 Ahorro del mes · {cur}</p>
+            </div>
+            <div className={styles.desktopRingLightBody}>
+              <div className={styles.desktopRingChartInner}>
+                <svg viewBox="0 0 36 36" className={styles.desktopRingSvg}>
+                  <path
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    fill="none"
+                    stroke="rgba(0,0,0,.07)"
+                    strokeWidth="2.5"
+                  />
+                  <path
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    fill="none"
+                    stroke={`url(#${gradId})`}
+                    strokeWidth="2.5"
+                    strokeDasharray={`${Math.max(2, rate)},100`}
+                    strokeLinecap="round"
+                  />
+                  <defs>
+                    <linearGradient id={gradId}>
+                      <stop offset="0%" stopColor="#f5b732" />
+                      <stop offset="100%" stopColor="#10b981" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div className={styles.desktopRingCenter}>
+                  <span className={styles.desktopRingPctLight}>{rate}%</span>
+                  <span className={styles.desktopRingLabelLight}>ahorrado</span>
+                </div>
+              </div>
+              <div className={styles.desktopRingLightMinis}>
+                <div
+                  className={[styles.desktopRingLightMini, styles.desktopRingMiniSpent].join(' ')}
+                >
+                  <p className={styles.desktopRingLightMiniLabel}>💸 Gastado</p>
+                  <p
+                    className={[styles.desktopRingLightMiniValue, styles.desktopRingMiniRed].join(
+                      ' '
+                    )}
+                  >
+                    {formatAmount(spent, cur)}
+                  </p>
+                </div>
+                <div className={styles.desktopRingLightMini}>
+                  <p className={styles.desktopRingLightMiniLabel}>💰 Ingreso</p>
+                  <p className={styles.desktopRingLightMiniValue}>{formatAmount(income, cur)}</p>
+                </div>
+                <div className={styles.desktopRingLightMini}>
+                  <p className={styles.desktopRingLightMiniLabel}>🐷 Ahorrado</p>
+                  <p
+                    className={[styles.desktopRingLightMiniValue, styles.desktopRingMiniGreen].join(
+                      ' '
+                    )}
+                  >
+                    {formatAmount(saved, cur)}
+                  </p>
+                </div>
+              </div>
+            </div>
+            {rate > 0 && (
+              <div className={styles.desktopProjectionCard}>
+                <p className={styles.desktopProjectionTitle}>📈 Proyección de ahorro</p>
+                <p className={styles.desktopProjectionText}>
+                  Si mantenés este ritmo, en 6 meses tenés{' '}
+                  <strong className={styles.desktopProjectionAmt}>
+                    {formatAmount(saved * 6, cur)}
+                  </strong>{' '}
+                  extra
+                </p>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop comparativas — full width */}
+      <div className={styles.desktopComparativasCard}>
+        <h3 className={styles.desktopCardTitle}>📊 Comparativas</h3>
+        <div
+          className={
+            currencyFilter === 'both'
+              ? styles.desktopComparativasGrid
+              : styles.desktopComparativasGridSingle
+          }
+        >
+          {(
+            [
+              {
+                currency: Currency.USD,
+                total: metrics.totalUsd,
+                prevPct: usdDeltaPct,
+                avgPct: usdVsAvgPct,
+                bgt: budget?.usd,
+                flag: '🇺🇸',
+              },
+              {
+                currency: Currency.UYU,
+                total: metrics.totalUyu,
+                prevPct: uyuDeltaPct,
+                avgPct: uyuVsAvgPct,
+                bgt: budget?.uyu,
+                flag: '🇺🇾',
+              },
+            ] as const
+          )
+            .filter(
+              ({ currency }) =>
+                currencyFilter === 'both' || currencyFilter === currency.toLowerCase()
+            )
+            .map(({ currency, total, prevPct, avgPct, bgt, flag }) => {
+              const budgetPct =
+                bgt && bgt > 0 ? Math.min(Math.round((total / bgt) * 100), 100) : null
+              return (
+                <div key={currency} className={styles.compareBlock}>
+                  <div className={styles.compareHeader}>
+                    <span className={styles.compareFlag}>
+                      {flag} {currency}
+                    </span>
+                    <span className={styles.compareTotal}>{formatAmount(total, currency)}</span>
+                  </div>
+                  <div className={styles.compareBadges}>
+                    <div className={styles.compareStat}>
+                      <span className={styles.compareStatLbl}>vs período anterior</span>
+                      <span
+                        className={[
+                          styles.delta,
+                          prevPct > 0
+                            ? styles.deltaUp
+                            : prevPct < 0
+                              ? styles.deltaDown
+                              : styles.deltaNeutral,
+                        ].join(' ')}
+                      >
+                        {prevPct > 0 ? '↑' : prevPct < 0 ? '↓' : '='} {Math.abs(prevPct)}%
+                      </span>
+                    </div>
+                    <div className={styles.compareStat}>
+                      <span className={styles.compareStatLbl}>vs promedio histórico</span>
+                      <span
+                        className={[
+                          styles.delta,
+                          avgPct > 0
+                            ? styles.deltaUp
+                            : avgPct < 0
+                              ? styles.deltaDown
+                              : styles.deltaNeutral,
+                        ].join(' ')}
+                      >
+                        {avgPct > 0 ? '↑' : avgPct < 0 ? '↓' : '='} {Math.abs(avgPct)}%
+                      </span>
+                    </div>
+                  </div>
+                  {bgt && bgt > 0 && budgetPct !== null && (
+                    <div className={styles.budgetRow}>
+                      <div className={styles.budgetLabels}>
+                        <span className={styles.budgetLbl}>Presupuesto</span>
+                        <span className={styles.budgetPct}>
+                          {formatAmount(total, currency)} / {formatAmount(bgt, currency)} (
+                          {budgetPct}%)
+                        </span>
+                      </div>
+                      <div className={styles.budgetBar}>
+                        <div
+                          className={styles.budgetFill}
+                          style={{
+                            width: `${budgetPct}%`,
+                            background:
+                              budgetPct >= 100
+                                ? 'var(--rose)'
+                                : budgetPct >= 80
+                                  ? 'var(--amb)'
+                                  : 'var(--g500)',
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+        </div>
+      </div>
+
+      {/* Desktop fijos vs variables */}
+      <div className={styles.desktopSplitCard}>
+        <h3 className={styles.desktopCardTitle}>⚖️ Fijos vs Variables</h3>
+        <div
+          className={
+            currencyFilter === 'both' ? styles.desktopSplitInner2 : styles.desktopSplitInner1
+          }
+        >
+          {[
+            {
+              cur: Currency.USD,
+              fixedAmt: monthlyFixedUsd,
+              varAmt: metrics.variableUsd,
+              pct: fixedPctUsd,
+            },
+            {
+              cur: Currency.UYU,
+              fixedAmt: monthlyFixedUyu,
+              varAmt: metrics.variableUyu,
+              pct: fixedPctUyu,
+            },
+          ]
+            .filter(({ cur }) => currencyFilter === 'both' || currencyFilter === cur.toLowerCase())
+            .map(({ cur, fixedAmt, varAmt, pct }) => (
+              <div key={cur} className={styles.desktopSplitBlock}>
+                <p className={styles.desktopSplitCurLabel}>{cur}</p>
+                <div className={styles.desktopSplitBars}>
+                  <div className={styles.desktopSplitBarRow}>
+                    <div className={styles.splitBar}>
+                      <div className={styles.splitFixed} style={{ width: `${pct}%` }} />
+                    </div>
+                    <div className={styles.desktopSplitBarRowMeta}>
+                      <div className={styles.splitItem}>
+                        <span className={styles.splitDot} style={{ background: '#7c3aed' }} />
+                        <span className={styles.splitLbl}>
+                          Fijos{' '}
+                          <span className={styles.splitLblNote}>(mensuales + anuales ÷ 12)</span>
+                        </span>
+                        <span className={styles.splitPct}>{pct}%</span>
+                      </div>
+                      <span className={styles.splitAmtVal} style={{ color: '#7c3aed' }}>
+                        {formatAmount(fixedAmt, cur)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className={styles.desktopSplitBarRow}>
+                    <div className={styles.splitBar}>
+                      <div
+                        className={styles.splitFixed}
+                        style={{ width: `${100 - pct}%`, background: 'var(--g400)' }}
+                      />
+                    </div>
+                    <div className={styles.desktopSplitBarRowMeta}>
+                      <div className={styles.splitItem}>
+                        <span className={styles.splitDot} style={{ background: 'var(--g400)' }} />
+                        <span className={styles.splitLbl}>Variables</span>
+                        <span className={styles.splitPct}>{100 - pct}%</span>
+                      </div>
+                      <span className={styles.splitAmtVal}>{formatAmount(varAmt, cur)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+        </div>
+      </div>
+
+      {/* Desktop 2-column grid */}
+      <div className={styles.desktopGrid2}>
+        {/* Col 1: Por categoría */}
+        <div className={styles.desktopCatCard}>
+          <h3 className={styles.desktopCardTitle}>Gasto por categoría</h3>
+          {filteredByCategory.map((cat) => {
+            const catColor =
+              categories?.find((c) => c.id === cat.categoryId)?.color ?? 'var(--g500)'
+            const maxUsd = Math.max(...filteredByCategory.map((c) => c.usd), 1)
+            const maxUyu = Math.max(...filteredByCategory.map((c) => c.uyu), 1)
+            const pctUsd = Math.round((cat.usd / maxUsd) * 100)
+            const pctUyu = Math.round((cat.uyu / maxUyu) * 100)
+            const showBoth = currencyFilter === 'both'
+
+            return (
+              <div key={cat.categoryId} className={styles.desktopCatRow}>
+                <span className={styles.desktopCatName}>
+                  {cat.categoryIcon} {cat.categoryName}
+                </span>
+                {showBoth ? (
+                  <div className={styles.desktopCatBars}>
+                    <div className={styles.desktopCatBarRow}>
+                      <div className={styles.desktopCatBar}>
+                        <div
+                          className={styles.desktopCatBarFill}
+                          style={{ width: `${pctUyu}%`, background: catColor }}
+                        />
+                      </div>
+                      <span className={styles.desktopCatAmt}>
+                        {formatAmount(cat.uyu, Currency.UYU)}
+                      </span>
+                      <span className={styles.desktopCatCurBadge}>UYU</span>
+                    </div>
+                    <div className={styles.desktopCatBarRow}>
+                      <div className={styles.desktopCatBar}>
+                        <div
+                          className={styles.desktopCatBarFill}
+                          style={{ width: `${pctUsd}%`, background: catColor }}
+                        />
+                      </div>
+                      <span className={styles.desktopCatAmt}>
+                        {formatAmount(cat.usd, Currency.USD)}
+                      </span>
+                      <span className={styles.desktopCatCurBadge}>USD</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className={styles.desktopCatBars}>
+                    <div className={styles.desktopCatBarRow}>
+                      <div className={styles.desktopCatBar}>
+                        <div
+                          className={styles.desktopCatBarFill}
+                          style={{
+                            width: `${currencyFilter === 'usd' ? pctUsd : pctUyu}%`,
+                            background: catColor,
+                          }}
+                        />
+                      </div>
+                      <span className={styles.desktopCatAmt}>
+                        {currencyFilter === 'usd'
+                          ? formatAmount(cat.usd, Currency.USD)
+                          : formatAmount(cat.uyu, Currency.UYU)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Col 2: Por categoría de producto */}
+        <div className={styles.desktopCatCard}>
+          <h3 className={styles.desktopCardTitle}>Gasto por producto</h3>
+          {metrics.byProductCategory.length === 0 ? (
+            <p className={styles.trendEmpty}>Sin datos de productos para este período.</p>
+          ) : (
+            metrics.byProductCategory.map((pcat) => {
+              const pcatColor =
+                productCategories?.find((c) => c.id === pcat.productCategoryId)?.color ??
+                'var(--g500)'
+              const maxUsd = Math.max(...metrics.byProductCategory.map((c) => c.usd), 1)
+              const maxUyu = Math.max(...metrics.byProductCategory.map((c) => c.uyu), 1)
+              const pctUsd = Math.round((pcat.usd / maxUsd) * 100)
+              const pctUyu = Math.round((pcat.uyu / maxUyu) * 100)
+              const showBoth = currencyFilter === 'both'
+              return (
+                <div key={pcat.productCategoryId} className={styles.desktopCatRow}>
+                  <span className={styles.desktopCatName}>
+                    {pcat.productCategoryIcon} {pcat.productCategoryName}
+                  </span>
+                  {showBoth ? (
+                    <div className={styles.desktopCatBars}>
+                      <div className={styles.desktopCatBarRow}>
+                        <div className={styles.desktopCatBar}>
+                          <div
+                            className={styles.desktopCatBarFill}
+                            style={{ width: `${pctUyu}%`, background: pcatColor }}
+                          />
+                        </div>
+                        <span className={styles.desktopCatAmt}>
+                          {formatAmount(pcat.uyu, Currency.UYU)}
+                        </span>
+                        <span className={styles.desktopCatCurBadge}>UYU</span>
+                      </div>
+                      <div className={styles.desktopCatBarRow}>
+                        <div className={styles.desktopCatBar}>
+                          <div
+                            className={styles.desktopCatBarFill}
+                            style={{ width: `${pctUsd}%`, background: pcatColor }}
+                          />
+                        </div>
+                        <span className={styles.desktopCatAmt}>
+                          {formatAmount(pcat.usd, Currency.USD)}
+                        </span>
+                        <span className={styles.desktopCatCurBadge}>USD</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className={styles.desktopCatBars}>
+                      <div className={styles.desktopCatBarRow}>
+                        <div className={styles.desktopCatBar}>
+                          <div
+                            className={styles.desktopCatBarFill}
+                            style={{
+                              width: `${currencyFilter === 'usd' ? pctUsd : pctUyu}%`,
+                              background: pcatColor,
+                            }}
+                          />
+                        </div>
+                        <span className={styles.desktopCatAmt}>
+                          {currencyFilter === 'usd'
+                            ? formatAmount(pcat.usd, Currency.USD)
+                            : formatAmount(pcat.uyu, Currency.UYU)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })
+          )}
+        </div>
+
+        {/* Col 3: Tendencia mensual */}
+        <div className={styles.desktopTrendCard}>
+          <h3 className={styles.desktopCardTitle}>📈 Tendencia mensual</h3>
+          {metrics.monthlyHistory.length === 0 ? (
+            <p className={styles.trendEmpty}>No hay datos históricos para mostrar.</p>
+          ) : (
+            <>
+              {(() => {
+                const showUsd = currencyFilter === 'both' || currencyFilter === 'usd'
+                const showUyu = currencyFilter === 'both' || currencyFilter === 'uyu'
+                const maxUsd = Math.max(...metrics.monthlyHistory.map((m) => m.usd), 1)
+                const maxUyu = Math.max(...metrics.monthlyHistory.map((m) => m.uyu), 1)
+
+                return metrics.monthlyHistory.map((m, i) => {
+                  const prev = metrics.monthlyHistory[i - 1]
+                  const isLast = i === metrics.monthlyHistory.length - 1
+                  const usdPct =
+                    prev && prev.usd > 0 ? Math.round(((m.usd - prev.usd) / prev.usd) * 100) : null
+                  const uyuPct =
+                    prev && prev.uyu > 0 ? Math.round(((m.uyu - prev.uyu) / prev.uyu) * 100) : null
+
+                  return (
+                    <div
+                      key={`${m.year}-${m.month}`}
+                      className={[styles.trendRow, isLast ? styles.trendRowCurrent : ''].join(' ')}
+                    >
+                      <span className={styles.trendMonth}>{m.label}</span>
+                      <div className={styles.trendBars}>
+                        {showUsd && (
+                          <div className={styles.trendBarWrap}>
+                            <div
+                              className={styles.trendBar}
+                              style={{
+                                width: `${(m.usd / maxUsd) * 100}%`,
+                                background: isLast ? '#2563eb' : '#93c5fd',
+                              }}
+                            />
+                          </div>
+                        )}
+                        {showUyu && (
+                          <div className={styles.trendBarWrap}>
+                            <div
+                              className={styles.trendBar}
+                              style={{
+                                width: `${(m.uyu / maxUyu) * 100}%`,
+                                background: isLast ? 'var(--g600)' : 'var(--g300)',
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                      <div className={styles.trendAmts}>
+                        {showUsd && (
+                          <span className={styles.trendAmt} style={{ color: '#2563eb' }}>
+                            {fmtShort(m.usd) || '—'}
+                            {currencyFilter === 'both' && (
+                              <span className={styles.trendCurrency}>USD</span>
+                            )}
+                            {usdPct !== null && (
+                              <span
+                                className={[
+                                  styles.trendDelta,
+                                  usdPct > 0
+                                    ? styles.deltaUp
+                                    : usdPct < 0
+                                      ? styles.deltaDown
+                                      : styles.deltaNeutral,
+                                ].join(' ')}
+                              >
+                                {usdPct > 0 ? '↑' : usdPct < 0 ? '↓' : '='}
+                                {Math.abs(usdPct)}%
+                              </span>
+                            )}
+                          </span>
+                        )}
+                        {showUyu && (
+                          <span className={styles.trendAmt} style={{ color: 'var(--g600)' }}>
+                            {fmtShort(m.uyu) || '—'}
+                            {currencyFilter === 'both' && (
+                              <span className={styles.trendCurrency}>UYU</span>
+                            )}
+                            {uyuPct !== null && (
+                              <span
+                                className={[
+                                  styles.trendDelta,
+                                  uyuPct > 0
+                                    ? styles.deltaUp
+                                    : uyuPct < 0
+                                      ? styles.deltaDown
+                                      : styles.deltaNeutral,
+                                ].join(' ')}
+                              >
+                                {uyuPct > 0 ? '↑' : uyuPct < 0 ? '↓' : '='}
+                                {Math.abs(uyuPct)}%
+                              </span>
+                            )}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })
+              })()}
+              <div className={styles.avgRow}>
+                <span className={styles.avgLbl}>Promedio histórico</span>
+                <span className={styles.avgVal}>
+                  {(currencyFilter === 'both' || currencyFilter === 'usd') &&
+                    `${formatAmount(avgUsd, Currency.USD)} USD`}
+                  {currencyFilter === 'both' && ' · '}
+                  {(currencyFilter === 'both' || currencyFilter === 'uyu') &&
+                    `${formatAmount(avgUyu, Currency.UYU)} UYU`}
+                </span>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
       {/* Mobile header */}
       <header className={styles.header}>
-        <p className={styles.mobileMonth}>{activePeriod?.sublabel}</p>
+        <PeriodDescription period={period} />
         <div className={styles.periodTabs} role="tablist">
-          {PERIODS.map((p) => (
-            <button
-              key={p.value}
-              role="tab"
-              aria-selected={period === p.value}
-              className={[styles.periodTab, period === p.value ? styles.periodTabActive : ''].join(' ')}
-              onClick={() => setPeriod(p.value)}
-            >
-              {p.label}
-            </button>
-          ))}
+          <PeriodControl value={period} onChange={setPeriod} />
         </div>
       </header>
 
       <div className={styles.body}>
-
         {/* ── 1. Tendencia mensual ────────────────────────── */}
         <div className={styles.card}>
           <div className={styles.trendHeader}>
-            <h2 className={styles.cardTitle} style={{ margin: 0 }}>📈 Tendencia mensual</h2>
+            <h2 className={styles.cardTitle} style={{ margin: 0 }}>
+              📈 Tendencia mensual
+            </h2>
             <div className={styles.currencyTabs}>
-              {([['both', 'Ambas'], ['usd', 'USD'], ['uyu', 'UYU']] as [CurrencyFilter, string][]).map(([val, lbl]) => (
+              {(
+                [
+                  ['both', 'Ambas'],
+                  ['usd', 'USD'],
+                  ['uyu', 'UYU'],
+                ] as [CurrencyFilter, string][]
+              ).map(([val, lbl]) => (
                 <button
                   key={val}
-                  className={[styles.currencyTab, currencyFilter === val ? styles.currencyTabActive : ''].join(' ')}
+                  className={[
+                    styles.currencyTab,
+                    currencyFilter === val ? styles.currencyTabActive : '',
+                  ].join(' ')}
                   onClick={() => setCurrencyFilter(val)}
-                >{lbl}</button>
+                >
+                  {lbl}
+                </button>
               ))}
             </div>
           </div>
@@ -166,18 +773,26 @@ export default function MetricsPage(): React.ReactElement {
                   const prev = metrics.monthlyHistory[i - 1]
                   const isLast = i === metrics.monthlyHistory.length - 1
 
-                  const usdPct = prev && prev.usd > 0 ? Math.round(((m.usd - prev.usd) / prev.usd) * 100) : null
-                  const uyuPct = prev && prev.uyu > 0 ? Math.round(((m.uyu - prev.uyu) / prev.uyu) * 100) : null
+                  const usdPct =
+                    prev && prev.usd > 0 ? Math.round(((m.usd - prev.usd) / prev.usd) * 100) : null
+                  const uyuPct =
+                    prev && prev.uyu > 0 ? Math.round(((m.uyu - prev.uyu) / prev.uyu) * 100) : null
 
                   return (
-                    <div key={`${m.year}-${m.month}`} className={[styles.trendRow, isLast ? styles.trendRowCurrent : ''].join(' ')}>
+                    <div
+                      key={`${m.year}-${m.month}`}
+                      className={[styles.trendRow, isLast ? styles.trendRowCurrent : ''].join(' ')}
+                    >
                       <span className={styles.trendMonth}>{m.label}</span>
                       <div className={styles.trendBars}>
                         {showUsd && (
                           <div className={styles.trendBarWrap}>
                             <div
                               className={styles.trendBar}
-                              style={{ width: `${(m.usd / maxUsd) * 100}%`, background: isLast ? '#2563eb' : '#93c5fd' }}
+                              style={{
+                                width: `${(m.usd / maxUsd) * 100}%`,
+                                background: isLast ? '#2563eb' : '#93c5fd',
+                              }}
                             />
                           </div>
                         )}
@@ -185,7 +800,10 @@ export default function MetricsPage(): React.ReactElement {
                           <div className={styles.trendBarWrap}>
                             <div
                               className={styles.trendBar}
-                              style={{ width: `${(m.uyu / maxUyu) * 100}%`, background: isLast ? 'var(--g600)' : 'var(--g300)' }}
+                              style={{
+                                width: `${(m.uyu / maxUyu) * 100}%`,
+                                background: isLast ? 'var(--g600)' : 'var(--g300)',
+                              }}
                             />
                           </div>
                         )}
@@ -193,20 +811,46 @@ export default function MetricsPage(): React.ReactElement {
                       <div className={styles.trendAmts}>
                         {showUsd && (
                           <span className={styles.trendAmt} style={{ color: '#2563eb' }}>
-                            {fmtShort(m.usd) || '—'}{currencyFilter === 'both' && <span className={styles.trendCurrency}>USD</span>}
+                            {fmtShort(m.usd) || '—'}
+                            {currencyFilter === 'both' && (
+                              <span className={styles.trendCurrency}>USD</span>
+                            )}
                             {usdPct !== null && (
-                              <span className={[styles.trendDelta, usdPct > 0 ? styles.deltaUp : usdPct < 0 ? styles.deltaDown : styles.deltaNeutral].join(' ')}>
-                                {usdPct > 0 ? '↑' : usdPct < 0 ? '↓' : '='}{Math.abs(usdPct)}%
+                              <span
+                                className={[
+                                  styles.trendDelta,
+                                  usdPct > 0
+                                    ? styles.deltaUp
+                                    : usdPct < 0
+                                      ? styles.deltaDown
+                                      : styles.deltaNeutral,
+                                ].join(' ')}
+                              >
+                                {usdPct > 0 ? '↑' : usdPct < 0 ? '↓' : '='}
+                                {Math.abs(usdPct)}%
                               </span>
                             )}
                           </span>
                         )}
                         {showUyu && (
                           <span className={styles.trendAmt} style={{ color: 'var(--g600)' }}>
-                            {fmtShort(m.uyu) || '—'}{currencyFilter === 'both' && <span className={styles.trendCurrency}>UYU</span>}
+                            {fmtShort(m.uyu) || '—'}
+                            {currencyFilter === 'both' && (
+                              <span className={styles.trendCurrency}>UYU</span>
+                            )}
                             {uyuPct !== null && (
-                              <span className={[styles.trendDelta, uyuPct > 0 ? styles.deltaUp : uyuPct < 0 ? styles.deltaDown : styles.deltaNeutral].join(' ')}>
-                                {uyuPct > 0 ? '↑' : uyuPct < 0 ? '↓' : '='}{Math.abs(uyuPct)}%
+                              <span
+                                className={[
+                                  styles.trendDelta,
+                                  uyuPct > 0
+                                    ? styles.deltaUp
+                                    : uyuPct < 0
+                                      ? styles.deltaDown
+                                      : styles.deltaNeutral,
+                                ].join(' ')}
+                              >
+                                {uyuPct > 0 ? '↑' : uyuPct < 0 ? '↓' : '='}
+                                {Math.abs(uyuPct)}%
                               </span>
                             )}
                           </span>
@@ -219,9 +863,11 @@ export default function MetricsPage(): React.ReactElement {
               <div className={styles.avgRow}>
                 <span className={styles.avgLbl}>Promedio histórico</span>
                 <span className={styles.avgVal}>
-                  {(currencyFilter === 'both' || currencyFilter === 'usd') && `${formatAmount(avgUsd, Currency.USD)} USD`}
+                  {(currencyFilter === 'both' || currencyFilter === 'usd') &&
+                    `${formatAmount(avgUsd, Currency.USD)} USD`}
                   {currencyFilter === 'both' && ' · '}
-                  {(currencyFilter === 'both' || currencyFilter === 'uyu') && `${formatAmount(avgUyu, Currency.UYU)} UYU`}
+                  {(currencyFilter === 'both' || currencyFilter === 'uyu') &&
+                    `${formatAmount(avgUyu, Currency.UYU)} UYU`}
                 </span>
               </div>
             </>
@@ -232,28 +878,66 @@ export default function MetricsPage(): React.ReactElement {
         <div className={styles.card}>
           <h2 className={styles.cardTitle}>📊 Comparativas</h2>
 
-          {([
-            { currency: Currency.USD, total: metrics.totalUsd, prev: metrics.previousPeriodUsd, prevPct: usdDeltaPct, avgPct: usdVsAvgPct, budget: budget?.usd, flag: '🇺🇸' },
-            { currency: Currency.UYU, total: metrics.totalUyu, prev: metrics.previousPeriodUyu, prevPct: uyuDeltaPct, avgPct: uyuVsAvgPct, budget: budget?.uyu, flag: '🇺🇾' },
-          ] as const).map(({ currency, total, prevPct, avgPct, budget: bgt, flag }) => {
+          {(
+            [
+              {
+                currency: Currency.USD,
+                total: metrics.totalUsd,
+                prev: metrics.previousPeriodUsd,
+                prevPct: usdDeltaPct,
+                avgPct: usdVsAvgPct,
+                budget: budget?.usd,
+                flag: '🇺🇸',
+              },
+              {
+                currency: Currency.UYU,
+                total: metrics.totalUyu,
+                prev: metrics.previousPeriodUyu,
+                prevPct: uyuDeltaPct,
+                avgPct: uyuVsAvgPct,
+                budget: budget?.uyu,
+                flag: '🇺🇾',
+              },
+            ] as const
+          ).map(({ currency, total, prevPct, avgPct, budget: bgt, flag }) => {
             const budgetPct = bgt && bgt > 0 ? Math.min(Math.round((total / bgt) * 100), 100) : null
             return (
               <div key={currency} className={styles.compareBlock}>
                 <div className={styles.compareHeader}>
-                  <span className={styles.compareFlag}>{flag} {currency}</span>
+                  <span className={styles.compareFlag}>
+                    {flag} {currency}
+                  </span>
                   <span className={styles.compareTotal}>{formatAmount(total, currency)}</span>
                 </div>
 
                 <div className={styles.compareBadges}>
                   <div className={styles.compareStat}>
                     <span className={styles.compareStatLbl}>vs período anterior</span>
-                    <span className={[styles.delta, prevPct > 0 ? styles.deltaUp : prevPct < 0 ? styles.deltaDown : styles.deltaNeutral].join(' ')}>
+                    <span
+                      className={[
+                        styles.delta,
+                        prevPct > 0
+                          ? styles.deltaUp
+                          : prevPct < 0
+                            ? styles.deltaDown
+                            : styles.deltaNeutral,
+                      ].join(' ')}
+                    >
                       {prevPct > 0 ? '↑' : prevPct < 0 ? '↓' : '='} {Math.abs(prevPct)}%
                     </span>
                   </div>
                   <div className={styles.compareStat}>
                     <span className={styles.compareStatLbl}>vs promedio histórico</span>
-                    <span className={[styles.delta, avgPct > 0 ? styles.deltaUp : avgPct < 0 ? styles.deltaDown : styles.deltaNeutral].join(' ')}>
+                    <span
+                      className={[
+                        styles.delta,
+                        avgPct > 0
+                          ? styles.deltaUp
+                          : avgPct < 0
+                            ? styles.deltaDown
+                            : styles.deltaNeutral,
+                      ].join(' ')}
+                    >
                       {avgPct > 0 ? '↑' : avgPct < 0 ? '↓' : '='} {Math.abs(avgPct)}%
                     </span>
                   </div>
@@ -263,14 +947,22 @@ export default function MetricsPage(): React.ReactElement {
                   <div className={styles.budgetRow}>
                     <div className={styles.budgetLabels}>
                       <span className={styles.budgetLbl}>Presupuesto</span>
-                      <span className={styles.budgetPct}>{formatAmount(total, currency)} / {formatAmount(bgt, currency)} ({budgetPct}%)</span>
+                      <span className={styles.budgetPct}>
+                        {formatAmount(total, currency)} / {formatAmount(bgt, currency)} ({budgetPct}
+                        %)
+                      </span>
                     </div>
                     <div className={styles.budgetBar}>
                       <div
                         className={styles.budgetFill}
                         style={{
                           width: `${budgetPct}%`,
-                          background: budgetPct >= 100 ? 'var(--rose)' : budgetPct >= 80 ? 'var(--amb)' : 'var(--g500)',
+                          background:
+                            budgetPct >= 100
+                              ? 'var(--rose)'
+                              : budgetPct >= 80
+                                ? 'var(--amb)'
+                                : 'var(--g500)',
                         }}
                       />
                     </div>
@@ -291,7 +983,9 @@ export default function MetricsPage(): React.ReactElement {
           <div className={styles.splitLegend}>
             <div className={styles.splitItem}>
               <span className={styles.splitDot} style={{ background: '#7c3aed' }} />
-              <span className={styles.splitLbl}>Fijos <span className={styles.splitLblNote}>(mensuales + anuales ÷ 12)</span></span>
+              <span className={styles.splitLbl}>
+                Fijos <span className={styles.splitLblNote}>(mensuales + anuales ÷ 12)</span>
+              </span>
               <span className={styles.splitPct}>{fixedPct}%</span>
             </div>
             <div className={styles.splitItem}>
@@ -303,19 +997,33 @@ export default function MetricsPage(): React.ReactElement {
 
           <div className={styles.splitAmounts}>
             <div className={styles.splitAmtRow}>
-              <span className={styles.splitAmtLbl} style={{ color: '#7c3aed' }}>Fijos (equiv. mensual)</span>
+              <span className={styles.splitAmtLbl} style={{ color: '#7c3aed' }}>
+                Fijos (equiv. mensual)
+              </span>
               <span className={styles.splitAmtVal}>
-                {monthlyFixedUsd > 0 && <span>{formatAmount(monthlyFixedUsd, Currency.USD)} USD</span>}
-                {monthlyFixedUsd > 0 && monthlyFixedUyu > 0 && <span className={styles.dot}> · </span>}
-                {monthlyFixedUyu > 0 && <span>{formatAmount(monthlyFixedUyu, Currency.UYU)} UYU</span>}
+                {monthlyFixedUsd > 0 && (
+                  <span>{formatAmount(monthlyFixedUsd, Currency.USD)} USD</span>
+                )}
+                {monthlyFixedUsd > 0 && monthlyFixedUyu > 0 && (
+                  <span className={styles.dot}> · </span>
+                )}
+                {monthlyFixedUyu > 0 && (
+                  <span>{formatAmount(monthlyFixedUyu, Currency.UYU)} UYU</span>
+                )}
               </span>
             </div>
             <div className={styles.splitAmtRow}>
               <span className={styles.splitAmtLbl}>Variables</span>
               <span className={styles.splitAmtVal}>
-                {metrics.variableUsd > 0 && <span>{formatAmount(metrics.variableUsd, Currency.USD)} USD</span>}
-                {metrics.variableUsd > 0 && metrics.variableUyu > 0 && <span className={styles.dot}> · </span>}
-                {metrics.variableUyu > 0 && <span>{formatAmount(metrics.variableUyu, Currency.UYU)} UYU</span>}
+                {metrics.variableUsd > 0 && (
+                  <span>{formatAmount(metrics.variableUsd, Currency.USD)} USD</span>
+                )}
+                {metrics.variableUsd > 0 && metrics.variableUyu > 0 && (
+                  <span className={styles.dot}> · </span>
+                )}
+                {metrics.variableUyu > 0 && (
+                  <span>{formatAmount(metrics.variableUyu, Currency.UYU)} UYU</span>
+                )}
               </span>
             </div>
           </div>
@@ -335,7 +1043,9 @@ export default function MetricsPage(): React.ReactElement {
             const amtStr = [
               cat.usd > 0 ? `${formatCurrency(cat.usd, Currency.USD)} USD` : '',
               cat.uyu > 0 ? `${formatAmount(cat.uyu, Currency.UYU)} UYU` : '',
-            ].filter(Boolean).join(' + ')
+            ]
+              .filter(Boolean)
+              .join(' + ')
 
             return (
               <div key={cat.categoryId} className={styles.catRow}>
@@ -347,8 +1057,14 @@ export default function MetricsPage(): React.ReactElement {
                   <div className={styles.catRight}>
                     <span className={styles.catAmt}>{amtStr}</span>
                     {delta !== 0 && (
-                      <span className={[styles.catDelta, delta > 0 ? styles.deltaUp : styles.deltaDown].join(' ')}>
-                        {delta > 0 ? '↑' : '↓'}{Math.abs(delta)}%
+                      <span
+                        className={[
+                          styles.catDelta,
+                          delta > 0 ? styles.deltaUp : styles.deltaDown,
+                        ].join(' ')}
+                      >
+                        {delta > 0 ? '↑' : '↓'}
+                        {Math.abs(delta)}%
                       </span>
                     )}
                   </div>
@@ -360,8 +1076,6 @@ export default function MetricsPage(): React.ReactElement {
             )
           })}
         </div>
-
-
       </div>
     </div>
   )

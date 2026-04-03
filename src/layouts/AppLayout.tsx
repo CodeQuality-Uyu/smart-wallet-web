@@ -1,7 +1,7 @@
 // src/layouts/AppLayout.tsx
 
 import React from 'react'
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/app/providers/AuthContext'
 import { useIsDesktop } from '@/hooks/useIsDesktop'
 import styles from './AppLayout.module.css'
@@ -27,6 +27,8 @@ const ALL_NAV = [...NAV_ITEMS_LEFT, ...NAV_ITEMS_RIGHT]
 function DesktopLayout(): React.ReactElement {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const { pathname } = useLocation()
+  const isSettings = pathname.startsWith('/settings')
 
   function handleLogout(): void {
     logout()
@@ -76,7 +78,7 @@ function DesktopLayout(): React.ReactElement {
       </header>
 
       <main className={styles.desktopMain}>
-        <div className={styles.desktopContent}>
+        <div className={styles.desktopContent} style={isSettings ? { padding: 0 } : undefined}>
           <Outlet />
         </div>
       </main>

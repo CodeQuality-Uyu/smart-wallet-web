@@ -9,6 +9,7 @@ import { FormField, TextInput } from '@/components/ui/FormField'
 import { Button } from '@/components/ui/Button'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { PeriodControl } from '@/components/ui/PeriodControl'
 import { LocaleFilterPeriod } from '@/types/enums'
 import styles from './PlacesPage.module.css'
 
@@ -42,21 +43,7 @@ export default function PlacesPage(): React.ReactElement {
     }
   }
 
-  const periodTabs = (
-    <div className={styles.periodTabs} role="tablist">
-      {PERIODS.map((p) => (
-        <button
-          key={p.value}
-          role="tab"
-          aria-selected={period === p.value}
-          className={[styles.periodTab, period === p.value ? styles.periodTabActive : ''].join(' ')}
-          onClick={() => setPeriod(p.value)}
-        >
-          {p.label}
-        </button>
-      ))}
-    </div>
-  )
+  const periodTabs = <PeriodControl options={PERIODS} value={period} onChange={setPeriod} /> // PlacesPage has different period options
 
   return (
     <div>

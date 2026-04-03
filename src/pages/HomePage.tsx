@@ -13,7 +13,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { groupExpensesByDate } from '@/utils/groupByDate'
 import { formatAmount, formatCurrency } from '@/utils/formatCurrency'
-import { MetricsPeriod, Currency, RecurringMode, RecurringPaymentStatus } from '@/types/enums'
+import { PeriodFilter, Currency, RecurringMode, RecurringPaymentStatus } from '@/types/enums'
 import { useAuth } from '@/app/providers/AuthContext'
 import { useIsDesktop } from '@/hooks/useIsDesktop'
 import styles from './HomePage.module.css'
@@ -42,7 +42,7 @@ export default function HomePage(): React.ReactElement {
     isLoading: loadingMetrics,
     error: metricsError,
     refetch,
-  } = useMetrics(MetricsPeriod.Month)
+  } = useMetrics(PeriodFilter.Month)
   const { data: budget, isLoading: loadingBudget } = useBudget()
   const { data: expensesPage, isLoading: loadingExpenses } = useExpenses()
   const { data: categories = [], isLoading: loadingCategories } = useCategories()
@@ -228,37 +228,6 @@ export default function HomePage(): React.ReactElement {
   if (isDesktop) {
     return (
       <div className={styles.desktopGrid}>
-        {/* Left: pending payments — spans full height */}
-        <div className={styles.desktopSidebar}>
-          <h2 className={styles.desktopSectionTitle}>Pagos pendientes</h2>
-          <div className={styles.desktopCard}>
-            {pendingRecurring.length === 0 ? (
-              <div className={styles.desktopAllPaid}>✅ Todos los pagos al día</div>
-            ) : (
-              pendingRecurring.map((r) => (
-                <button
-                  key={r.id}
-                  className={styles.desktopRecurringRow}
-                  onClick={() => void navigate(`/settings/recurring/${r.id}`)}
-                >
-                  <span className={styles.desktopRecurringIcon}>{r.icon}</span>
-                  <div className={styles.desktopRecurringInfo}>
-                    <span className={styles.desktopRecurringName}>{r.name}</span>
-                    {r.dueDayOfMonth && (
-                      <span className={styles.desktopRecurringDue}>
-                        Vence el día {r.dueDayOfMonth}
-                      </span>
-                    )}
-                  </div>
-                  <span className={styles.desktopRecurringAmt}>
-                    {formatCurrency(r.amount, r.currency)}
-                  </span>
-                </button>
-              ))
-            )}
-          </div>
-        </div>
-
         {/* Right: column of independent cards */}
         <div className={styles.desktopRightCol}>
           {/* Stat cards */}
@@ -376,46 +345,77 @@ export default function HomePage(): React.ReactElement {
               )}
             </div>
           </div>
+        </div>
 
-          {/* Tips + categories — independent side-by-side cards */}
-          {(shownTips.length > 0 || categoryGrowth.length > 0) && (
-            <div className={styles.desktopBottomRow}>
-              {shownTips.length > 0 && (
-                <div>
-                  <h2 className={styles.desktopSectionTitle}>💡 Tips de ahorro</h2>
-                  <div className={styles.desktopCard}>
-                    {shownTips.map((tip, i) => (
-                      <div key={i} className={styles.desktopTipRow}>
-                        <span className={styles.desktopTipIcon}>{tip.icon}</span>
-                        <p className={styles.desktopTipText}>{tip.text}</p>
-                      </div>
-                    ))}
+        {/* Sidebar: pending payments + tips + categories */}
+        <div className={styles.desktopSidebar}>
+          <h2 className={styles.desktopSectionTitle}>Pagos pendientes</h2>
+          <div className={styles.desktopCard}>
+            {pendingRecurring.length === 0 ? (
+              <div className={styles.desktopAllPaid}>✅ Todos los pagos al día</div>
+            ) : (
+              pendingRecurring.map((r) => (
+                <button
+                  key={r.id}
+                  className={styles.desktopRecurringRow}
+                  onClick={() => void navigate(`/settings/recurring/${r.id}`)}
+                >
+                  <span className={styles.desktopRecurringIcon}>{r.icon}</span>
+                  <div className={styles.desktopRecurringInfo}>
+                    <span className={styles.desktopRecurringName}>{r.name}</span>
+                    {r.dueDayOfMonth && (
+                      <span className={styles.desktopRecurringDue}>
+                        Vence el día {r.dueDayOfMonth}
+                      </span>
+                    )}
                   </div>
-                </div>
-              )}
-              {categoryGrowth.length > 0 && (
-                <div>
-                  <h2 className={styles.desktopSectionTitle}>Categorías destacadas</h2>
-                  <div className={styles.desktopCard}>
-                    {categoryGrowth.map((cat) => (
-                      <div key={cat.categoryId} className={styles.desktopCatRow}>
-                        <span className={styles.desktopCatIcon}>{cat.categoryIcon}</span>
-                        <span className={styles.desktopCatName}>{cat.categoryName}</span>
-                        <span
-                          className={[
-                            styles.desktopCatDelta,
-                            cat.delta > 0 ? styles.catDeltaUp : styles.catDeltaDown,
-                          ].join(' ')}
-                        >
-                          {cat.delta > 0 ? '↑' : '↓'}
-                          {Math.abs(cat.delta)}%
-                        </span>
-                      </div>
-                    ))}
+                  <span className={styles.desktopRecurringAmt}>
+                    {formatCurrency(r.amount, r.currency)}
+                  </span>
+                </button>
+              ))
+            )}
+          </div>
+
+          {shownTips.length > 0 && (
+            <>
+              <h2 className={[styles.desktopSectionTitle, styles.desktopSidebarSection].join(' ')}>
+                💡 Tips de ahorro
+              </h2>
+              <div className={styles.desktopCard}>
+                {shownTips.map((tip, i) => (
+                  <div key={i} className={styles.desktopTipRow}>
+                    <span className={styles.desktopTipIcon}>{tip.icon}</span>
+                    <p className={styles.desktopTipText}>{tip.text}</p>
                   </div>
-                </div>
-              )}
-            </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {categoryGrowth.length > 0 && (
+            <>
+              <h2 className={[styles.desktopSectionTitle, styles.desktopSidebarSection].join(' ')}>
+                Categorías destacadas
+              </h2>
+              <div className={styles.desktopCard}>
+                {categoryGrowth.map((cat) => (
+                  <div key={cat.categoryId} className={styles.desktopCatRow}>
+                    <span className={styles.desktopCatIcon}>{cat.categoryIcon}</span>
+                    <span className={styles.desktopCatName}>{cat.categoryName}</span>
+                    <span
+                      className={[
+                        styles.desktopCatDelta,
+                        cat.delta > 0 ? styles.catDeltaUp : styles.catDeltaDown,
+                      ].join(' ')}
+                    >
+                      {cat.delta > 0 ? '↑' : '↓'}
+                      {Math.abs(cat.delta)}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       </div>

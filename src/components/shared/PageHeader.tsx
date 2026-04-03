@@ -21,20 +21,23 @@ export function PageHeader({
 
   return (
     <header className={styles.header}>
-      <div className={styles.top}>
-        {showBack && (
-          <button
-            className={styles.backBtn}
-            onClick={() => navigate(-1)}
-            aria-label="Volver"
-          >
-            ←
-          </button>
-        )}
-        <h1 className={styles.title}>{title}</h1>
-        {rightAction && <div className={styles.right}>{rightAction}</div>}
+      <div className={styles.left}>
+        <div className={styles.top}>
+          {showBack && (
+            <button
+              className={styles.backBtn}
+              onClick={() => navigate(-1)}
+              aria-label="Volver"
+            >
+              ←
+            </button>
+          )}
+          <h1 className={styles.title}>{title}</h1>
+          {rightAction && <div className={styles.rightMobile}>{rightAction}</div>}
+        </div>
+        {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
       </div>
-      {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
+      {rightAction && <div className={styles.right}>{rightAction}</div>}
     </header>
   )
 }

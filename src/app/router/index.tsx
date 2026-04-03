@@ -31,7 +31,6 @@ const CategoriesPage = lazy(() => import('@/pages/CategoriesPage'))
 const PlacesPage = lazy(() => import('@/pages/PlacesPage'))
 const CardsPage = lazy(() => import('@/pages/CardsPage'))
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'))
-const SalariesPage = lazy(() => import('@/pages/SalariesPage'))
 const BudgetSettingsPage = lazy(() => import('@/pages/BudgetSettingsPage'))
 const MonthClosingPage = lazy(() => import('@/pages/MonthClosingPage'))
 const ReportsPage = lazy(() => import('@/pages/ReportsPage'))
@@ -43,6 +42,7 @@ const ProductCategoriesPage = lazy(() => import('@/pages/ProductCategoriesPage')
 const ProductsPage = lazy(() => import('@/pages/ProductsPage'))
 const NewProductPage = lazy(() => import('@/pages/NewProductPage'))
 const ProductDetailPage = lazy(() => import('@/pages/ProductDetailPage'))
+const ProfilePage = lazy(() => import('@/pages/ProfilePage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 
 const SuspenseWrapper = ({ children }: { children: React.ReactNode }): React.ReactElement => (
@@ -116,13 +116,13 @@ const router = createBrowserRouter([
           { path: 'places', element: <SuspenseWrapper><PlacesPage /></SuspenseWrapper> },
           { path: 'cards', element: <SuspenseWrapper><CardsPage /></SuspenseWrapper> },
           { path: 'budget', element: <SuspenseWrapper><BudgetSettingsPage /></SuspenseWrapper> },
-          { path: 'salaries', element: <SuspenseWrapper><SalariesPage /></SuspenseWrapper> },
           { path: 'reports', element: <SuspenseWrapper><ReportsPage /></SuspenseWrapper> },
           { path: 'reports/:yearMonth', element: <SuspenseWrapper><MonthClosingPage /></SuspenseWrapper> },
           { path: 'product-categories', element: <SuspenseWrapper><ProductCategoriesPage /></SuspenseWrapper> },
           { path: 'products', element: <SuspenseWrapper><ProductsPage /></SuspenseWrapper> },
           { path: 'products/new', element: <SuspenseWrapper><NewProductPage /></SuspenseWrapper> },
           { path: 'products/:id', element: <SuspenseWrapper><ProductDetailPage /></SuspenseWrapper> },
+          { path: 'profile', element: <SuspenseWrapper><ProfilePage /></SuspenseWrapper> },
         ],
       },
         ],

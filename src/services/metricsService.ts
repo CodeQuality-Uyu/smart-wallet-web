@@ -2,10 +2,13 @@
 
 import { getMetricsBackend } from '@/backend'
 import type { MetricsSummary } from '@/types/models'
-import { MetricsPeriod } from '@/types/enums'
+import { PeriodFilter } from '@/types/enums'
 
 export const metricsService = {
-  async getSummary(period: MetricsPeriod = MetricsPeriod.Month, yearMonth?: string): Promise<MetricsSummary> {
+  async getSummary(
+    period: PeriodFilter = PeriodFilter.Month,
+    yearMonth?: string
+  ): Promise<MetricsSummary> {
     return (await getMetricsBackend()).getSummary(period, yearMonth)
   },
 }
