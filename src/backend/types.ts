@@ -294,3 +294,13 @@ export interface INotificationsBackend {
   getPrefs(): Promise<NotificationPrefs>
   setPrefs(prefs: NotificationPrefs): Promise<NotificationPrefs>
 }
+
+// ─── Notifications ────────────────────────────────────────
+
+export interface INotificationsBackend {
+  list(): Promise<Notification[]>
+  markRead(id: string): Promise<Notification>
+  markAllRead(): Promise<void>
+  getPrefs(): Promise<NotificationPrefs>
+  setPrefs(prefs: NotificationPrefs): Promise<NotificationPrefs>
+}

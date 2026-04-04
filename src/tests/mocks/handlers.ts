@@ -400,6 +400,8 @@ export const handlers = [
           return { categoryId: catId, categoryName: cat?.name ?? catId, categoryIcon: cat?.icon ?? '📦', ...totals }
         })
         .sort((a, b) => (b.usd + b.uyu) - (a.usd + a.uyu))
+      return { totalUsd, totalUyu, byCategory }
+    }
 
       const productMap = new Map(mockUserProducts.map((p) => [p.id, p]))
       const pcatMap = new Map(mockProductCategories.map((c) => [c.id, c]))
