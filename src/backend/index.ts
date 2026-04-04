@@ -22,6 +22,7 @@ let _productCategoriesBackend: IProductCategoriesBackend | null = null
 let _brandsBackend: IBrandsBackend | null = null
 let _productsBackend: IProductsBackend | null = null
 let _categoryLimitsBackend: ICategoryLimitsBackend | null = null
+let _productCategoryLimitsBackend: ICategoryLimitsBackend | null = null
 let _notificationsBackend: INotificationsBackend | null = null
 
 export async function getAuthBackend(): Promise<IAuthBackend> {
@@ -191,6 +192,18 @@ export async function getCategoryLimitsBackend(): Promise<ICategoryLimitsBackend
     _categoryLimitsBackend = mswCategoryLimitsBackend
   }
   return _categoryLimitsBackend
+}
+
+export async function getProductCategoryLimitsBackend(): Promise<ICategoryLimitsBackend> {
+  if (_productCategoryLimitsBackend) return _productCategoryLimitsBackend
+  if (backend === 'firestore') {
+    const { firestoreProductCategoryLimitsBackend } = await import('./firestore/productCategoryLimits')
+    _productCategoryLimitsBackend = firestoreProductCategoryLimitsBackend
+  } else {
+    const { mswProductCategoryLimitsBackend } = await import('./msw/productCategoryLimits')
+    _productCategoryLimitsBackend = mswProductCategoryLimitsBackend
+  }
+  return _productCategoryLimitsBackend
 }
 
 export async function getNotificationsBackend(): Promise<INotificationsBackend> {

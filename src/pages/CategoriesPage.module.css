@@ -293,7 +293,7 @@
 .limitInput:focus { border-color: var(--g400); }
 
 .formActions {
-  display: flex; align-items: center;
+  display: flex; align-items: center; justify-content: space-between;
 }
 
 .formActionsRight { display: flex; gap: 8px; align-items: center; margin-left: auto; }
@@ -315,10 +315,12 @@
 .formSaveBtn:disabled { opacity: .6; cursor: default; }
 
 .formDeleteBtn {
-  padding: 9px 16px; border-radius: 12px;
-  font-size: 13px; font-weight: 500;
+  display: block; width: 100%;
+  margin-top: 10px; padding: 9px 16px;
+  border-radius: 12px; font-size: 13px; font-weight: 500;
   background: #fff1f2; color: #e11d48;
   border: 1px solid #fecdd3; cursor: pointer; font-family: inherit;
+  text-align: center;
 }
 
 @media (min-width: 768px) {
@@ -529,7 +531,7 @@
   }
 
   .formActions {
-    justify-content: flex-end;
+    justify-content: space-between;
     gap: 10px;
     padding-top: 4px;
   }

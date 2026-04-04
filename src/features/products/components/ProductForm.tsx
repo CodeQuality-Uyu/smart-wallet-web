@@ -263,7 +263,7 @@ function NewBrandModal({ onClose, onCreated }: NewBrandModalProps): React.ReactE
 
   return (
     <Modal title="Nueva marca" onClose={onClose} width={360}>
-      <form onSubmit={(e) => void handleSubmit(e)} style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '4px 0' }}>
+      <form onSubmit={(e) => void handleSubmit(e)} style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '20px 24px' }}>
         <div>
           <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.06em' }}>
             Nombre

@@ -6,6 +6,7 @@ import {
   useCategories,
   useCreateCategory,
   useUpdateCategory,
+  useDeleteCategory,
 } from '@/features/categories/hooks/useCategories'
 import {
   categorySchema,
@@ -79,6 +80,7 @@ const COLOR_OPTIONS = [
 export default function CategoriesPage(): React.ReactElement {
   const { data: categories = [], isLoading } = useCategories()
   const { mutateAsync: createCat } = useCreateCategory()
+  const { mutateAsync: deleteCat } = useDeleteCategory()
 
   const [editing, setEditing] = useState<Category | null>(null)
   const [showForm, setShowForm] = useState(false)
@@ -295,16 +297,24 @@ export default function CategoriesPage(): React.ReactElement {
                     >
                       Cancelar
                     </button>
-                    <div className={styles.formActionsRight}>
-                      <button type="submit" className={styles.formSaveBtn} disabled={isSubmitting}>
-                        {isSubmitting
-                          ? 'Guardando…'
-                          : editing
-                            ? 'Guardar cambios'
-                            : 'Crear categoría'}
-                      </button>
-                    </div>
+                    <button type="submit" className={styles.formSaveBtn} disabled={isSubmitting}>
+                      {isSubmitting ? 'Guardando…' : editing ? 'Guardar' : 'Crear categoría'}
+                    </button>
                   </div>
+                  {editing && (
+                    <button
+                      type="button"
+                      className={styles.formDeleteBtn}
+                      onClick={async () => {
+                        if (!window.confirm(`¿Eliminar la categoría "${editing.name}"?`)) return
+                        await deleteCat(editing.id)
+                        setShowForm(false)
+                        setEditing(null)
+                      }}
+                    >
+                      Eliminar categoría
+                    </button>
+                  )}
                 </Form>
               )}
             </Formik>
@@ -317,7 +327,7 @@ export default function CategoriesPage(): React.ReactElement {
           {filteredCategories.map((cat) => {
             const spend = spendMap.get(cat.id)
             return (
-              <div key={cat.id} className={styles.tile}>
+              <div key={cat.id} className={styles.tile} style={cat.color ? { borderColor: cat.color } : undefined}>
                 <div className={styles.tileIconWrap}>
                   <span className={styles.tileIcon}>{cat.icon}</span>
                 </div>

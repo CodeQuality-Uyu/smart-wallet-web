@@ -26,7 +26,7 @@ export function ProductNameInput({ onSelectGlobal }: ProductNameInputProps): Rea
     return () => clearTimeout(t)
   }, [field.value])
 
-  const { data: suggestions = [], isFetching } = useSearchGlobalProducts(searchQuery)
+  const { data: suggestions = [] } = useSearchGlobalProducts(searchQuery)
 
   // Close on outside click
   useEffect(() => {
@@ -118,12 +118,8 @@ export function ProductNameInput({ onSelectGlobal }: ProductNameInputProps): Rea
         )}
       </div>
 
-      {showDropdown && (
+      {showDropdown && suggestions.length > 0 && (
         <ul className={styles.dropdown} role="listbox">
-          {isFetching && suggestions.length === 0 && (
-            <li className={styles.hint}>Buscando...</li>
-          )}
-
           {suggestions.map((s, idx) => (
             <li
               key={s.id}

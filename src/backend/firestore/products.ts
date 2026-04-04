@@ -7,6 +7,7 @@ import {
   collection, getDocs, addDoc, doc, updateDoc, getDoc, query, orderBy, where, limit,
 } from 'firebase/firestore'
 import { firebaseAuth, firestore } from './config'
+import type { Currency } from '@/types/enums'
 import type {
   IProductsBackend,
   GlobalProductSuggestion,
@@ -201,5 +202,13 @@ export const firestoreProductsBackend: IProductsBackend = {
     }).catch(() => { /* ignore if global product not found */ })
 
     return { id: ref.id, ...data }
+  },
+
+  async updatePriceRecord(id: string, payload: { unitPrice: number; currency: Currency }): Promise<ProductPriceRecord> {
+    requireUid()
+    const ref = doc(firestore, 'priceHistory', id)
+    await updateDoc(ref, payload)
+    const snap = await getDoc(ref)
+    return { id: snap.id, ...snap.data() } as ProductPriceRecord
   },
 }

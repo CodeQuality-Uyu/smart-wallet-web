@@ -1,6 +1,7 @@
 // src/backend/msw/products.ts
 
 import { httpClient } from '@/api/httpClient'
+import type { Currency } from '@/types/enums'
 import type {
   IProductsBackend,
   GlobalProductSuggestion,
@@ -65,6 +66,11 @@ export const mswProductsBackend: IProductsBackend = {
       `/products/${payload.productId}/price-history`,
       payload,
     )
+    return data
+  },
+
+  async updatePriceRecord(id: string, payload: { unitPrice: number; currency: Currency }): Promise<ProductPriceRecord> {
+    const { data } = await httpClient.patch<ProductPriceRecord>(`/price-history/${id}`, payload)
     return data
   },
 }
