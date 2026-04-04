@@ -112,18 +112,22 @@ export default function CategoriesPage(): React.ReactElement {
     { setStatus }: { setStatus: (status: string) => void }
   ): Promise<void> {
     try {
+      const { limitUYU: _lUYU, limitUSD: _lUSD, ...categoryFields } = values
       const catId = editing
-        ? (await updateCat(values), editing.id)
-        : (await createCat({ ...values, active: true })).id
-      const prev = categoryLimits[catId] ?? {}
-      await setLimits({
-        ...categoryLimits,
-        [catId]: {
-          ...prev,
-          [Currency.UYU]: values.limitUYU ?? undefined,
-          [Currency.USD]: values.limitUSD ?? undefined,
-        },
-      })
+        ? (await updateCat(categoryFields), editing.id)
+        : (await createCat({ ...categoryFields, active: true })).id
+      const prev = { ...(categoryLimits[catId] ?? {}) }
+      if (values.limitUYU != null && values.limitUYU > 0) {
+        prev[Currency.UYU] = values.limitUYU
+      } else {
+        delete prev[Currency.UYU]
+      }
+      if (values.limitUSD != null && values.limitUSD > 0) {
+        prev[Currency.USD] = values.limitUSD
+      } else {
+        delete prev[Currency.USD]
+      }
+      await setLimits({ ...categoryLimits, [catId]: prev })
       setShowForm(false)
       setEditing(null)
     } catch (err) {
