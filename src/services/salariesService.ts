@@ -2,9 +2,9 @@
 // Thin delegator — all logic lives in the active backend implementation.
 
 import { getSalariesBackend } from '@/backend'
-import type { Salary, CreateSalaryPayload } from '@/backend/types'
+import type { Salary, CreateSalaryPayload, UpdateSalaryPayload } from '@/backend/types'
 
-export type { Salary, CreateSalaryPayload }
+export type { Salary, CreateSalaryPayload, UpdateSalaryPayload }
 
 export const salariesService = {
   async list(): Promise<Salary[]> {
@@ -13,6 +13,10 @@ export const salariesService = {
 
   async create(payload: CreateSalaryPayload): Promise<Salary> {
     return (await getSalariesBackend()).create(payload)
+  },
+
+  async update(id: string, payload: UpdateSalaryPayload): Promise<Salary> {
+    return (await getSalariesBackend()).update(id, payload)
   },
 
   async remove(id: string): Promise<void> {

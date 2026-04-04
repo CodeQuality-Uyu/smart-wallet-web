@@ -9,6 +9,7 @@ import {
   RecurringPaymentStatus,
   ProductPricingType,
   WeightUnit,
+  NotificationType,
 } from '@/types/enums'
 
 // ─── Shared ───────────────────────────────────────────────
@@ -75,6 +76,7 @@ export interface Card extends Timestamps {
   type: CardType
   bank: string
   lastFour?: string
+  color?: string
   active?: boolean
 }
 
@@ -164,6 +166,10 @@ export interface MonthlySpend {
   label: string
   usd: number
   uyu: number
+  fixedUsd: number
+  fixedUyu: number
+  variableUsd: number
+  variableUyu: number
 }
 
 export interface CategorySpend {
@@ -172,6 +178,7 @@ export interface CategorySpend {
   categoryIcon: string
   usd: number
   uyu: number
+  expenseCount: number
 }
 
 export interface FixedExpenseBreakdown {
@@ -182,6 +189,14 @@ export interface FixedExpenseBreakdown {
   amount: number
   currency: Currency
   frequency: RecurringFrequency
+}
+
+export interface ProductCategorySpend {
+  productCategoryId: string
+  productCategoryName: string
+  productCategoryIcon: string
+  usd: number
+  uyu: number
 }
 
 export interface MetricsSummary {
@@ -198,6 +213,7 @@ export interface MetricsSummary {
   byCategory: CategorySpend[]
   previousByCategory: CategorySpend[]
   fixedBreakdown: FixedExpenseBreakdown[]
+  byProductCategory: ProductCategorySpend[]
 }
 
 // ─── Budget ───────────────────────────────────────────────
@@ -205,6 +221,17 @@ export interface MetricsSummary {
 export interface BudgetSettings {
   usd?: number
   uyu?: number
+}
+
+// ─── Category limits ──────────────────────────────────────
+
+export interface CategoryLimitEntry {
+  [Currency.UYU]?: number
+  [Currency.USD]?: number
+}
+
+export interface CategoryLimits {
+  [categoryId: string]: CategoryLimitEntry
 }
 
 // ─── Month closings ───────────────────────────────────────
@@ -250,6 +277,7 @@ export interface ProductCategory extends Timestamps {
   id: string
   name: string
   icon: string
+  color?: string
 }
 
 export type CreateProductCategoryPayload = Omit<ProductCategory, 'id' | 'createdAt' | 'updatedAt'>
@@ -345,4 +373,41 @@ export interface Income {
   name: string
   amount: number
   currency: Currency
+}
+
+// ─── Notifications ────────────────────────────────────────
+
+export interface Notification {
+  id: string
+  title: string
+  body: string
+  type: NotificationType
+  read: boolean
+  createdAt: string
+}
+
+export interface NotificationAlertPrefs {
+  expenses: boolean
+  budgetLimit: boolean
+  income: boolean
+  weeklySummary: boolean
+  recurring: boolean
+}
+
+export interface NotificationChannelPrefs {
+  push: boolean
+  email: boolean
+  whatsapp: boolean
+}
+
+export interface NotificationQuietHours {
+  enabled: boolean
+  from: string
+  to: string
+}
+
+export interface NotificationPrefs {
+  alerts: NotificationAlertPrefs
+  channels: NotificationChannelPrefs
+  quietHours: NotificationQuietHours
 }

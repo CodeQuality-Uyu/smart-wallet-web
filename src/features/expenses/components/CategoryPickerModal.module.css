@@ -2,15 +2,26 @@
 
 /* ── Header create button ── */
 .headerCreateBtn {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--ind);
-  background: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
   border: none;
+  background: var(--g700);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
   cursor: pointer;
-  font-family: inherit;
-  padding: 0;
-  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity .15s;
+}
+
+.headerCreateBtn:hover { opacity: .85; }
+
+.headerCreateBtnActive {
+  background: var(--muted);
+  font-size: 12px;
 }
 
 /* ── Inline create form ── */
@@ -142,8 +153,8 @@
 
 .tileCheck {
   position: absolute;
-  top: 5px;
-  right: 7px;
+  top: 7px;
+  right: 14px;
   font-size: 10px;
   font-weight: 700;
   color: var(--g700);

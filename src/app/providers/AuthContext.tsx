@@ -14,6 +14,7 @@ interface AuthContextValue {
   verifyCode: (email: string, code: string) => Promise<void>
   resetPassword: (email: string) => Promise<void>
   logout: () => void
+  updateProfile: (name: string) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -74,6 +75,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null)
   }, [])
 
+  const updateProfile = useCallback(async (name: string): Promise<void> => {
+    if (appConfig.backend === 'firestore') {
+      const [{ updateProfile: fbUpdateProfile }, { firebaseAuth }] = await Promise.all([
+        import('firebase/auth'),
+        import('@/backend/firestore/config'),
+      ])
+      const currentUser = firebaseAuth.currentUser
+      if (currentUser) {
+        await fbUpdateProfile(currentUser, { displayName: name })
+      }
+    }
+    setUser((prev) => {
+      if (!prev) return prev
+      const updated: SessionUser = { ...prev, name }
+      const token = window.localStorage.getItem(AUTH_TOKEN_KEY) ?? ''
+      storeSession(token, updated)
+      return updated
+    })
+  }, [])
+
   // For Firestore: listen to Firebase auth state changes.
   // If Firebase loses the session (refresh token expired / user disabled),
   // clear the stale localStorage entry so the user is redirected to login.
@@ -95,8 +116,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [])
 
   const value = useMemo<AuthContextValue>(
-    () => ({ user, isAuthenticated: Boolean(user), login, register, verifyCode, resetPassword, logout }),
-    [user, login, register, verifyCode, resetPassword, logout],
+    () => ({ user, isAuthenticated: Boolean(user), login, register, verifyCode, resetPassword, logout, updateProfile }),
+    [user, login, register, verifyCode, resetPassword, logout, updateProfile],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -53,7 +53,14 @@
 
 .closeBtn:hover { background: var(--border); color: var(--ink); }
 
+.titleGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
 .titleAction {
-  margin-left: auto;
-  margin-right: 10px;
+  flex-shrink: 0;
 }

@@ -15,6 +15,11 @@ export const mswCardsBackend: ICardsBackend = {
     return data
   },
 
+  async update(id: string, payload: Partial<CreateCardPayload>): Promise<Card> {
+    const { data } = await httpClient.patch<Card>(`/cards/${id}`, payload)
+    return data
+  },
+
   async remove(id: string): Promise<void> {
     await httpClient.delete(`/cards/${id}`)
   },

@@ -7,7 +7,11 @@
       "Bash(npx tsc:*)",
       "Bash(ls c:UsersOdinDocumentsGitHubCodeQualitysmart-wallet*.md)",
       "Bash(grep -l \"yup\\\\|Yup\" c:/Users/Odin/Documents/GitHub/CodeQuality/smart-wallet/src/features/*/schemas/*.ts)",
-      "Bash(xargs grep:*)"
+      "Bash(xargs grep:*)",
+      "Bash(git stash:*)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)"
     ]
   }
 }

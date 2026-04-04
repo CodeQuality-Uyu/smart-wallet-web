@@ -27,6 +27,19 @@ export function useCreateCard() {
   })
 }
 
+export function useUpdateCard() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: Partial<import('@/types/models').CreateCardPayload> }) =>
+      cardsService.update(id, payload),
+    onSuccess: (updated) => {
+      qc.setQueryData<Card[]>(CARD_KEYS.list(), (prev) =>
+        prev?.map((c) => (c.id === updated.id ? updated : c)) ?? []
+      )
+    },
+  })
+}
+
 export function useDeleteCard() {
   const qc = useQueryClient()
   return useMutation({

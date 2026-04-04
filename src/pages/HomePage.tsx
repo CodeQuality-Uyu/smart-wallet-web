@@ -8,14 +8,12 @@ import { useExpenses } from '@/features/expenses/hooks/useExpenses'
 import { useCategories } from '@/features/categories/hooks/useCategories'
 import { useRecurringList } from '@/features/recurring/hooks/useRecurring'
 import { useCards } from '@/features/cards/hooks/useCards'
-import { ExpenseListItem } from '@/features/expenses/components/ExpenseListItem'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { groupExpensesByDate } from '@/utils/groupByDate'
 import { formatAmount, formatCurrency } from '@/utils/formatCurrency'
-import { MetricsPeriod, Currency, RecurringMode, RecurringPaymentStatus } from '@/types/enums'
+import { PeriodFilter, Currency, RecurringMode, RecurringPaymentStatus } from '@/types/enums'
 import { useAuth } from '@/app/providers/AuthContext'
-import { useIsDesktop } from '@/hooks/useIsDesktop'
 import styles from './HomePage.module.css'
 
 const MONTH_NAMES = [
@@ -35,14 +33,13 @@ const MONTH_NAMES = [
 
 export default function HomePage(): React.ReactElement {
   const navigate = useNavigate()
-  const { user } = useAuth()
-  const isDesktop = useIsDesktop()
+  useAuth()
   const {
     data: metrics,
     isLoading: loadingMetrics,
     error: metricsError,
     refetch,
-  } = useMetrics(MetricsPeriod.Month)
+  } = useMetrics(PeriodFilter.Month)
   const { data: budget, isLoading: loadingBudget } = useBudget()
   const { data: expensesPage, isLoading: loadingExpenses } = useExpenses()
   const { data: categories = [], isLoading: loadingCategories } = useCategories()
@@ -199,7 +196,6 @@ export default function HomePage(): React.ReactElement {
 
   // ── Recent expenses ───────────────────────────────────────
   const expenses = expensesPage?.data ?? []
-  const groups = groupExpensesByDate(expenses).slice(0, 2)
 
   const spendCards = [
     {
@@ -224,41 +220,8 @@ export default function HomePage(): React.ReactElement {
     },
   ]
 
-  // ── Desktop render ────────────────────────────────────────
-  if (isDesktop) {
-    return (
+  return (
       <div className={styles.desktopGrid}>
-        {/* Left: pending payments — spans full height */}
-        <div className={styles.desktopSidebar}>
-          <h2 className={styles.desktopSectionTitle}>Pagos pendientes</h2>
-          <div className={styles.desktopCard}>
-            {pendingRecurring.length === 0 ? (
-              <div className={styles.desktopAllPaid}>✅ Todos los pagos al día</div>
-            ) : (
-              pendingRecurring.map((r) => (
-                <button
-                  key={r.id}
-                  className={styles.desktopRecurringRow}
-                  onClick={() => void navigate(`/settings/recurring/${r.id}`)}
-                >
-                  <span className={styles.desktopRecurringIcon}>{r.icon}</span>
-                  <div className={styles.desktopRecurringInfo}>
-                    <span className={styles.desktopRecurringName}>{r.name}</span>
-                    {r.dueDayOfMonth && (
-                      <span className={styles.desktopRecurringDue}>
-                        Vence el día {r.dueDayOfMonth}
-                      </span>
-                    )}
-                  </div>
-                  <span className={styles.desktopRecurringAmt}>
-                    {formatCurrency(r.amount, r.currency)}
-                  </span>
-                </button>
-              ))
-            )}
-          </div>
-        </div>
-
         {/* Right: column of independent cards */}
         <div className={styles.desktopRightCol}>
           {/* Stat cards */}
@@ -376,227 +339,79 @@ export default function HomePage(): React.ReactElement {
               )}
             </div>
           </div>
+        </div>
 
-          {/* Tips + categories — independent side-by-side cards */}
-          {(shownTips.length > 0 || categoryGrowth.length > 0) && (
-            <div className={styles.desktopBottomRow}>
-              {shownTips.length > 0 && (
-                <div>
-                  <h2 className={styles.desktopSectionTitle}>💡 Tips de ahorro</h2>
-                  <div className={styles.desktopCard}>
-                    {shownTips.map((tip, i) => (
-                      <div key={i} className={styles.desktopTipRow}>
-                        <span className={styles.desktopTipIcon}>{tip.icon}</span>
-                        <p className={styles.desktopTipText}>{tip.text}</p>
-                      </div>
-                    ))}
+        {/* Sidebar: pending payments + tips + categories */}
+        <div className={styles.desktopSidebar}>
+          <h2 className={styles.desktopSectionTitle}>Pagos pendientes</h2>
+          <div className={styles.desktopCard}>
+            {pendingRecurring.length === 0 ? (
+              <div className={styles.desktopAllPaid}>✅ Todos los pagos al día</div>
+            ) : (
+              pendingRecurring.map((r) => (
+                <button
+                  key={r.id}
+                  className={styles.desktopRecurringRow}
+                  onClick={() => void navigate(`/settings/recurring/${r.id}`)}
+                >
+                  <span className={styles.desktopRecurringIcon}>{r.icon}</span>
+                  <div className={styles.desktopRecurringInfo}>
+                    <span className={styles.desktopRecurringName}>{r.name}</span>
+                    {r.dueDayOfMonth && (
+                      <span className={styles.desktopRecurringDue}>
+                        Vence el día {r.dueDayOfMonth}
+                      </span>
+                    )}
                   </div>
-                </div>
-              )}
-              {categoryGrowth.length > 0 && (
-                <div>
-                  <h2 className={styles.desktopSectionTitle}>Categorías destacadas</h2>
-                  <div className={styles.desktopCard}>
-                    {categoryGrowth.map((cat) => (
-                      <div key={cat.categoryId} className={styles.desktopCatRow}>
-                        <span className={styles.desktopCatIcon}>{cat.categoryIcon}</span>
-                        <span className={styles.desktopCatName}>{cat.categoryName}</span>
-                        <span
-                          className={[
-                            styles.desktopCatDelta,
-                            cat.delta > 0 ? styles.catDeltaUp : styles.catDeltaDown,
-                          ].join(' ')}
-                        >
-                          {cat.delta > 0 ? '↑' : '↓'}
-                          {Math.abs(cat.delta)}%
-                        </span>
-                      </div>
-                    ))}
+                  <span className={styles.desktopRecurringAmt}>
+                    {formatCurrency(r.amount, r.currency)}
+                  </span>
+                </button>
+              ))
+            )}
+          </div>
+
+          {shownTips.length > 0 && (
+            <>
+              <h2 className={[styles.desktopSectionTitle, styles.desktopSidebarSection].join(' ')}>
+                💡 Tips de ahorro
+              </h2>
+              <div className={styles.desktopCard}>
+                {shownTips.map((tip, i) => (
+                  <div key={i} className={styles.desktopTipRow}>
+                    <span className={styles.desktopTipIcon}>{tip.icon}</span>
+                    <p className={styles.desktopTipText}>{tip.text}</p>
                   </div>
-                </div>
-              )}
-            </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {categoryGrowth.length > 0 && (
+            <>
+              <h2 className={[styles.desktopSectionTitle, styles.desktopSidebarSection].join(' ')}>
+                Categorías destacadas
+              </h2>
+              <div className={styles.desktopCard}>
+                {categoryGrowth.map((cat) => (
+                  <div key={cat.categoryId} className={styles.desktopCatRow}>
+                    <span className={styles.desktopCatIcon}>{cat.categoryIcon}</span>
+                    <span className={styles.desktopCatName}>{cat.categoryName}</span>
+                    <span
+                      className={[
+                        styles.desktopCatDelta,
+                        cat.delta > 0 ? styles.catDeltaUp : styles.catDeltaDown,
+                      ].join(' ')}
+                    >
+                      {cat.delta > 0 ? '↑' : '↓'}
+                      {Math.abs(cat.delta)}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       </div>
     )
-  }
-
-  return (
-    <div className={styles.page}>
-      {/* ── Header ── */}
-      {!isDesktop && (
-        <header className={styles.header}>
-          <div className={styles.topBar}>
-            <div>
-              <p className={styles.greeting}>Buenos días,</p>
-              <p className={styles.name}>{user?.name ?? 'Usuario'} 👋</p>
-            </div>
-            <div className={styles.avatar} aria-hidden>
-              {user?.name
-                ?.split(' ')
-                .map((w) => w[0])
-                .slice(0, 2)
-                .join('')
-                .toUpperCase() ?? '??'}
-            </div>
-          </div>
-
-          <p className={styles.monthLabel}>📅 {monthLabel}</p>
-
-          {/* Spend cards */}
-          <div className={styles.spendCards}>
-            {spendCards.map(
-              ({ currency, total, deltaPct, budgetPct, budget: bgt, symbol: _symbol, label }) => (
-                <div key={currency} className={styles.spendCard}>
-                  <div className={styles.spendCardTop}>
-                    {deltaPct !== 0 && (
-                      <span
-                        className={[
-                          styles.delta,
-                          deltaPct > 0 ? styles.deltaUp : styles.deltaDown,
-                        ].join(' ')}
-                      >
-                        {deltaPct > 0 ? '↑' : '↓'}
-                        {Math.abs(deltaPct)}%
-                      </span>
-                    )}
-                  </div>
-                  <p className={styles.spendAmount}>{formatAmount(total, currency)}</p>
-                  <p className={styles.spendLabel}>
-                    <span className={styles.spendCurrLabel}>{label}</span> este mes
-                  </p>
-                  {budgetPct !== null && bgt !== undefined && (
-                    <div className={styles.budgetBar}>
-                      <div
-                        className={[
-                          styles.budgetFill,
-                          budgetPct >= 90
-                            ? styles.budgetDanger
-                            : budgetPct >= 70
-                              ? styles.budgetWarn
-                              : styles.budgetOk,
-                        ].join(' ')}
-                        style={{ width: `${Math.min(budgetPct, 100)}%` }}
-                      />
-                    </div>
-                  )}
-                  {budgetPct !== null && (
-                    <p className={styles.budgetLabel}>
-                      {budgetPct}% de {formatCurrency(bgt!, currency)}
-                    </p>
-                  )}
-                </div>
-              )
-            )}
-          </div>
-        </header>
-      )}
-
-      <div className={styles.body}>
-        {/* ── Categorías que más cambiaron ── */}
-        {categoryGrowth.length > 0 && (
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Categorías destacadas</h2>
-            <div className={styles.card}>
-              {categoryGrowth.map((cat) => (
-                <div key={cat.categoryId} className={styles.catRow}>
-                  <span className={styles.catIcon}>{cat.categoryIcon}</span>
-                  <span className={styles.catName}>{cat.categoryName}</span>
-                  <span
-                    className={[
-                      styles.catDelta,
-                      cat.delta > 0 ? styles.catDeltaUp : styles.catDeltaDown,
-                    ].join(' ')}
-                  >
-                    {cat.delta > 0 ? '↑' : '↓'}
-                    {Math.abs(cat.delta)}%
-                  </span>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* ── Tips de ahorro ── */}
-        {shownTips.length > 0 && (
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>💡 Tips de ahorro</h2>
-            <div className={styles.tipsCard}>
-              {shownTips.map((tip, i) => (
-                <div
-                  key={i}
-                  className={[
-                    styles.tipRow,
-                    tip.type === 'success'
-                      ? styles.tip_success
-                      : tip.type === 'warn'
-                        ? styles.tip_warn
-                        : styles.tip_info,
-                  ].join(' ')}
-                >
-                  <span className={styles.tipIcon}>{tip.icon}</span>
-                  <p className={styles.tipText}>{tip.text}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* ── Pagos pendientes ── */}
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Pagos pendientes</h2>
-          {pendingRecurring.length === 0 ? (
-            <div className={[styles.card, styles.allPaidMsg].join(' ')}>
-              <span>✅</span>
-              <span>Todos los pagos del mes están al día</span>
-            </div>
-          ) : (
-            <div className={styles.card}>
-              {pendingRecurring.map((r) => (
-                <button
-                  key={r.id}
-                  className={styles.recurringRow}
-                  onClick={() => navigate(`/settings/recurring/${r.id}`)}
-                >
-                  <span className={styles.recurringIcon}>{r.icon}</span>
-                  <div className={styles.recurringInfo}>
-                    <span className={styles.recurringName}>{r.name}</span>
-                    {r.dueDayOfMonth && (
-                      <span className={styles.recurringDue}>Vence el día {r.dueDayOfMonth}</span>
-                    )}
-                  </div>
-                  <span className={styles.recurringAmt}>
-                    {formatCurrency(r.amount, r.currency)} {r.currency}
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* ── Gastos recientes ── */}
-        <section className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <h2 className={styles.sectionTitle}>Gastos recientes</h2>
-            <button className={styles.seeAll} onClick={() => navigate('/expenses')}>
-              Ver todos →
-            </button>
-          </div>
-          {groups.length === 0 ? (
-            <p className={styles.empty}>No hay gastos este mes.</p>
-          ) : (
-            groups.map((group) => (
-              <div key={group.date}>
-                <p className={styles.dateHeader}>{group.label}</p>
-                {group.expenses.slice(0, 4).map((expense) => (
-                  <ExpenseListItem key={expense.id} expense={expense} categories={categories} />
-                ))}
-              </div>
-            ))
-          )}
-        </section>
-      </div>
-    </div>
-  )
 }

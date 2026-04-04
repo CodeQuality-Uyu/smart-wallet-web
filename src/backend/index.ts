@@ -1,7 +1,7 @@
 // src/backend/index.ts
 // Factory: returns the correct backend implementation based on VITE_BACKEND
 
-import type { IAuthBackend, IBudgetBackend, ICardsBackend, ICategoriesBackend, IExpensesBackend, IMetricsBackend, IPlacesBackend, IRecurringBackend, ISalariesBackend, IMonthClosingsBackend, IProductCategoriesBackend, IBrandsBackend, IProductsBackend } from './types'
+import type { IAuthBackend, IBudgetBackend, ICardsBackend, ICategoriesBackend, IExpensesBackend, IMetricsBackend, IPlacesBackend, IRecurringBackend, ISalariesBackend, IMonthClosingsBackend, IProductCategoriesBackend, IBrandsBackend, IProductsBackend, ICategoryLimitsBackend, INotificationsBackend } from './types'
 
 type BackendType = 'msw' | 'firestore' | 'aws'
 
@@ -21,6 +21,8 @@ let _monthClosingsBackend: IMonthClosingsBackend | null = null
 let _productCategoriesBackend: IProductCategoriesBackend | null = null
 let _brandsBackend: IBrandsBackend | null = null
 let _productsBackend: IProductsBackend | null = null
+let _categoryLimitsBackend: ICategoryLimitsBackend | null = null
+let _notificationsBackend: INotificationsBackend | null = null
 
 export async function getAuthBackend(): Promise<IAuthBackend> {
   if (_authBackend) return _authBackend
@@ -177,6 +179,30 @@ export async function getProductsBackend(): Promise<IProductsBackend> {
     _productsBackend = mswProductsBackend
   }
   return _productsBackend
+}
+
+export async function getCategoryLimitsBackend(): Promise<ICategoryLimitsBackend> {
+  if (_categoryLimitsBackend) return _categoryLimitsBackend
+  if (backend === 'firestore') {
+    const { firestoreCategoryLimitsBackend } = await import('./firestore/categoryLimits')
+    _categoryLimitsBackend = firestoreCategoryLimitsBackend
+  } else {
+    const { mswCategoryLimitsBackend } = await import('./msw/categoryLimits')
+    _categoryLimitsBackend = mswCategoryLimitsBackend
+  }
+  return _categoryLimitsBackend
+}
+
+export async function getNotificationsBackend(): Promise<INotificationsBackend> {
+  if (_notificationsBackend) return _notificationsBackend
+  if (backend === 'firestore') {
+    const { firestoreNotificationsBackend } = await import('./firestore/notifications')
+    _notificationsBackend = firestoreNotificationsBackend
+  } else {
+    const { mswNotificationsBackend } = await import('./msw/notifications')
+    _notificationsBackend = mswNotificationsBackend
+  }
+  return _notificationsBackend
 }
 
 export { backend as activeBackend }

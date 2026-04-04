@@ -1,96 +1,242 @@
 /* src/pages/ExpenseDetailPage.module.css */
 
-.page { display: flex; flex-direction: column; }
+/* ─── Two-column layout ───────────────────────────────── */
+
+.layout {
+  display: flex;
+  align-items: stretch;
+  flex: 1;
+  margin: -32px;
+}
+
+/* ─── Sidenav ─────────────────────────────────────────── */
+
+.sidenav {
+  width: 240px;
+  flex-shrink: 0;
+  background: #fff;
+  border-right: 1px solid #e8e2d4;
+  overflow: hidden;
+  position: sticky;
+  top: 0;
+  align-self: stretch;
+}
+
+.sidenavTitle {
+  font-family: var(--font-head);
+  font-size: 11px; font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  padding: 36px 16px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidenavList {
+  max-height: calc(100vh - 140px);
+  overflow-y: auto;
+}
+
+.sidenavItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: background .12s;
+}
+.sidenavItem:last-child { border-bottom: none; }
+.sidenavItem:hover { background: var(--g50); }
+
+.sidenavItemActive { background: var(--g50); }
+
+.sidenavIcon { font-size: 18px; flex-shrink: 0; }
+
+.sidenavInfo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+}
+
+.sidenavDesc {
+  font-size: 12px; font-weight: 500; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.sidenavAmt {
+  font-family: var(--font-num);
+  font-size: 11px; font-weight: 600; color: var(--muted);
+}
+
+/* ─── Detail panel ────────────────────────────────────── */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: min(680px, 100%);
+  margin: 32px auto;
+  padding: 0 32px 100px 32px;
+}
+
+/* ─── Header ──────────────────────────────────────────── */
 
 .header {
-  background: linear-gradient(155deg, var(--g800), var(--g600));
-  padding: 18px 20px 26px;
-  flex-shrink: 0;
+  background: #fff;
+  border: 1px solid #e8e2d4;
+  border-radius: 16px;
+  padding: 20px 24px;
 }
 
-.headerTop {
-  display: flex; justify-content: space-between;
-  margin-bottom: 20px;
+.headerBody {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
 }
 
-.back {
-  width: 36px; height: 36px;
-  background: rgba(255,255,255,.16); border: none; border-radius: 12px;
-  font-size: 18px; color: #fff; display: flex; align-items: center; justify-content: center;
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
 }
 
 .edit {
-  background: rgba(255,255,255,.16); border: none; border-radius: 10px;
-  padding: 8px 14px; color: #fff; font-size: 13px; font-weight: 600;
+  width: 36px; height: 36px;
+  background: var(--cream); border: 1.5px solid var(--border);
+  border-radius: 10px; font-size: 16px;
+  cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .12s;
 }
+.edit:hover { background: #e8e3d8; }
 
 .icon {
-  width: 60px; height: 60px; border-radius: 20px;
-  background: rgba(255,255,255,.14);
+  width: 56px; height: 56px;
+  border-radius: 16px;
+  background: var(--g50);
+  border: 1px solid #e8e2d4;
   display: flex; align-items: center; justify-content: center;
-  font-size: 28px; margin-bottom: 10px;
+  font-size: 26px;
+  flex-shrink: 0;
 }
+
+.headerInfo { flex: 1; min-width: 0; }
 
 .name {
   font-family: var(--font-head);
-  font-size: 22px; font-weight: 800; color: #fff;
+  font-size: 18px; font-weight: 700; color: var(--ink);
+  margin-bottom: 6px;
 }
 
-.amountRow { display: flex; align-items: baseline; gap: 6px; margin-top: 7px; }
+.amountRow { display: flex; align-items: baseline; gap: 5px; margin-bottom: 8px; }
 
 .amount {
   font-family: var(--font-num);
-  font-size: 40px; font-weight: 700; color: #fff; letter-spacing: -.04em;
+  font-size: 32px; font-weight: 700; color: var(--ink); letter-spacing: -.03em;
 }
 
-.currency { font-size: 17px; color: var(--g300); font-weight: 600; font-family: var(--font-num); }
+.currency {
+  font-family: var(--font-num);
+  font-size: 14px; font-weight: 600; color: var(--muted);
+}
 
 .paymentBadge {
   display: inline-flex; align-items: center;
-  border-radius: 20px; padding: 4px 12px;
-  font-size: 12px; font-weight: 700; margin-top: 9px;
-  background: rgba(255,255,255,.14); color: #fff;
-  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 8px; padding: 3px 10px;
+  font-size: 11px; font-weight: 700;
+  background: var(--cream); color: var(--muted);
+  border: 1px solid var(--border);
 }
 
-/* body */
-.body { padding: 18px 20px; }
+/* ─── Detail rows ─────────────────────────────────────── */
+
+.body {
+  background: #fff;
+  border: 1px solid #e8e2d4;
+  border-radius: 16px;
+  padding: 4px 0;
+}
 
 .row {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 13px 0; border-bottom: 1px solid var(--border);
+  padding: 13px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.row:last-child { border-bottom: none; }
+
+.rowLabel {
+  font-size: 12px; color: var(--muted); font-weight: 500;
+}
+.rowValue {
+  font-size: 13px; font-weight: 500; color: var(--ink); font-family: var(--font-num);
 }
 
-.rowLabel { font-size: 12px; color: var(--muted); font-weight: 500; }
-.rowValue { font-size: 13px; font-weight: 500; color: var(--ink); font-family: var(--font-num); }
-
-.cats { display: flex; gap: 5px; flex-wrap: wrap; }
+.cats { display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end; }
 .catPill {
   background: var(--g50); color: var(--g700);
   border-radius: 6px; padding: 3px 10px;
   font-size: 12px; font-weight: 600;
+  border: 1px solid #c8dcc8;
 }
 
-/* receipt section */
-.receiptSection { padding: 0 20px 20px; }
-.uploadArea { border: 2px dashed var(--border); border-radius: var(--radius); padding: 14px; text-align: center; font-size: 13px; color: var(--muted); cursor: pointer; }
+/* ─── Section card ─────────────────────────────────────── */
+
+.section {
+  background: #fff;
+  border: 1px solid #e8e2d4;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.sectionHeader {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sectionTitle {
+  font-family: var(--font-head);
+  font-size: 13px; font-weight: 700; color: var(--ink);
+}
+
+/* ─── Receipt ──────────────────────────────────────────── */
+
+.receiptBody { padding: 16px 20px; }
+
+.uploadArea {
+  border: 2px dashed var(--border); border-radius: 12px;
+  padding: 20px; text-align: center;
+  font-size: 13px; color: var(--muted);
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.uploadArea:hover { border-color: var(--g400); background: var(--g50); }
+
 .receiptPreview { display: flex; align-items: center; gap: 12px; }
-.receiptLink { font-size: 14px; color: var(--primary, #2563eb); text-decoration: none; }
-.receiptChange { font-size: 12px; color: var(--muted); background: none; border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+.receiptLink { font-size: 14px; color: var(--g700); text-decoration: none; font-weight: 600; }
+.receiptChange {
+  font-size: 12px; color: var(--muted); background: var(--cream);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 4px 10px; cursor: pointer;
+}
 .receiptChange:disabled { opacity: 0.5; cursor: default; }
 
-/* ticket section */
-.ticketSection { padding: 0 20px 20px; }
-
-.ticketHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-.ticketTitle { font-family: var(--font-head); font-size: 13px; font-weight: 700; color: var(--ink); }
+/* ─── Ticket lines ─────────────────────────────────────── */
 
 .addLineForm {
   display: flex; flex-direction: column; gap: 8px;
-  padding: 10px 12px;
-  background: #f8fafc; border-radius: 10px;
-  border: 1.5px dashed var(--ind-md);
-  margin-bottom: 8px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--cream);
 }
 
 .addLineRow {
@@ -98,86 +244,91 @@
 }
 
 .lineInput {
-  border: 1.5px solid var(--border); border-radius: 8px;
-  padding: 8px 10px; font-size: 13px; background: #fff;
+  border: 1.5px solid var(--border); border-radius: 10px;
+  padding: 9px 12px; font-size: 13px; background: #fff;
   font-family: var(--font-body); outline: none; width: 100%; min-width: 0;
+  transition: border-color .12s;
 }
-
 .lineInput:focus { border-color: var(--g400); }
 
 .addLineBtn {
-  background: var(--g500); color: #fff; border: none;
-  border-radius: 9px; width: 36px; height: 36px;
-  font-size: 16px; flex-shrink: 0; cursor: pointer;
+  background: linear-gradient(135deg, #f5b732, #e09422);
+  color: #1a1a0e; border: none;
+  border-radius: 10px; width: 36px; height: 36px;
+  font-size: 15px; font-weight: 700; flex-shrink: 0; cursor: pointer;
+  transition: opacity .15s;
 }
 .addLineBtn:disabled { opacity: 0.5; cursor: default; }
+.addLineBtn:not(:disabled):hover { opacity: .88; }
+
+.lineHint {
+  font-size: 11px; color: var(--muted);
+  padding-left: 2px;
+}
+
+.lineHintLink {
+  color: var(--g700); font-weight: 600;
+  background: none; border: none; padding: 0;
+  cursor: pointer; font-size: inherit; font-family: inherit;
+}
 
 .ticketLine {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 9px 12px; background: #fff; border-radius: 10px;
-  margin-bottom: 6px; border: 1.5px solid var(--border);
+  padding: 11px 20px;
+  border-bottom: 1px solid var(--border);
 }
+.ticketLine:last-child { border-bottom: none; }
 
-.lineLeft { display: flex; align-items: center; gap: 6px; min-width: 0; }
-.lineName { font-size: 13px; font-weight: 500; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.lineRight { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.lineLeft { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1; }
+.lineName {
+  font-size: 13px; font-weight: 500; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.linkedBadge { font-size: 12px; flex-shrink: 0; }
 
-.linkedBadge { font-size: 13px; line-height: 1; flex-shrink: 0; }
+.lineRight { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.lineAmt { font-family: var(--font-num); font-size: 13px; font-weight: 600; color: var(--ink); }
+.lineDelete {
+  width: 24px; height: 24px;
+  background: #fff1f2; color: #e11d48;
+  border: 1px solid #fecdd3; border-radius: 6px;
+  font-size: 14px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
 
 /* ─── Line product autocomplete ─────────────────────────── */
 
 .lineProductWrap { position: relative; flex: 1; }
 
 .lineDropdown {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0; right: 0;
-  background: #fff;
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: 0 4px 16px rgba(0,0,0,.10);
-  z-index: 200;
-  max-height: 200px;
-  overflow-y: auto;
-  list-style: none;
-  margin: 0;
-  padding: 4px 0;
+  background: #fff; border: 1.5px solid var(--border);
+  border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.15);
+  max-height: 200px; overflow-y: auto;
+  list-style: none; margin: 0; padding: 4px 0;
 }
 
 .lineDropdownItem {
-  padding: 9px 14px;
-  cursor: pointer;
-  transition: background .1s;
+  padding: 9px 14px; cursor: pointer; transition: background .1s;
 }
-
 .lineDropdownItem:hover { background: var(--g50); }
 
 .lineDropdownName {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--ink);
-}
-.lineAmt { font-family: var(--font-num); font-size: 13px; font-weight: 600; color: var(--ink); }
-.lineDelete {
-  width: 22px; height: 22px;
-  background: var(--rose-lt); color: var(--rose);
-  border: none; border-radius: 6px; font-size: 14px;
+  font-size: 13px; font-weight: 500; color: var(--ink);
 }
 
-.lineHint {
-  font-size: 11px;
-  color: var(--muted);
-  margin-top: 2px;
-  padding-left: 2px;
+/* ─── Delete button area ──────────────────────────────── */
+
+.deleteArea {
+  position: fixed;
+  bottom: 0;
+  left: 240px;
+  right: 0;
+  padding: 16px 32px;
+  background: linear-gradient(to bottom, transparent, #fff 40%);
+  z-index: 10;
 }
 
-.lineHintLink {
-  color: var(--ind);
-  font-weight: 600;
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  font-size: inherit;
-  font-family: inherit;
+.deleteAreaInner {
+  width: min(616px, 100%);
+  margin: 0 auto;
 }

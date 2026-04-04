@@ -11,11 +11,13 @@ import { mockRecurring } from './data/recurring'
 import { mockMetrics } from './data/metrics'
 import { mockSalaries } from './data/salaries'
 import { mockBudget } from './data/budget'
+import { mockCategoryLimits } from './data/categoryLimits'
 import { mockMonthClosings } from './data/monthClosings'
 import { mockProductCategories } from './data/productCategories'
 import { mockBrands } from './data/brands'
 import { mockUserProducts, mockGlobalProductSuggestions } from './data/products'
 import { mockPriceHistory } from './data/priceHistory'
+import { mockNotifications, mockNotificationPrefs } from './data/notifications'
 
 const BASE = '/api'
 
@@ -70,12 +72,37 @@ export const handlers = [
   }),
 
   // ─── Expenses ───────────────────────────────────────────
-  http.get(`${BASE}/expenses`, () => HttpResponse.json({
-    data: mockExpenses,
-    total: mockExpenses.length,
-    page: 1,
-    pageSize: 20,
-  })),
+  http.get(`${BASE}/expenses`, ({ request }) => {
+    const url = new URL(request.url)
+    const period = url.searchParams.get('period')
+    const now = new Date()
+
+    let start: Date | null = null
+    let end: Date | null = null
+
+    if (period === '7d') {
+      start = new Date(now); start.setDate(start.getDate() - 6); start.setHours(0,0,0,0)
+      end = new Date(now); end.setHours(23,59,59,999)
+    } else if (period === 'month') {
+      start = new Date(now.getFullYear(), now.getMonth(), 1)
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
+    } else if (period === '3m') {
+      start = new Date(now); start.setMonth(start.getMonth() - 3); start.setHours(0,0,0,0)
+      end = new Date(now); end.setHours(23,59,59,999)
+    } else if (period === 'year') {
+      start = new Date(now.getFullYear(), 0, 1)
+      end = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999)
+    }
+
+    const data = start && end
+      ? mockExpenses.filter((e) => {
+          const d = new Date(`${e.date}T12:00:00`)
+          return d >= start! && d <= end!
+        })
+      : mockExpenses
+
+    return HttpResponse.json({ data, total: data.length, page: 1, pageSize: 20 })
+  }),
 
   http.get(`${BASE}/expenses/:id`, ({ params }) => {
     const expense = mockExpenses.find((e) => e.id === params['id'])
@@ -86,6 +113,7 @@ export const handlers = [
   http.post(`${BASE}/expenses`, async ({ request }) => {
     const body = await request.json() as Record<string, unknown>
     const created = { ...body, id: crypto.randomUUID(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), ticketLines: [] }
+    mockExpenses.unshift(created as unknown as typeof mockExpenses[0])
     return HttpResponse.json(created, { status: 201 })
   }),
 
@@ -218,6 +246,14 @@ export const handlers = [
     return HttpResponse.json(created, { status: 201 })
   }),
 
+  http.patch(`${BASE}/cards/:id`, async ({ params, request }) => {
+    const card = mockCards.find((c) => c.id === params['id'])
+    if (!card) return new HttpResponse(null, { status: 404 })
+    const body = await request.json() as Record<string, unknown>
+    Object.assign(card, body, { updatedAt: new Date().toISOString() })
+    return HttpResponse.json(card)
+  }),
+
   http.delete(`${BASE}/cards/:id`, ({ params }) => {
     const card = mockCards.find((c) => c.id === params['id'])
     if (!card) return new HttpResponse(null, { status: 404 })
@@ -301,42 +337,69 @@ export const handlers = [
     return HttpResponse.json(mockBudget)
   }),
 
+  // ─── Category limits ─────────────────────────────────────
+  http.get(`${BASE}/category-limits`, () => HttpResponse.json(mockCategoryLimits)),
+  http.put(`${BASE}/category-limits`, async ({ request }) => {
+    const body = await request.json() as Record<string, number>
+    for (const key of Object.keys(mockCategoryLimits)) delete mockCategoryLimits[key]
+    Object.assign(mockCategoryLimits, body)
+    return HttpResponse.json(mockCategoryLimits)
+  }),
+
   // ─── Metrics ────────────────────────────────────────────
   http.get(`${BASE}/metrics`, ({ request }) => {
-    const yearMonth = new URL(request.url).searchParams.get('yearMonth')
-    if (yearMonth) {
-      const [y, m] = yearMonth.split('-').map(Number) as [number, number]
-      const lastDay = new Date(y, m, 0).getDate()
-      const start = `${yearMonth}-01`
-      const end = `${yearMonth}-${String(lastDay).padStart(2, '0')}`
-      const filtered = mockExpenses.filter((e) => e.date >= start && e.date <= end)
+    const url = new URL(request.url)
+    const yearMonth = url.searchParams.get('yearMonth')
+    const period = url.searchParams.get('period')
+
+    function getDateRange(p: string | null): { start: Date; end: Date } | null {
+      const now = new Date()
+      if (p === '7d') {
+        const start = new Date(now); start.setDate(start.getDate() - 6); start.setHours(0, 0, 0, 0)
+        const end = new Date(now); end.setHours(23, 59, 59, 999)
+        return { start, end }
+      } else if (p === 'month') {
+        return { start: new Date(now.getFullYear(), now.getMonth(), 1), end: new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999) }
+      } else if (p === '3m') {
+        const start = new Date(now); start.setMonth(start.getMonth() - 3); start.setHours(0, 0, 0, 0)
+        const end = new Date(now); end.setHours(23, 59, 59, 999)
+        return { start, end }
+      } else if (p === 'year') {
+        return { start: new Date(now.getFullYear(), 0, 1), end: new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999) }
+      }
+      return null
+    }
+
+    function computeMetrics(filtered: typeof mockExpenses) {
       const totalUsd = filtered.filter((e) => e.currency === 'USD').reduce((s, e) => s + e.amount, 0)
       const totalUyu = filtered.filter((e) => e.currency === 'UYU').reduce((s, e) => s + e.amount, 0)
-
-      // Compute byCategory
       const catMap = new Map(mockCategories.map((c) => [c.id, c]))
-      const byCategoryMap = new Map<string, { usd: number; uyu: number }>()
+      const byCategoryMap = new Map<string, { usd: number; uyu: number; expenseCount: number }>()
       for (const exp of filtered) {
         for (const catId of exp.categoryIds) {
-          const entry = byCategoryMap.get(catId) ?? { usd: 0, uyu: 0 }
+          const entry = byCategoryMap.get(catId) ?? { usd: 0, uyu: 0, expenseCount: 0 }
           if (exp.currency === 'USD') entry.usd += exp.amount
           else entry.uyu += exp.amount
+          entry.expenseCount += 1
           byCategoryMap.set(catId, entry)
         }
       }
       const byCategory = [...byCategoryMap.entries()]
         .map(([catId, totals]) => {
           const cat = catMap.get(catId)
-          return {
-            categoryId: catId,
-            categoryName: cat?.name ?? catId,
-            categoryIcon: cat?.icon ?? '📦',
-            ...totals,
-          }
+          return { categoryId: catId, categoryName: cat?.name ?? catId, categoryIcon: cat?.icon ?? '📦', ...totals }
         })
         .sort((a, b) => (b.usd + b.uyu) - (a.usd + a.uyu))
+      return { totalUsd, totalUyu, byCategory }
+    }
 
-      // Fixed from paid recurring in that month
+    if (yearMonth) {
+      const [y, m] = yearMonth.split('-').map(Number) as [number, number]
+      const lastDay = new Date(y, m, 0).getDate()
+      const start = `${yearMonth}-01`
+      const end = `${yearMonth}-${String(lastDay).padStart(2, '0')}`
+      const filtered = mockExpenses.filter((e) => e.date >= start && e.date <= end)
+      const { totalUsd, totalUyu, byCategory } = computeMetrics(filtered)
       const fixedUsd = mockRecurring
         .filter((r) => r.paymentHistory.some((h) => `${h.year}-${String(h.month).padStart(2,'0')}` === yearMonth) || r.mode === 'auto')
         .filter((r) => r.currency === 'USD')
@@ -345,7 +408,6 @@ export const handlers = [
         .filter((r) => r.paymentHistory.some((h) => `${h.year}-${String(h.month).padStart(2,'0')}` === yearMonth) || r.mode === 'auto')
         .filter((r) => r.currency === 'UYU')
         .reduce((s, r) => s + r.amount, 0)
-
       return HttpResponse.json({
         ...mockMetrics,
         period: yearMonth,
@@ -361,8 +423,35 @@ export const handlers = [
         byCategory,
         previousByCategory: [],
         fixedBreakdown: [],
+        byProductCategory: [],
       })
     }
+
+    const range = getDateRange(period)
+    if (range) {
+      const filtered = mockExpenses.filter((e) => {
+        const d = new Date(`${e.date}T12:00:00`)
+        return d >= range.start && d <= range.end
+      })
+      const { totalUsd, totalUyu, byCategory } = computeMetrics(filtered)
+      return HttpResponse.json({
+        ...mockMetrics,
+        period: period ?? 'month',
+        totalUsd,
+        totalUyu,
+        variableUsd: totalUsd,
+        variableUyu: totalUyu,
+        fixedUsd: 0,
+        fixedUyu: 0,
+        previousPeriodUsd: 0,
+        previousPeriodUyu: 0,
+        monthlyHistory: mockMetrics.monthlyHistory,
+        byCategory,
+        previousByCategory: [],
+        byProductCategory: [],
+      })
+    }
+
     return HttpResponse.json(mockMetrics)
   }),
 
@@ -374,6 +463,14 @@ export const handlers = [
     const created = { ...body, id: crypto.randomUUID(), createdAt: new Date().toISOString() }
     mockSalaries.unshift(created as typeof mockSalaries[0])
     return HttpResponse.json(created, { status: 201 })
+  }),
+
+  http.patch(`${BASE}/salaries/:id`, async ({ request, params }) => {
+    const body = await request.json() as Record<string, unknown>
+    const idx = mockSalaries.findIndex((s) => s.id === params['id'])
+    if (idx === -1) return new HttpResponse(null, { status: 404 })
+    mockSalaries[idx] = { ...mockSalaries[idx], ...body }
+    return HttpResponse.json(mockSalaries[idx])
   }),
 
   http.delete(`${BASE}/salaries/:id`, ({ params }) => {
@@ -546,5 +643,33 @@ export const handlers = [
     const body = await request.json() as Record<string, unknown>
     Object.assign(record, body)
     return HttpResponse.json(record)
+  }),
+
+  // ─── Notifications ────────────────────────────────────────
+
+  http.get(`${BASE}/notifications`, () => {
+    return HttpResponse.json(mockNotifications.filter((n) => !('_deleted' in n)))
+  }),
+
+  http.patch(`${BASE}/notifications/:id/read`, ({ params }) => {
+    const notif = mockNotifications.find((n) => n.id === params['id'])
+    if (!notif) return new HttpResponse(null, { status: 404 })
+    notif.read = true
+    return HttpResponse.json(notif)
+  }),
+
+  http.post(`${BASE}/notifications/read-all`, () => {
+    mockNotifications.forEach((n) => { n.read = true })
+    return new HttpResponse(null, { status: 204 })
+  }),
+
+  http.get(`${BASE}/notifications/prefs`, () => {
+    return HttpResponse.json(mockNotificationPrefs)
+  }),
+
+  http.put(`${BASE}/notifications/prefs`, async ({ request }) => {
+    const body = await request.json() as typeof mockNotificationPrefs
+    Object.assign(mockNotificationPrefs, body)
+    return HttpResponse.json(mockNotificationPrefs)
   }),
 ]

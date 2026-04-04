@@ -3,11 +3,24 @@
 
 import { collection, getDocs, query, orderBy } from 'firebase/firestore'
 import { firebaseAuth, firestore } from './config'
-import { MetricsPeriod, Currency, RecurringFrequency, RecurringStatus } from '@/types/enums'
+import { PeriodFilter, Currency, RecurringFrequency, RecurringStatus } from '@/types/enums'
 import type { IMetricsBackend, MetricsSummary, MetricsPeriod as MPeriod } from '../types'
 import type { Expense, Category, RecurringExpense } from '@/types/models'
 
-const MONTH_SHORT = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+const MONTH_SHORT = [
+  'Ene',
+  'Feb',
+  'Mar',
+  'Abr',
+  'May',
+  'Jun',
+  'Jul',
+  'Ago',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dic',
+]
 
 function requireUid(): string {
   const uid = firebaseAuth.currentUser?.uid
@@ -28,17 +41,19 @@ function getYearMonthBounds(yearMonth: string): { start: string; end: string } {
 function getPeriodBounds(period: MPeriod): { start: string; end: string } {
   const now = new Date()
   const today = isoDate(now)
-  if (period === MetricsPeriod.SevenDays) {
-    const d = new Date(now); d.setDate(d.getDate() - 7)
+  if (period === PeriodFilter.SevenDays) {
+    const d = new Date(now)
+    d.setDate(d.getDate() - 7)
     return { start: isoDate(d), end: today }
   }
-  if (period === MetricsPeriod.Month) {
+  if (period === PeriodFilter.Month) {
     const y = now.getFullYear()
     const m = String(now.getMonth() + 1).padStart(2, '0')
     return { start: `${y}-${m}-01`, end: today }
   }
-  if (period === MetricsPeriod.ThreeMonths) {
-    const d = new Date(now); d.setMonth(d.getMonth() - 3)
+  if (period === PeriodFilter.ThreeMonths) {
+    const d = new Date(now)
+    d.setMonth(d.getMonth() - 3)
     return { start: isoDate(d), end: today }
   }
   // Year
@@ -47,19 +62,23 @@ function getPeriodBounds(period: MPeriod): { start: string; end: string } {
 
 function getPreviousPeriodBounds(period: MPeriod): { start: string; end: string } {
   const now = new Date()
-  if (period === MetricsPeriod.SevenDays) {
-    const end = new Date(now); end.setDate(end.getDate() - 7)
-    const start = new Date(end); start.setDate(start.getDate() - 7)
+  if (period === PeriodFilter.SevenDays) {
+    const end = new Date(now)
+    end.setDate(end.getDate() - 7)
+    const start = new Date(end)
+    start.setDate(start.getDate() - 7)
     return { start: isoDate(start), end: isoDate(end) }
   }
-  if (period === MetricsPeriod.Month) {
+  if (period === PeriodFilter.Month) {
     const first = new Date(now.getFullYear(), now.getMonth() - 1, 1)
     const last = new Date(now.getFullYear(), now.getMonth(), 0)
     return { start: isoDate(first), end: isoDate(last) }
   }
-  if (period === MetricsPeriod.ThreeMonths) {
-    const end = new Date(now); end.setMonth(end.getMonth() - 3)
-    const start = new Date(end); start.setMonth(start.getMonth() - 3)
+  if (period === PeriodFilter.ThreeMonths) {
+    const end = new Date(now)
+    end.setMonth(end.getMonth() - 3)
+    const start = new Date(end)
+    start.setMonth(start.getMonth() - 3)
     return { start: isoDate(start), end: isoDate(end) }
   }
   // Year
@@ -82,17 +101,21 @@ export const firestoreMetricsBackend: IMetricsBackend = {
       getDocs(query(collection(firestore, 'users', uid, 'recurring'), orderBy('name', 'asc'))),
     ])
 
-    const allExpenses = expSnap.docs.map((d) => ({ id: d.id, ...d.data() } as Expense))
+    const allExpenses = expSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as Expense)
     const categories = catSnap.docs
       .filter((d) => d.data()['active'] === true)
-      .map((d) => ({ id: d.id, ...d.data() } as Category))
-    const recurring = recSnap.docs.map((d) => ({ id: d.id, ...d.data() } as RecurringExpense))
+      .map((d) => ({ id: d.id, ...d.data() }) as Category)
+    const recurring = recSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as RecurringExpense)
 
     const bounds = yearMonth ? getYearMonthBounds(yearMonth) : getPeriodBounds(period)
     const prevBounds = getPreviousPeriodBounds(period)
 
-    const currentExpenses = allExpenses.filter((e) => e.date >= bounds.start && e.date <= bounds.end)
-    const prevExpenses = allExpenses.filter((e) => e.date >= prevBounds.start && e.date <= prevBounds.end)
+    const currentExpenses = allExpenses.filter(
+      (e) => e.date >= bounds.start && e.date <= bounds.end
+    )
+    const prevExpenses = allExpenses.filter(
+      (e) => e.date >= prevBounds.start && e.date <= prevBounds.end
+    )
 
     const totalUsd = sumByCurrency(currentExpenses, Currency.USD)
     const totalUyu = sumByCurrency(currentExpenses, Currency.UYU)
@@ -124,23 +147,32 @@ export const firestoreMetricsBackend: IMetricsBackend = {
       const mo = d.getMonth() + 1
       const prefix = `${y}-${String(mo).padStart(2, '0')}`
       const monthExpenses = allExpenses.filter((e) => e.date.startsWith(prefix))
+      const totalUsdMonth = sumByCurrency(monthExpenses, Currency.USD)
+      const totalUyuMonth = sumByCurrency(monthExpenses, Currency.UYU)
+      const fixedUsdMonth = Math.min(fixedUsd, totalUsdMonth)
+      const fixedUyuMonth = Math.min(fixedUyu, totalUyuMonth)
       return {
         month: mo,
         year: y,
         label: MONTH_SHORT[mo - 1] as string,
-        usd: sumByCurrency(monthExpenses, Currency.USD),
-        uyu: sumByCurrency(monthExpenses, Currency.UYU),
+        usd: totalUsdMonth,
+        uyu: totalUyuMonth,
+        fixedUsd: fixedUsdMonth,
+        fixedUyu: fixedUyuMonth,
+        variableUsd: totalUsdMonth - fixedUsdMonth,
+        variableUyu: totalUyuMonth - fixedUyuMonth,
       }
     })
 
     // By category
     const catMap = new Map(categories.map((c) => [c.id, c]))
-    const catTotals = new Map<string, { usd: number; uyu: number }>()
+    const catTotals = new Map<string, { usd: number; uyu: number; expenseCount: number }>()
     for (const exp of currentExpenses) {
       for (const cid of exp.categoryIds) {
-        const cur = catTotals.get(cid) ?? { usd: 0, uyu: 0 }
+        const cur = catTotals.get(cid) ?? { usd: 0, uyu: 0, expenseCount: 0 }
         if (exp.currency === Currency.USD) cur.usd += exp.amount
         else cur.uyu += exp.amount
+        cur.expenseCount += 1
         catTotals.set(cid, cur)
       }
     }
@@ -153,17 +185,19 @@ export const firestoreMetricsBackend: IMetricsBackend = {
           categoryIcon: cat?.icon ?? '🏷',
           usd: totals.usd,
           uyu: totals.uyu,
+          expenseCount: totals.expenseCount,
         }
       })
-      .sort((a, b) => (b.usd + b.uyu / 100) - (a.usd + a.uyu / 100))
+      .sort((a, b) => b.usd + b.uyu / 100 - (a.usd + a.uyu / 100))
 
     // Previous period by category
-    const prevCatTotals = new Map<string, { usd: number; uyu: number }>()
+    const prevCatTotals = new Map<string, { usd: number; uyu: number; expenseCount: number }>()
     for (const exp of prevExpenses) {
       for (const cid of exp.categoryIds) {
-        const cur = prevCatTotals.get(cid) ?? { usd: 0, uyu: 0 }
+        const cur = prevCatTotals.get(cid) ?? { usd: 0, uyu: 0, expenseCount: 0 }
         if (exp.currency === Currency.USD) cur.usd += exp.amount
         else cur.uyu += exp.amount
+        cur.expenseCount += 1
         prevCatTotals.set(cid, cur)
       }
     }
@@ -175,6 +209,7 @@ export const firestoreMetricsBackend: IMetricsBackend = {
         categoryIcon: cat?.icon ?? '🏷',
         usd: totals.usd,
         uyu: totals.uyu,
+        expenseCount: totals.expenseCount,
       }
     })
 
@@ -204,6 +239,7 @@ export const firestoreMetricsBackend: IMetricsBackend = {
       byCategory,
       previousByCategory,
       fixedBreakdown,
+      byProductCategory: [],
     }
   },
 }

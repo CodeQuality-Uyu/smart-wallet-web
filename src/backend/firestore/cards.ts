@@ -4,6 +4,7 @@
 import {
   collection,
   getDocs,
+  getDoc,
   addDoc,
   updateDoc,
   doc,
@@ -39,6 +40,14 @@ export const firestoreCardsBackend: ICardsBackend = {
     const data = { ...payload, active: true, createdAt: now, updatedAt: now }
     const ref = await addDoc(collection(firestore, 'users', uid, 'cards'), data)
     return { id: ref.id, ...data }
+  },
+
+  async update(id: string, payload: Partial<CreateCardPayload>): Promise<Card> {
+    const uid = requireUid()
+    const ref = doc(firestore, 'users', uid, 'cards', id)
+    await updateDoc(ref, { ...payload, updatedAt: new Date().toISOString() })
+    const snap = await getDoc(ref)
+    return { id: snap.id, ...snap.data() } as Card
   },
 
   async remove(id: string): Promise<void> {

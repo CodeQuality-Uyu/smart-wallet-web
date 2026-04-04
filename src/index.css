@@ -5,26 +5,37 @@
   --g900: #061710; --g800: #0c2b17; --g700: #11401f; --g600: #175828;
   --g500: #1d7232; --g400: #27974a; --g300: #43c264; --g200: #80dfa0;
   --g50: #edfaf0;
-  /* Golden accent — primary CTAs, FAB, active nav */
+  /* Golden accent — primary CTAs, active nav */
   --gold: #F5A623; --gold-dk: #C47D10; --gold-lt: #FEF3DC;
   --ind: #4f46e5; --ind-md: #6366f1; --ind-lt: #eef2ff;
   --amb: #d97706; --amb-lt: #fffbeb;
   --rose: #e11d48; --rose-lt: #fff1f2;
   --sky: #0284c7; --sky-lt: #f0f9ff;
   --cream: #f4f3ef; --ink: #0c180e; --muted: #64748b;
-  --border: #e2e8f0;
-  --radius: 16px; --radius-sm: 10px;
-  --shadow: 0 4px 20px rgba(0,0,0,.08);
-  --font-head: 'Syne', sans-serif;
+  --border: #e8e2d4;
+  --radius: 24px; --radius-sm: 10px;
+  --shadow: 0 8px 40px rgba(0,0,0,.06);
+  --font-head: 'Space Grotesk', sans-serif;
+  --font-space: 'Space Grotesk', sans-serif;
   --font-body: 'DM Sans', sans-serif;
   --font-num: 'JetBrains Mono', monospace;
+  /* Desktop design tokens */
+  --dark-card: linear-gradient(135deg, #0c1f1a, #0d3528);
+  --bg-desktop: #faf8f5;
+  --ink-desktop: #1a2e1f;
+  --muted-desktop: #92886f;
+  --border-card: #e8e2d4;
+  --border-subtle: #f0ebe0;
+  --radius-card: 24px;
+  --radius-pill: 99px;
+  --shadow-card: 0 8px 40px rgba(0,0,0,.06);
 }
 
 html { font-size: 16px; -webkit-font-smoothing: antialiased; }
 
 body {
   font-family: var(--font-body);
-  background: var(--cream);
+  background: #fff;
   color: var(--ink);
   min-height: 100dvh;
 }
