@@ -4,6 +4,7 @@ import React from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { ExpenseForm } from '@/features/expenses/components/ExpenseForm'
 import { useCreateExpense } from '@/features/expenses/hooks/useExpenses'
+import { expensesService } from '@/services/expensesService'
 import type { ExpenseFormValues } from '@/features/expenses/schemas/expenseSchema'
 import type { CreateExpensePayload } from '@/types/models'
 import styles from './NewExpensePage.module.css'
@@ -39,7 +40,10 @@ export default function NewExpensePage(): React.ReactElement {
       placeId: values.placeId || undefined,
       date: values.date,
     }
-    await createExpense(payload)
+    const expense = await createExpense(payload)
+    if (values.receiptFile) {
+      await expensesService.uploadReceipt(expense.id, values.receiptFile)
+    }
     navigate('/expenses')
   }
 

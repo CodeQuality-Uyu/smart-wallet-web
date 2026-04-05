@@ -2,6 +2,7 @@
 
 import { http, HttpResponse } from 'msw'
 import { Currency, RecurringPaymentStatus } from '@/types/enums'
+import type { CategorySpend, ProductCategorySpend } from '@/types/models'
 
 import { mockExpenses } from './data/expenses'
 import { mockCategories } from './data/categories'
@@ -142,6 +143,14 @@ export const handlers = [
       if (idx !== -1) expense.ticketLines.splice(idx, 1)
     }
     return new HttpResponse(null, { status: 204 })
+  }),
+
+  http.post(`${BASE}/expenses/:id/receipt`, async ({ params }) => {
+    const expense = mockExpenses.find((e) => e.id === params['id'])
+    if (!expense) return new HttpResponse(null, { status: 404 })
+    const receiptUrl = `https://mock-storage.example.com/receipts/${params['id']}.jpg`
+    Object.assign(expense, { receiptUrl })
+    return HttpResponse.json({ receiptUrl }, { status: 200 })
   }),
 
   http.post(`${BASE}/expenses/:id/duplicate`, ({ params }) => {
@@ -380,7 +389,7 @@ export const handlers = [
       return null
     }
 
-    function computeMetrics(filtered: typeof mockExpenses) {
+    function computeMetrics(filtered: typeof mockExpenses): { totalUsd: number; totalUyu: number; byCategory: CategorySpend[]; byProductCategory: ProductCategorySpend[] } {
       const totalUsd = filtered.filter((e) => e.currency === 'USD').reduce((s, e) => s + e.amount, 0)
       const totalUyu = filtered.filter((e) => e.currency === 'UYU').reduce((s, e) => s + e.amount, 0)
       const catMap = new Map(mockCategories.map((c) => [c.id, c]))
@@ -400,9 +409,6 @@ export const handlers = [
           return { categoryId: catId, categoryName: cat?.name ?? catId, categoryIcon: cat?.icon ?? '📦', ...totals }
         })
         .sort((a, b) => (b.usd + b.uyu) - (a.usd + a.uyu))
-      return { totalUsd, totalUyu, byCategory }
-    }
-
       const productMap = new Map(mockUserProducts.map((p) => [p.id, p]))
       const pcatMap = new Map(mockProductCategories.map((c) => [c.id, c]))
       const byProductCategoryMap = new Map<string, { usd: number; uyu: number }>()

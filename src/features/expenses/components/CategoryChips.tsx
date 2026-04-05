@@ -25,7 +25,21 @@ export function CategoryChips({
     }
   }
 
-  const visible = maxVisible ? categories.slice(0, maxVisible) : categories
+  const base = maxVisible ? categories.slice(0, maxVisible) : categories
+  const baseIds = new Set(base.map((c) => c.id))
+  const extraSelected = categories.filter((c) => selected.includes(c.id) && !baseIds.has(c.id))
+
+  let visible: typeof categories
+  if (!maxVisible || extraSelected.length === 0) {
+    visible = base
+  } else {
+    const slots = maxVisible - extraSelected.length
+    const prioritizedBase = [
+      ...base.filter((c) => selected.includes(c.id)),
+      ...base.filter((c) => !selected.includes(c.id)),
+    ].slice(0, slots)
+    visible = [...extraSelected, ...prioritizedBase]
+  }
 
   return (
     <div className={styles.scroll} role="group" aria-label="Categorías">
