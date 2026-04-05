@@ -62,18 +62,6 @@ function LineProductInput({
     })
   }, [])
 
-  const updatePosition = useCallback(() => {
-    if (!wrapRef.current) return
-    const rect = wrapRef.current.getBoundingClientRect()
-    setDropdownStyle({
-      position: 'fixed',
-      top: rect.bottom + 4,
-      left: rect.left,
-      width: rect.width,
-      zIndex: 1000,
-    })
-  }, [])
-
   useEffect(() => {
     function onDown(e: MouseEvent) {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false)

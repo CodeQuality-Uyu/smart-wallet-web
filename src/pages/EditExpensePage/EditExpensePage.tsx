@@ -8,7 +8,7 @@ import { expensesService } from '@/services/expensesService'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import type { ExpenseFormValues } from '@/features/expenses/schemas/expenseSchema'
-import styles from './NewExpensePage.module.css'
+import styles from '../NewExpensePage/NewExpensePage.module.css'
 
 export default function EditExpensePage(): React.ReactElement {
   const { id } = useParams<{ id: string }>()

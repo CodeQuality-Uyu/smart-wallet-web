@@ -151,3 +151,42 @@ for (const user of usersSnap.docs) {
 ---
 
 - tips y metricas dinamicos
+
+---
+
+## Cobertura de tests insuficiente
+
+**Contexto**
+El proyecto tiene ~21% de cobertura. Los tests existentes cubren bien utilidades y algunos schemas, pero la mayoría de la lógica de negocio no tiene tests.
+
+**Estado al 2026-04-05**
+
+| Categoría | Total | Con test | Cobertura |
+|---|---|---|---|
+| Utilidades | 3 | 3 | 100% |
+| Schemas | 6 | 4 | 67% |
+| Componentes | 15 | 4 | 27% |
+| Hooks | 14 | 2 | 14% |
+| Servicios | 17 | 2 | 12% |
+| Páginas | 27 | 0 | 0% |
+
+**Con test actualmente**
+- Utilidades: `formatCurrency`, `groupByDate`, `getPriceDataConfidence`
+- Schemas: `expenseSchema`, `recurringSchema`, `brandSchema`, `productSchema`
+- Hooks: `useExpenses`, `useProducts`
+- Servicios: `expensesService`, `productsService`
+- Componentes: `Button`, `CategoryChips`, `ExpenseListItem`, `BrandAutocomplete`
+
+**Sin test — prioridad alta**
+- Schemas: `cardSchema`, `categorySchema`, `placeSchema`, `productCategorySchema`
+- Servicios: `authService`, `budgetService`, `cardsService`, `categoriesService`, `placesService`, `recurringService`, `metricsService`, `monthClosingsService`, `salariesService`, `brandsService`
+- Hooks: `useBudget`, `useMetrics`, `useRecurring`, `usePlaces`, `useCategories`, `useCards`, `useMonthClosings`
+
+**Sin test — prioridad media**
+- Componentes con lógica: `ExpenseForm`, `ProductForm`, `PlaceNameInput`, `CategoryPickerModal`, `ProductNameInput`, `PriceHistoryChart`
+- Primitivos UI: `Modal`, `FormField`, `PageHeader`
+
+**Sin test — prioridad baja**
+- Páginas (27 en total) — son integración de componentes ya testeables individualmente
+
+**Impacto estimado**: alto esfuerzo, bajo riesgo de regresión — es trabajo aditivo que no toca código existente.
