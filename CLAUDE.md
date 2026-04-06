@@ -134,6 +134,30 @@ Archivos de partida relevantes:
 
 ---
 
+## 📋 Features pendientes — Locales
+
+### Categorización de locales
+- Agregar campo `type` (enum `PlaceType`: `Supermercado | Restaurante | Farmacia | Tienda | Otro`) al modelo `Place` y `GlobalPlace`
+- Permitir seleccionar categoría al crear/editar un local
+- Filtrar la grilla de locales por categoría en `PlacesPage` (pills ya preparadas en el diseño)
+
+### Precio promedio por categoría de producto en un local
+- En cada local (`Place`), trackear `totalProductsAmount` (suma de precios de todos los productos registrados) y `productCount`
+- Calcular `avgProductPrice = totalProductsAmount / productCount` para mostrarlo en la card del local y en el panel de detalle
+- Objetivo: en `PlacesPage` mostrar en cada card cuál es el precio promedio de los productos de ese local según su categoría de producto (ej. "Lácteos: $X promedio")
+- Modelo sugerido: `PlaceProductStats { categoryId, totalAmount, currency, count }[]` guardado en el documento del local o como subcolección
+
+### Tips y métricas dinámicos
+- Reemplazar los tips estáticos (hardcoded) del Dashboard y otras páginas por sugerencias generadas a partir de los datos reales del usuario
+- Ejemplos de tips dinámicos:
+  - "Este mes gastaste un 23% más en Restaurantes que el mes pasado"
+  - "Tu local más visitado es X — registrá sus productos para comparar precios"
+  - "Llevas N días sin registrar gastos"
+- Métricas dinámicas: calcular y mostrar en las páginas relevantes indicadores que hoy son placeholders (`–`), como productos únicos por local, total ahorrado, mejor precio por producto
+- Implementación sugerida: función `computeTips(metrics: MetricsSummary, places: Place[]): Tip[]` en `src/services/` que devuelva un array de `{ icon, text, type: 'info' | 'warning' | 'success' }` — sin llamada a IA, puramente lógica sobre los datos existentes
+
+---
+
 ## ⚠️ Notas importantes
 
 - **Datos reales en producción** (uso familiar). Toda migración de datos debe ser un script aislado, nunca inline en el código de la app.

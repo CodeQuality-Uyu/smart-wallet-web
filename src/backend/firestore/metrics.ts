@@ -5,7 +5,7 @@ import { collection, getDocs, query, orderBy } from 'firebase/firestore'
 import { firebaseAuth, firestore } from './config'
 import { PeriodFilter, Currency, RecurringFrequency, RecurringStatus } from '@/types/enums'
 import type { IMetricsBackend, MetricsSummary, MetricsPeriod as MPeriod } from '../types'
-import type { Expense, Category, RecurringExpense } from '@/types/models'
+import type { Expense, Category, RecurringExpense, Product, ProductCategory } from "@/types/models"
 
 const MONTH_SHORT = [
   'Ene',
@@ -94,11 +94,13 @@ export const firestoreMetricsBackend: IMetricsBackend = {
   async getSummary(period: MPeriod, yearMonth?: string): Promise<MetricsSummary> {
     const uid = requireUid()
 
-    // Fetch all expenses, categories, and recurring in parallel
-    const [expSnap, catSnap, recSnap] = await Promise.all([
+    // Fetch all expenses, categories, recurring, and products in parallel
+    const [expSnap, catSnap, recSnap, prodSnap, pCatSnap] = await Promise.all([
       getDocs(query(collection(firestore, 'users', uid, 'expenses'), orderBy('date', 'desc'))),
       getDocs(query(collection(firestore, 'users', uid, 'categories'), orderBy('name', 'asc'))),
       getDocs(query(collection(firestore, 'users', uid, 'recurring'), orderBy('name', 'asc'))),
+      getDocs(collection(firestore, 'users', uid, 'products')),
+      getDocs(collection(firestore, 'users', uid, 'productCategories')),
     ])
 
     const allExpenses = expSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as Expense)
@@ -106,6 +108,8 @@ export const firestoreMetricsBackend: IMetricsBackend = {
       .filter((d) => d.data()['active'] === true)
       .map((d) => ({ id: d.id, ...d.data() }) as Category)
     const recurring = recSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as RecurringExpense)
+    const products = prodSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as Product)
+    const productCategories = pCatSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as ProductCategory)
 
     const bounds = yearMonth ? getYearMonthBounds(yearMonth) : getPeriodBounds(period)
     const prevBounds = getPreviousPeriodBounds(period)
@@ -124,20 +128,17 @@ export const firestoreMetricsBackend: IMetricsBackend = {
 
     // Fixed costs = active recurring expenses (by amount × currency).
     // Only count monthly items toward the monthly fixed cost;
-    // annual items are divided by 12 for a monthly equivalent.
     const activeRecurring = recurring.filter((r) => r.status === RecurringStatus.Active)
     const fixedUsd = activeRecurring
       .filter((r) => r.currency === Currency.USD)
-      .reduce((s, r) => {
-        const freq = r.frequency ?? RecurringFrequency.Monthly
-        return s + (freq === RecurringFrequency.Annual ? r.amount / 12 : r.amount)
-      }, 0)
+      .filter(r => r.frequency === RecurringFrequency.Monthly)
+      .reduce((s, r) => s + r.amount
+        , 0)
     const fixedUyu = activeRecurring
       .filter((r) => r.currency === Currency.UYU)
-      .reduce((s, r) => {
-        const freq = r.frequency ?? RecurringFrequency.Monthly
-        return s + (freq === RecurringFrequency.Annual ? r.amount / 12 : r.amount)
-      }, 0)
+      .filter(r => r.frequency === RecurringFrequency.Monthly)
+      .reduce((s, r) => s + r.amount
+        , 0)
 
     // Monthly history — last 6 months
     const now = new Date()
@@ -147,20 +148,20 @@ export const firestoreMetricsBackend: IMetricsBackend = {
       const mo = d.getMonth() + 1
       const prefix = `${y}-${String(mo).padStart(2, '0')}`
       const monthExpenses = allExpenses.filter((e) => e.date.startsWith(prefix))
-      const totalUsdMonth = sumByCurrency(monthExpenses, Currency.USD)
-      const totalUyuMonth = sumByCurrency(monthExpenses, Currency.UYU)
-      const fixedUsdMonth = Math.min(fixedUsd, totalUsdMonth)
-      const fixedUyuMonth = Math.min(fixedUyu, totalUyuMonth)
+      const varUsdMonth = sumByCurrency(monthExpenses, Currency.USD)
+      const varUyuMonth = sumByCurrency(monthExpenses, Currency.UYU)
+      const totalUsdMonth = varUsdMonth + fixedUsd
+      const totalUyuMonth = varUyuMonth + fixedUyu
       return {
         month: mo,
         year: y,
         label: MONTH_SHORT[mo - 1] as string,
         usd: totalUsdMonth,
         uyu: totalUyuMonth,
-        fixedUsd: fixedUsdMonth,
-        fixedUyu: fixedUyuMonth,
-        variableUsd: totalUsdMonth - fixedUsdMonth,
-        variableUyu: totalUyuMonth - fixedUyuMonth,
+        fixedUsd: fixedUsd,
+        fixedUyu: fixedUyu,
+        variableUsd: varUsdMonth,
+        variableUyu: varUyuMonth,
       }
     })
 
@@ -225,6 +226,34 @@ export const firestoreMetricsBackend: IMetricsBackend = {
       frequency: r.frequency ?? RecurringFrequency.Monthly,
     }))
 
+    // By product category — aggregate ticketLines → product → productCategoryId
+    const prodMap = new Map(products.map((p) => [p.id, p]))
+    const pCatMap = new Map(productCategories.map((pc) => [pc.id, pc]))
+    const byProdCatMap = new Map<string, { usd: number; uyu: number }>()
+    for (const exp of currentExpenses) {
+      for (const line of (exp.ticketLines ?? [])) {
+        if (!line.productId) continue
+        const prod = prodMap.get(line.productId)
+        if (!prod?.productCategoryId) continue
+        const entry = byProdCatMap.get(prod.productCategoryId) ?? { usd: 0, uyu: 0 }
+        if (exp.currency === Currency.USD) entry.usd += line.amount
+        else entry.uyu += line.amount
+        byProdCatMap.set(prod.productCategoryId, entry)
+      }
+    }
+    const byProductCategory = [...byProdCatMap.entries()]
+      .map(([pcId, totals]) => {
+        const pc = pCatMap.get(pcId)
+        return {
+          productCategoryId: pcId,
+          productCategoryName: pc?.name ?? pcId,
+          productCategoryIcon: pc?.icon ?? '📦',
+          usd: totals.usd,
+          uyu: totals.uyu,
+        }
+      })
+      .sort((a, b) => (b.usd + b.uyu) - (a.usd + a.uyu))
+
     return {
       period,
       totalUsd,
@@ -239,7 +268,7 @@ export const firestoreMetricsBackend: IMetricsBackend = {
       byCategory,
       previousByCategory,
       fixedBreakdown,
-      byProductCategory: [],
+      byProductCategory,
     }
   },
 }

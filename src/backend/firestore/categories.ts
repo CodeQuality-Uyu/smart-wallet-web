@@ -30,7 +30,7 @@ export const firestoreCategoriesBackend: ICategoriesBackend = {
     const snap = await getDocs(q)
     return snap.docs
       .filter((d) => d.data()['active'] === true)
-      .map((d) => ({ id: d.id, ...d.data() } as Category))
+      .map((d) => ({ id: d.id, ...d.data(), color: d.data()['color'] !== '' ? d.data()['color'] : null } as Category))
   },
 
   async create(payload: CreateCategoryPayload): Promise<Category> {

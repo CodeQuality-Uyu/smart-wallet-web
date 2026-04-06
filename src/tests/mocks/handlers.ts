@@ -390,7 +390,30 @@ export const handlers = [
           return { categoryId: catId, categoryName: cat?.name ?? catId, categoryIcon: cat?.icon ?? '📦', ...totals }
         })
         .sort((a, b) => (b.usd + b.uyu) - (a.usd + a.uyu))
-      return { totalUsd, totalUyu, byCategory }
+
+      // byProductCategory — aggregate via ticketLines → product → productCategoryId
+      const prodMap = new Map(mockUserProducts.map((p) => [p.id, p]))
+      const pCatMap = new Map(mockProductCategories.map((pc) => [pc.id, pc]))
+      const byProdCatMap = new Map<string, { usd: number; uyu: number }>()
+      for (const exp of filtered) {
+        for (const line of exp.ticketLines) {
+          if (!line.productId) continue
+          const prod = prodMap.get(line.productId)
+          if (!prod?.productCategoryId) continue
+          const entry = byProdCatMap.get(prod.productCategoryId) ?? { usd: 0, uyu: 0 }
+          if (exp.currency === 'USD') entry.usd += line.amount
+          else entry.uyu += line.amount
+          byProdCatMap.set(prod.productCategoryId, entry)
+        }
+      }
+      const byProductCategory = [...byProdCatMap.entries()]
+        .map(([pcId, totals]) => {
+          const pc = pCatMap.get(pcId)
+          return { productCategoryId: pcId, productCategoryName: pc?.name ?? pcId, productCategoryIcon: pc?.icon ?? '📦', ...totals }
+        })
+        .sort((a, b) => (b.usd + b.uyu) - (a.usd + a.uyu))
+
+      return { totalUsd, totalUyu, byCategory, byProductCategory }
     }
 
     if (yearMonth) {
@@ -399,7 +422,7 @@ export const handlers = [
       const start = `${yearMonth}-01`
       const end = `${yearMonth}-${String(lastDay).padStart(2, '0')}`
       const filtered = mockExpenses.filter((e) => e.date >= start && e.date <= end)
-      const { totalUsd, totalUyu, byCategory } = computeMetrics(filtered)
+      const { totalUsd, totalUyu, byCategory, byProductCategory } = computeMetrics(filtered)
       const fixedUsd = mockRecurring
         .filter((r) => r.paymentHistory.some((h) => `${h.year}-${String(h.month).padStart(2,'0')}` === yearMonth) || r.mode === 'auto')
         .filter((r) => r.currency === 'USD')
@@ -423,7 +446,7 @@ export const handlers = [
         byCategory,
         previousByCategory: [],
         fixedBreakdown: [],
-        byProductCategory: [],
+        byProductCategory,
       })
     }
 
@@ -433,7 +456,7 @@ export const handlers = [
         const d = new Date(`${e.date}T12:00:00`)
         return d >= range.start && d <= range.end
       })
-      const { totalUsd, totalUyu, byCategory } = computeMetrics(filtered)
+      const { totalUsd, totalUyu, byCategory, byProductCategory } = computeMetrics(filtered)
       return HttpResponse.json({
         ...mockMetrics,
         period: period ?? 'month',
@@ -448,7 +471,7 @@ export const handlers = [
         monthlyHistory: mockMetrics.monthlyHistory,
         byCategory,
         previousByCategory: [],
-        byProductCategory: [],
+        byProductCategory,
       })
     }
 

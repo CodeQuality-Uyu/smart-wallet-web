@@ -149,5 +149,3 @@ for (const user of usersSnap.docs) {
 **Impacto estimado**: bajo — script aislado, no toca código existente. Ejecutar una sola vez en producción.
 
 ---
-
-- tips y metricas dinamicos
