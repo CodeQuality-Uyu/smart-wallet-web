@@ -369,12 +369,8 @@ export default function CategoriesPage(): React.ReactElement {
 
         {/* Límites por categoría */}
         {(() => {
-          const byCategory = metrics?.byCategory ?? []
           const catsWithLimit = categories.filter((c) => (c.limitUYU ?? 0) > 0 || (c.limitUSD ?? 0) > 0)
           const configuredCount = catsWithLimit.length
-          const spendingCatsWithLimit = byCategory.filter((c) =>
-            catsWithLimit.some((cat) => cat.id === c.categoryId)
-          )
           return (
             <div className={styles.limitsCard}>
               <div className={styles.limitsHeader}>
@@ -395,12 +391,12 @@ export default function CategoriesPage(): React.ReactElement {
                   </p>
                 </div>
               )}
-              {spendingCatsWithLimit.map((c) => {
-                const cat = catsWithLimit.find((cat) => cat.id === c.categoryId)!
+              {catsWithLimit.map((cat) => {
+                const spend = spendMap.get(cat.id)
                 const limitUyu = cat.limitUYU ?? 0
                 const limitUsd = cat.limitUSD ?? 0
-                const spentUyu = c.uyu
-                const spentUsd = c.usd
+                const spentUyu = spend?.uyu ?? 0
+                const spentUsd = spend?.usd ?? 0
                 const pctUyu =
                   limitUyu > 0 ? Math.min(Math.round((spentUyu / limitUyu) * 100), 100) : 0
                 const pctUsd =
@@ -408,10 +404,10 @@ export default function CategoriesPage(): React.ReactElement {
                 const worstPct = Math.max(pctUyu, pctUsd)
                 const color = worstPct < 66 ? '#10b981' : worstPct < 90 ? '#f5b732' : '#ef4444'
                 return (
-                  <div key={c.categoryId} className={styles.limitRow}>
-                    <span className={styles.limitIcon}>{c.categoryIcon}</span>
+                  <div key={cat.id} className={styles.limitRow}>
+                    <span className={styles.limitIcon}>{cat.icon}</span>
                     <div className={styles.limitInfo}>
-                      <span className={styles.limitName}>{c.categoryName}</span>
+                      <span className={styles.limitName}>{cat.name}</span>
                       {limitUyu > 0 && (
                         <>
                           <div className={styles.limitTopRow}>
@@ -454,11 +450,6 @@ export default function CategoriesPage(): React.ReactElement {
                   </div>
                 )
               })}
-              {configuredCount > 0 && spendingCatsWithLimit.length === 0 && (
-                <p className={styles.limitsEmpty}>
-                  Sin gastos en las categorías configuradas para este período.
-                </p>
-              )}
             </div>
           )
         })()}
