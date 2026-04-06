@@ -121,6 +121,27 @@
   color: var(--g800);
 }
 
+/* ─── "Ver todas" button (in FormField labelRight) ──────── */
+
+.verTodasBtn {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--g600);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* ─── Empty hint (no categories) ────────────────────────── */
+
+.emptyHint {
+  font-size: 13px;
+  color: var(--muted);
+  padding: 4px 0;
+}
+
 /* ─── Field error (used below chip/unit selectors) ────────── */
 
 .fieldError {

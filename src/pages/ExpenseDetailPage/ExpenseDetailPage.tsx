@@ -1,7 +1,6 @@
 // src/pages/ExpenseDetailPage.tsx
 
-import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react'
-import ReactDOM from 'react-dom'
+import React, { useRef, useState, useMemo } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import {
@@ -15,8 +14,8 @@ import {
 import { useCategories } from '@/features/categories/hooks/useCategories'
 import { useCards } from '@/features/cards/hooks/useCards'
 import { usePlaces } from '@/features/places/hooks/usePlaces'
-import { useProducts } from '@/features/products/hooks/useProducts'
 import { useAddPriceRecord, PRICE_HISTORY_KEYS } from '@/features/products/hooks/usePriceHistory'
+import { ProductLineAutocomplete } from '@/features/products/components/ProductLineAutocomplete'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { Button } from '@/components/ui/Button'
@@ -113,6 +112,7 @@ function LineProductInput({
     </div>
   )
 }
+
 
 // ─── Unit price calculation for ByWeight products ───────────
 
@@ -416,14 +416,38 @@ export default function ExpenseDetailPage(): React.ReactElement {
 
           <div className={styles.addLineForm}>
             <div className={styles.addLineRow}>
-              <LineProductInput
+              <ProductLineAutocomplete
                 value={newLineName}
                 onChange={(name, product) => {
                   setNewLineName(name)
                   setNewLineProduct(product)
-                  setNewLineAmount('')
-                  setNewLineWeight('')
-                  setNewLinePricePaid('')
+                  // Pre-fill amount from last known price for this place
+                  if (product?.globalProductId && expense?.placeId) {
+                    const cached = qc.getQueryData<PriceByPlace[]>(
+                      PRICE_HISTORY_KEYS.byPlace(product.globalProductId)
+                    )
+                    const entry = cached?.find((r) => r.placeId === expense.placeId)
+                    if (entry) {
+                      const isByWeightProduct =
+                        product.pricingType === ProductPricingType.ByWeight
+                      if (isByWeightProduct) {
+                        setNewLinePricePaid(String(entry.unitPrice))
+                        setNewLineAmount('')
+                      } else {
+                        setNewLineAmount(String(entry.unitPrice))
+                        setNewLinePricePaid('')
+                      }
+                      setNewLineWeight('')
+                    } else {
+                      setNewLineAmount('')
+                      setNewLineWeight('')
+                      setNewLinePricePaid('')
+                    }
+                  } else {
+                    setNewLineAmount('')
+                    setNewLineWeight('')
+                    setNewLinePricePaid('')
+                  }
                 }}
                 disabled={addingLine}
               />
