@@ -17,7 +17,6 @@ import { PageHeader } from '@/components/shared/PageHeader'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { PeriodControl } from '@/components/ui/PeriodControl'
 import { useMetrics } from '@/hooks/useMetrics'
-import { useCategoryLimits, useSetCategoryLimits } from '@/hooks/useCategoryLimits'
 import { formatCurrency } from '@/utils/formatCurrency'
 import { PeriodFilter, Currency } from '@/types/enums'
 import type { Category } from '@/types/models'
@@ -88,8 +87,6 @@ export default function CategoriesPage(): React.ReactElement {
   const [search, setSearch] = useState('')
   const { mutateAsync: updateCat } = useUpdateCategory(editing?.id ?? '')
   const { data: metrics } = useMetrics(period)
-  const { data: categoryLimits = {} } = useCategoryLimits()
-  const { mutateAsync: setLimits } = useSetCategoryLimits()
 
   const spendMap = useMemo(() => {
     const map = new Map<string, { usd: number; uyu: number; expenseCount: number }>()
@@ -112,22 +109,18 @@ export default function CategoriesPage(): React.ReactElement {
     { setStatus }: { setStatus: (status: string) => void }
   ): Promise<void> {
     try {
-      const { limitUYU: _lUYU, limitUSD: _lUSD, ...categoryFields } = values
-      const catId = editing
-        ? (await updateCat(categoryFields), editing.id)
-        : (await createCat({ ...categoryFields, active: true })).id
-      const prev = { ...(categoryLimits[catId] ?? {}) }
-      if (values.limitUYU != null && values.limitUYU > 0) {
-        prev[Currency.UYU] = values.limitUYU
-      } else {
-        delete prev[Currency.UYU]
+      const payload = {
+        name: values.name,
+        icon: values.icon,
+        color: values.color,
+        limitUYU: values.limitUYU && values.limitUYU > 0 ? values.limitUYU : undefined,
+        limitUSD: values.limitUSD && values.limitUSD > 0 ? values.limitUSD : undefined,
       }
-      if (values.limitUSD != null && values.limitUSD > 0) {
-        prev[Currency.USD] = values.limitUSD
+      if (editing) {
+        await updateCat(payload)
       } else {
-        delete prev[Currency.USD]
+        await createCat({ ...payload, active: true })
       }
-      await setLimits({ ...categoryLimits, [catId]: prev })
       setShowForm(false)
       setEditing(null)
     } catch (err) {
@@ -148,8 +141,8 @@ export default function CategoriesPage(): React.ReactElement {
     name: editing?.name ?? '',
     icon: editing?.icon ?? '',
     color: editing?.color ?? '',
-    limitUYU: editing ? (categoryLimits[editing.id]?.[Currency.UYU] ?? undefined) : undefined,
-    limitUSD: editing ? (categoryLimits[editing.id]?.[Currency.USD] ?? undefined) : undefined,
+    limitUYU: editing?.limitUYU ?? undefined,
+    limitUSD: editing?.limitUSD ?? undefined,
   }
 
   const periodControl = <PeriodControl value={period} onChange={setPeriod} />
@@ -377,12 +370,11 @@ export default function CategoriesPage(): React.ReactElement {
         {/* Límites por categoría */}
         {(() => {
           const byCategory = metrics?.byCategory ?? []
-          const configuredIds = Object.keys(categoryLimits).filter((id) => {
-            const e = categoryLimits[id]
-            return (e?.[Currency.UYU] ?? 0) > 0 || (e?.[Currency.USD] ?? 0) > 0
-          })
-          const configuredCount = configuredIds.length
-          const catsWithLimit = byCategory.filter((c) => configuredIds.includes(c.categoryId))
+          const catsWithLimit = categories.filter((c) => (c.limitUYU ?? 0) > 0 || (c.limitUSD ?? 0) > 0)
+          const configuredCount = catsWithLimit.length
+          const spendingCatsWithLimit = byCategory.filter((c) =>
+            catsWithLimit.some((cat) => cat.id === c.categoryId)
+          )
           return (
             <div className={styles.limitsCard}>
               <div className={styles.limitsHeader}>
@@ -403,19 +395,18 @@ export default function CategoriesPage(): React.ReactElement {
                   </p>
                 </div>
               )}
-              {catsWithLimit.map((c, idx) => {
-                const entry = categoryLimits[c.categoryId] ?? {}
-                const totalCats = catsWithLimit.length
-                const colorPct = idx / (totalCats - 1 || 1)
-                const color = colorPct < 0.33 ? '#10b981' : colorPct < 0.66 ? '#f5b732' : '#ef4444'
-                const limitUyu = entry[Currency.UYU] ?? 0
-                const limitUsd = entry[Currency.USD] ?? 0
+              {spendingCatsWithLimit.map((c) => {
+                const cat = catsWithLimit.find((cat) => cat.id === c.categoryId)!
+                const limitUyu = cat.limitUYU ?? 0
+                const limitUsd = cat.limitUSD ?? 0
                 const spentUyu = c.uyu
                 const spentUsd = c.usd
                 const pctUyu =
                   limitUyu > 0 ? Math.min(Math.round((spentUyu / limitUyu) * 100), 100) : 0
                 const pctUsd =
                   limitUsd > 0 ? Math.min(Math.round((spentUsd / limitUsd) * 100), 100) : 0
+                const worstPct = Math.max(pctUyu, pctUsd)
+                const color = worstPct < 66 ? '#10b981' : worstPct < 90 ? '#f5b732' : '#ef4444'
                 return (
                   <div key={c.categoryId} className={styles.limitRow}>
                     <span className={styles.limitIcon}>{c.categoryIcon}</span>
@@ -463,7 +454,7 @@ export default function CategoriesPage(): React.ReactElement {
                   </div>
                 )
               })}
-              {configuredCount > 0 && catsWithLimit.length === 0 && (
+              {configuredCount > 0 && spendingCatsWithLimit.length === 0 && (
                 <p className={styles.limitsEmpty}>
                   Sin gastos en las categorías configuradas para este período.
                 </p>

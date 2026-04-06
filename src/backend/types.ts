@@ -39,7 +39,6 @@ import type {
   UpdateProductPayload,
   ProductPriceRecord,
   CreateProductPriceRecordPayload,
-  CategoryLimits,
   Notification,
   NotificationPrefs,
 } from '@/types/models'
@@ -195,11 +194,14 @@ export interface IBudgetBackend {
   set(settings: BudgetSettings): Promise<BudgetSettings>
 }
 
-// ─── Category limits ──────────────────────────────────────
+// ─── Product category limits ──────────────────────────────
+
+export type ProductCategoryLimitEntry = { UYU?: number; USD?: number }
+export type ProductCategoryLimits = { [categoryId: string]: ProductCategoryLimitEntry }
 
 export interface ICategoryLimitsBackend {
-  get(): Promise<CategoryLimits>
-  set(limits: CategoryLimits): Promise<CategoryLimits>
+  get(): Promise<ProductCategoryLimits>
+  set(limits: ProductCategoryLimits): Promise<ProductCategoryLimits>
 }
 
 // ─── Product category limits ──────────────────────────────

@@ -1,8 +1,7 @@
-// src/backend/firestore/productCategoryLimits.ts
+// src/backend/firestore/productProductCategoryLimits.ts
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { firebaseAuth, firestore } from './config'
-import type { ICategoryLimitsBackend } from '../types'
-import type { CategoryLimits } from '@/types/models'
+import type { IProductCategoryLimitsBackend, ProductProductCategoryLimits } from '../types'
 
 function requireUid(): string {
   const uid = firebaseAuth.currentUser?.uid
@@ -10,18 +9,18 @@ function requireUid(): string {
   return uid
 }
 
-export const firestoreProductCategoryLimitsBackend: ICategoryLimitsBackend = {
-  async get(): Promise<CategoryLimits> {
+export const firestoreProductProductCategoryLimitsBackend: IProductCategoryLimitsBackend = {
+  async get(): Promise<ProductCategoryLimits> {
     const uid = requireUid()
     const snap = await getDoc(doc(firestore, 'users', uid))
     if (!snap.exists()) return {}
     const data = snap.data()
-    return (data['productCategoryLimits'] as CategoryLimits | undefined) ?? {}
+    return (data['productProductCategoryLimits'] as ProductCategoryLimits | undefined) ?? {}
   },
 
-  async set(limits: CategoryLimits): Promise<CategoryLimits> {
+  async set(limits: ProductCategoryLimits): Promise<ProductCategoryLimits> {
     const uid = requireUid()
-    await setDoc(doc(firestore, 'users', uid), { productCategoryLimits: limits }, { merge: true })
+    await setDoc(doc(firestore, 'users', uid), { productProductCategoryLimits: limits }, { merge: true })
     return limits
   },
 }

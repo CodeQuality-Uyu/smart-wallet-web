@@ -21,7 +21,6 @@ let _monthClosingsBackend: IMonthClosingsBackend | null = null
 let _productCategoriesBackend: IProductCategoriesBackend | null = null
 let _brandsBackend: IBrandsBackend | null = null
 let _productsBackend: IProductsBackend | null = null
-let _categoryLimitsBackend: ICategoryLimitsBackend | null = null
 let _productCategoryLimitsBackend: ICategoryLimitsBackend | null = null
 let _notificationsBackend: INotificationsBackend | null = null
 
@@ -180,18 +179,6 @@ export async function getProductsBackend(): Promise<IProductsBackend> {
     _productsBackend = mswProductsBackend
   }
   return _productsBackend
-}
-
-export async function getCategoryLimitsBackend(): Promise<ICategoryLimitsBackend> {
-  if (_categoryLimitsBackend) return _categoryLimitsBackend
-  if (backend === 'firestore') {
-    const { firestoreCategoryLimitsBackend } = await import('./firestore/categoryLimits')
-    _categoryLimitsBackend = firestoreCategoryLimitsBackend
-  } else {
-    const { mswCategoryLimitsBackend } = await import('./msw/categoryLimits')
-    _categoryLimitsBackend = mswCategoryLimitsBackend
-  }
-  return _categoryLimitsBackend
 }
 
 export async function getProductCategoryLimitsBackend(): Promise<ICategoryLimitsBackend> {

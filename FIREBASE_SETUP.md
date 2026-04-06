@@ -7,7 +7,7 @@ Incluye material teórico de cada servicio para que entiendas qué estás hacien
 
 ## 📚 ¿Qué es Firebase?
 
-Firebase es una plataforma de Google que provee servicios de backend listos para usar sin necesidad de escribir ni deployar un servidor propio. Para esta app usamos dos de sus servicios:
+Firebase es una plataforma de Google que provee servicios de backend listos para usar sin necesidad de escribir ni deployar un servidor propio. Para esta app usamos tres de sus servicios:
 
 | Servicio | Qué hace |
 |---|---|

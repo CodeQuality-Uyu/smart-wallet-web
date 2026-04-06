@@ -10,6 +10,7 @@ import {
   doc,
   query,
   orderBy,
+  deleteField,
 } from 'firebase/firestore'
 import { firebaseAuth, firestore } from './config'
 import type { ICategoriesBackend, Category, CreateCategoryPayload, UpdateCategoryPayload } from '../types'
@@ -44,7 +45,10 @@ export const firestoreCategoriesBackend: ICategoriesBackend = {
   async update(id: string, payload: UpdateCategoryPayload): Promise<Category> {
     const uid = requireUid()
     const ref = doc(firestore, 'users', uid, 'categories', id)
-    await updateDoc(ref, { ...payload, updatedAt: new Date().toISOString() })
+    const data: Record<string, unknown> = { ...payload, updatedAt: new Date().toISOString() }
+    if (payload.limitUYU == null) data['limitUYU'] = deleteField()
+    if (payload.limitUSD == null) data['limitUSD'] = deleteField()
+    await updateDoc(ref, data)
     const snap = await getDoc(ref)
     return { id: snap.id, ...snap.data() } as Category
   },

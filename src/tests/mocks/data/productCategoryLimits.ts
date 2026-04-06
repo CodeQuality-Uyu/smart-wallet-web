@@ -1,3 +1,3 @@
-import type { CategoryLimits } from '@/types/models'
+import type { ProductCategoryLimits } from '@/backend/types'
 
-export let mockProductCategoryLimits: CategoryLimits = {}
+export let mockProductCategoryLimits: ProductCategoryLimits = {}

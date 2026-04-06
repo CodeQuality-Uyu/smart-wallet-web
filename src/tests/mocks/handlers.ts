@@ -12,7 +12,6 @@ import { mockRecurring } from './data/recurring'
 import { mockMetrics } from './data/metrics'
 import { mockSalaries } from './data/salaries'
 import { mockBudget } from './data/budget'
-import { mockCategoryLimits } from './data/categoryLimits'
 import { mockProductCategoryLimits } from './data/productCategoryLimits'
 import { mockMonthClosings } from './data/monthClosings'
 import { mockProductCategories } from './data/productCategories'
@@ -345,15 +344,6 @@ export const handlers = [
     if (typeof body['usd'] === 'number' || body['usd'] === null) mockBudget.usd = body['usd'] as number | undefined
     if (typeof body['uyu'] === 'number' || body['uyu'] === null) mockBudget.uyu = body['uyu'] as number | undefined
     return HttpResponse.json(mockBudget)
-  }),
-
-  // ─── Category limits ─────────────────────────────────────
-  http.get(`${BASE}/category-limits`, () => HttpResponse.json(mockCategoryLimits)),
-  http.put(`${BASE}/category-limits`, async ({ request }) => {
-    const body = await request.json() as Record<string, number>
-    for (const key of Object.keys(mockCategoryLimits)) delete mockCategoryLimits[key]
-    Object.assign(mockCategoryLimits, body)
-    return HttpResponse.json(mockCategoryLimits)
   }),
 
   // ─── Product category limits ─────────────────────────────

@@ -1,16 +1,15 @@
 // src/backend/msw/productCategoryLimits.ts
 import { httpClient } from '@/api/httpClient'
-import type { ICategoryLimitsBackend } from '../types'
-import type { CategoryLimits } from '@/types/models'
+import type { ICategoryLimitsBackend, ProductCategoryLimits } from '../types'
 
 export const mswProductCategoryLimitsBackend: ICategoryLimitsBackend = {
-  async get(): Promise<CategoryLimits> {
-    const { data } = await httpClient.get<CategoryLimits>('/product-category-limits')
+  async get(): Promise<ProductCategoryLimits> {
+    const { data } = await httpClient.get<ProductCategoryLimits>('/product-category-limits')
     return data
   },
 
-  async set(limits: CategoryLimits): Promise<CategoryLimits> {
-    const { data } = await httpClient.put<CategoryLimits>('/product-category-limits', limits)
+  async set(limits: ProductCategoryLimits): Promise<ProductCategoryLimits> {
+    const { data } = await httpClient.put<ProductCategoryLimits>('/product-category-limits', limits)
     return data
   },
 }

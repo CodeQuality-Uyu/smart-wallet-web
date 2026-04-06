@@ -34,6 +34,8 @@ export interface Category extends Timestamps {
   icon: string
   color?: string
   active: boolean
+  limitUYU?: number
+  limitUSD?: number
 }
 
 export type CreateCategoryPayload = Omit<Category, 'id' | 'createdAt' | 'updatedAt'>
@@ -221,17 +223,6 @@ export interface MetricsSummary {
 export interface BudgetSettings {
   usd?: number
   uyu?: number
-}
-
-// ─── Category limits ──────────────────────────────────────
-
-export interface CategoryLimitEntry {
-  [Currency.UYU]?: number
-  [Currency.USD]?: number
-}
-
-export interface CategoryLimits {
-  [categoryId: string]: CategoryLimitEntry
 }
 
 // ─── Month closings ───────────────────────────────────────
