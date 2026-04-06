@@ -301,7 +301,6 @@ export interface GlobalProduct {
   brandId?: string
   // Denormalized last price info (updated on each addPriceRecord)
   lastPlaceId?: string
-  lastPlaceName?: string
   lastUnitPrice?: number
   lastCurrency?: Currency
   lastRecordedAt?: string

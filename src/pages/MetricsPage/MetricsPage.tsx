@@ -11,7 +11,7 @@ import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { formatAmount } from '@/utils/formatCurrency'
 import { PeriodFilter, Currency, RecurringFrequency } from '@/types/enums'
 import styles from './MetricsPage.module.css'
-import { CURRENCY_OPTIONS } from '../constants/currencyOptions'
+import { CURRENCY_OPTIONS } from '@/constants/currencyOptions'
 const MONTH_NAMES = [
   'Enero',
   'Febrero',

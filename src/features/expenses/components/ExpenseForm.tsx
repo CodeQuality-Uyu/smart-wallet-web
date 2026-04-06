@@ -1,6 +1,6 @@
 // src/features/expenses/components/ExpenseForm.tsx
 
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { Formik, Form } from 'formik'
 import { expenseSchema, type ExpenseFormValues } from '../schemas/expenseSchema'
 import { FormField, TextInput, SelectInput } from '@/components/ui/FormField'
@@ -36,6 +36,7 @@ const DEFAULT_VALUES: ExpenseFormValues = {
   categoryIds: [],
   placeId: '',
   date: new Date().toISOString().split('T')[0] ?? '',
+  receiptFile: undefined,
 }
 
 type ActiveModal = 'card' | 'categories' | 'place' | null
@@ -49,6 +50,7 @@ export function ExpenseForm({
 }: ExpenseFormProps): React.ReactElement {
   const isDesktop = variant === 'desktop'
   const [activeModal, setActiveModal] = useState<ActiveModal>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const { data: categories = [] } = useCategories()
   const { data: cards = [] } = useCards()
@@ -208,6 +210,42 @@ export function ExpenseForm({
                 max={new Date().toISOString().split('T')[0]}
               />
             </FormField>
+
+            <div className={styles.receiptField}>
+              <p className={styles.receiptLabel}>Factura <span className={styles.receiptOptional}>(opcional)</span></p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,application/pdf"
+                className={styles.receiptHiddenInput}
+                onChange={(e) => {
+                  const file = e.target.files?.[0] ?? undefined
+                  void setFieldValue('receiptFile', file)
+                  e.target.value = ''
+                }}
+              />
+              {!values.receiptFile ? (
+                <button
+                  type="button"
+                  className={styles.receiptBtn}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  📎 Adjuntar factura
+                </button>
+              ) : (
+                <div className={styles.receiptAttached}>
+                  <span className={styles.receiptFileName}>📎 {values.receiptFile.name}</span>
+                  <button
+                    type="button"
+                    className={styles.receiptClear}
+                    onClick={() => void setFieldValue('receiptFile', undefined)}
+                    aria-label="Quitar factura"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className={isDesktop ? styles.actionsDesktop : styles.actions}>

@@ -1,0 +1,59 @@
+/* src/features/products/components/ProductLineAutocomplete.module.css */
+
+.wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.input {
+  width: 100%;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 13px;
+  background: #fff;
+  font-family: var(--font-body);
+  outline: none;
+  min-width: 0;
+  transition: border-color .12s;
+}
+
+.input:focus { border-color: var(--g400); }
+.input:disabled { opacity: 0.6; cursor: default; }
+
+/* ─── Portal dropdown ─────────────────────────────────── */
+
+.dropdown {
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.15);
+  max-height: 220px;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+}
+
+.option {
+  padding: 9px 14px;
+  cursor: pointer;
+  transition: background .1s;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.option:hover { background: var(--g50); }
+
+.name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.meta {
+  font-size: 11px;
+  color: var(--muted);
+}

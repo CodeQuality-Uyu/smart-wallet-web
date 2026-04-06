@@ -30,6 +30,8 @@ export const expenseSchema = Yup.object({
   date: Yup.string()
     .matches(/^\d{4}-\d{2}-\d{2}$/, 'Formato de fecha inválido (AAAA-MM-DD)')
     .required('La fecha es requerida'),
+
+  receiptFile: Yup.mixed<File>().optional(),
 })
 
 export type ExpenseFormValues = Yup.InferType<typeof expenseSchema>

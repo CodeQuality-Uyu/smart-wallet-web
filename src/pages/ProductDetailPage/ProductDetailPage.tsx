@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useProduct, useUpdateProduct, useDeleteProduct } from '@/features/products/hooks/useProducts'
-import { usePriceHistory, usePriceByPlace, useAddPriceRecord } from '@/features/products/hooks/usePriceHistory'
+import { usePriceHistory, usePriceByPlace, useAddPriceRecord, useUpdatePriceRecord } from '@/features/products/hooks/usePriceHistory'
 import { useProductCategories } from '@/features/products/hooks/useProductCategories'
 import { useBrands } from '@/features/products/hooks/useBrands'
 import { usePlaces } from '@/features/places/hooks/usePlaces'
@@ -29,14 +29,19 @@ interface AddPriceValues {
   placeId: string | undefined
 }
 
-const addPriceSchema = Yup.object({
+const priceAmountSchema = Yup.object({
   currency: Yup.mixed<Currency>().oneOf(Object.values(Currency)).required(),
   unitPrice: Yup.number()
     .transform((v, orig) => (orig === '' ? undefined : v))
     .required('El precio es requerido')
     .min(0.01, 'Debe ser mayor a 0'),
+})
+
+// Schema for add-new includes placeId; edit schema omits it (it's fixed from the row)
+const addPriceSchema = priceAmountSchema.shape({
   placeId: Yup.string().required('El local es requerido'),
 })
+const editPriceSchema = priceAmountSchema
 
 function CurrencyField(): React.ReactElement {
   const [field, , helpers] = useField<Currency>('currency')
@@ -100,6 +105,7 @@ export default function ProductDetailPage(): React.ReactElement {
   const { mutateAsync: updateProduct } = useUpdateProduct(id ?? '')
   const { mutateAsync: deleteProduct } = useDeleteProduct()
   const { mutateAsync: addPriceRecord } = useAddPriceRecord()
+  const { mutateAsync: updatePriceRecord } = useUpdatePriceRecord()
 
   if (isLoading) return <LoadingSpinner fullPage />
   if (error || !product) return <ErrorMessage message="No se pudo cargar el producto." />
@@ -130,12 +136,17 @@ export default function ProductDetailPage(): React.ReactElement {
 
   async function handleEditPrice(values: AddPriceValues): Promise<void> {
     if (!values.unitPrice || !values.placeId) return
-    await addPriceRecord({
-      productId: globalId,
-      placeId: values.placeId,
+    // Find the most recent record for this place to update it (not add to history)
+    const latestRecord = priceHistory
+      .filter((r) => r.placeId === values.placeId)
+      .sort((a, b) => b.recordedAt.localeCompare(a.recordedAt))[0]
+    if (!latestRecord) return
+    await updatePriceRecord({
+      id: latestRecord.id,
       unitPrice: values.unitPrice,
       currency: values.currency,
-      recordedAt: new Date().toISOString().split('T')[0] as string,
+      productId: globalId,
+      placeId: values.placeId,
     })
     setEditingRow(null)
   }
@@ -261,7 +272,7 @@ export default function ProductDetailPage(): React.ReactElement {
           {editingRow && (
             <Formik<AddPriceValues>
               initialValues={{ currency: editingRow.currency, unitPrice: editingRow.unitPrice, placeId: editingRow.placeId }}
-              validationSchema={addPriceSchema}
+              validationSchema={editPriceSchema}
               onSubmit={handleEditPrice}
             >
               {({ isSubmitting }) => (

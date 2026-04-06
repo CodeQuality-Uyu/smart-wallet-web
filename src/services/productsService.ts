@@ -1,6 +1,7 @@
 // src/services/productsService.ts
 
 import { getProductsBackend } from '@/backend'
+import type { Currency } from '@/types/enums'
 import type {
   Product, GlobalProductSuggestion, CreateProductPayload, UpdateProductPayload,
   ProductPriceRecord, CreateProductPriceRecordPayload,
@@ -42,5 +43,9 @@ export const productsService = {
 
   async addPriceRecord(payload: CreateProductPriceRecordPayload): Promise<ProductPriceRecord> {
     return (await getProductsBackend()).addPriceRecord(payload)
+  },
+
+  async updatePriceRecord(id: string, payload: { unitPrice: number; currency: Currency }): Promise<ProductPriceRecord> {
+    return (await getProductsBackend()).updatePriceRecord(id, payload)
   },
 }

@@ -14,7 +14,7 @@ import {
   groupExpensesByPlace,
   groupExpensesByCategory,
 } from '@/utils/groupByDate'
-import { formatAmount, formatCurrency } from '@/utils/formatCurrency'
+import { formatCurrency, formatAmountNoSymbol } from '@/utils/formatCurrency'
 import { Currency, PeriodFilter, GroupBy } from '@/types/enums'
 import { CURRENCY_OPTIONS } from '@/constants/currencyOptions'
 import styles from './ExpensesPage.module.css'
@@ -132,14 +132,14 @@ export default function ExpensesPage(): React.ReactElement {
             <p className={styles.desktopStatLabel}>Total USD</p>
             <p className={styles.desktopStatValue}>
               <span className={styles.desktopAmtSymbol}>U$S </span>
-              {formatAmount(totalUsd, Currency.USD).replace(/^\$/, '')}
+              {formatAmountNoSymbol(totalUsd, Currency.USD)}
             </p>
           </div>
           <div className={styles.desktopStatCard}>
             <p className={styles.desktopStatLabel}>Total UYU</p>
             <p className={styles.desktopStatValue}>
               <span className={styles.desktopAmtSymbol}>$ </span>
-              {formatAmount(totalUyu, Currency.UYU).replace(/^\$/, '')}
+              {formatAmountNoSymbol(totalUyu, Currency.UYU)}
             </p>
           </div>
           <div className={styles.desktopStatCard}>
@@ -237,7 +237,7 @@ export default function ExpensesPage(): React.ReactElement {
                           {gUsd > 0 && (
                             <span className={styles.groupTotalItem}>
                               <span className={styles.groupTotalAmt}>
-                                U$S {formatAmount(gUsd, Currency.USD).replace(/^[^\d]*/, '')}
+                                U$S {formatAmountNoSymbol(gUsd, Currency.USD)}
                               </span>
                               <span className={styles.groupTotalBadge}>USD</span>
                             </span>
@@ -248,7 +248,7 @@ export default function ExpensesPage(): React.ReactElement {
                           {gUyu > 0 && (
                             <span className={styles.groupTotalItem}>
                               <span className={styles.groupTotalAmt}>
-                                $ {formatAmount(gUyu, Currency.UYU).replace(/^[^\d]*/, '')}
+                                $ {formatAmountNoSymbol(gUyu, Currency.UYU)}
                               </span>
                               <span className={styles.groupTotalBadge}>UYU</span>
                             </span>

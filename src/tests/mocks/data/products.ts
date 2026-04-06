@@ -12,7 +12,7 @@ export const mockGlobalProducts: GlobalProduct[] = [
     pricingType: ProductPricingType.ByWeight,
     weightUnit: WeightUnit.Kg,
     lastPlaceId: 'place-1',
-    lastPlaceName: 'Disco',
+
     lastUnitPrice: 85,
     lastCurrency: Currency.UYU,
     lastRecordedAt: '2026-01-10',
@@ -25,7 +25,7 @@ export const mockGlobalProducts: GlobalProduct[] = [
     pricingType: ProductPricingType.ByWeight,
     weightUnit: WeightUnit.Kg,
     lastPlaceId: 'place-1',
-    lastPlaceName: 'Disco',
+
     lastUnitPrice: 320,
     lastCurrency: Currency.UYU,
     lastRecordedAt: '2026-01-08',
@@ -39,7 +39,7 @@ export const mockGlobalProducts: GlobalProduct[] = [
     weightUnit: WeightUnit.Kg,
     brandId: 'brand-1',
     lastPlaceId: 'place-2',
-    lastPlaceName: 'Tienda Inglesa',
+
     lastUnitPrice: 450,
     lastCurrency: Currency.UYU,
     lastRecordedAt: '2026-01-05',
@@ -52,7 +52,7 @@ export const mockGlobalProducts: GlobalProduct[] = [
     pricingType: ProductPricingType.Fixed,
     brandId: 'brand-1',
     lastPlaceId: 'place-1',
-    lastPlaceName: 'Disco',
+
     lastUnitPrice: 75,
     lastCurrency: Currency.UYU,
     lastRecordedAt: '2026-01-12',
@@ -65,7 +65,7 @@ export const mockGlobalProducts: GlobalProduct[] = [
     pricingType: ProductPricingType.Fixed,
     brandId: 'brand-2',
     lastPlaceId: 'place-1',
-    lastPlaceName: 'Disco',
+
     lastUnitPrice: 45,
     lastCurrency: Currency.UYU,
     lastRecordedAt: '2026-01-11',
@@ -78,7 +78,7 @@ export const mockGlobalProducts: GlobalProduct[] = [
     pricingType: ProductPricingType.Fixed,
     brandId: 'brand-3',
     lastPlaceId: 'place-2',
-    lastPlaceName: 'Tienda Inglesa',
+
     lastUnitPrice: 120,
     lastCurrency: Currency.UYU,
     lastRecordedAt: '2026-01-09',
@@ -88,9 +88,9 @@ export const mockGlobalProducts: GlobalProduct[] = [
 
 // Suggestions shape (used by searchGlobal handler)
 export const mockGlobalProductSuggestions: GlobalProductSuggestion[] = mockGlobalProducts.map(
-  ({ id, name, pricingType, weightUnit, brandId, lastPlaceId, lastPlaceName, lastUnitPrice, lastCurrency, lastRecordedAt }) => ({
+  ({ id, name, pricingType, weightUnit, brandId, lastPlaceId, lastUnitPrice, lastCurrency, lastRecordedAt }) => ({
     id, name, pricingType, weightUnit, brandId,
-    lastPlaceId, lastPlaceName, lastUnitPrice, lastCurrency, lastRecordedAt,
+    lastPlaceId, lastUnitPrice, lastCurrency, lastRecordedAt,
   }),
 )
 

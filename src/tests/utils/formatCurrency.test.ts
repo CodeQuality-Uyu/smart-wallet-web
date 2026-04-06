@@ -5,10 +5,10 @@ import { formatCurrency, formatAmount } from '@/utils/formatCurrency'
 import { Currency } from '@/types/enums'
 
 describe('formatCurrency', () => {
-  it('formats USD with 2 decimal places', () => {
+  it('formats USD with 2 decimal places and U$S symbol', () => {
     const result = formatCurrency(12.9, Currency.USD)
     expect(result).toContain('12.90')
-    expect(result).toContain('$')
+    expect(result).toContain('U$S')
   })
 
   it('formats UYU without decimal places', () => {
@@ -19,7 +19,7 @@ describe('formatCurrency', () => {
 
 describe('formatAmount', () => {
   it('compacts large UYU amounts', () => {
-    expect(formatAmount(24800, Currency.UYU)).toBe('$24.8k')
+    expect(formatAmount(24800, Currency.UYU)).toBe('$ 24.8k')
   })
 
   it('does not compact small UYU amounts', () => {

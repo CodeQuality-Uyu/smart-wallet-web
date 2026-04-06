@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { Formik, Form, useField, useFormikContext } from 'formik'
 import { productSchema, productCreateSchema, type ProductFormValues } from '../schemas/productSchema'
 import { FormField, TextInput, SelectInput } from '@/components/ui/FormField'
+import { ProductCategoryPickerModal } from './ProductCategoryPickerModal'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { ProductNameInput } from './ProductNameInput'
@@ -50,29 +51,77 @@ const WEIGHT_UNIT_OPTIONS = [
   { value: WeightUnit.Ml, label: 'ml' },
 ]
 
-// ─── Category chips (single-select) ───────────────────────
+// ─── Category chips (single-select, top 5 + "Ver todas") ──
+
+const TOP_CAT_COUNT = 5
 
 function CategoryChipField(): React.ReactElement {
-  const { data: categories = [] } = useProductCategories()
+  const { data: categories = [], isLoading } = useProductCategories()
   const [field, , helpers] = useField('productCategoryId')
+  const [showPicker, setShowPicker] = useState(false)
+
+  const verTodasBtn = categories.length > 0
+    ? <button type="button" className={styles.verTodasBtn} onClick={() => setShowPicker(true)}>Ver todas</button>
+    : null
+
+  const picker = showPicker && (
+    <ProductCategoryPickerModal
+      selected={field.value as string}
+      onConfirm={(id) => { void helpers.setValue(id); setShowPicker(false) }}
+      onClose={() => setShowPicker(false)}
+    />
+  )
+
+  if (isLoading) {
+    return (
+      <FormField name="productCategoryId" label="Categoría">
+        <p className={styles.emptyHint}>Cargando...</p>
+      </FormField>
+    )
+  }
+
+  if (categories.length === 0) {
+    return (
+      <FormField name="productCategoryId" label="Categoría">
+        <p className={styles.emptyHint}>
+          No hay categorías todavía.{' '}
+          <button type="button" className={styles.createLink} onClick={() => setShowPicker(true)}>
+            Crear la primera
+          </button>
+        </p>
+        {showPicker && (
+          <ProductCategoryPickerModal
+            selected=""
+            onConfirm={(id) => { void helpers.setValue(id); setShowPicker(false) }}
+            onClose={() => setShowPicker(false)}
+          />
+        )}
+      </FormField>
+    )
+  }
 
   return (
-    <div className={styles.chipsWrap} role="group" aria-label="Categoría">
-      {categories.map((cat) => {
-        const selected = field.value === cat.id
-        return (
-          <button
-            key={cat.id}
-            type="button"
-            className={[styles.chip, selected ? styles.chipSelected : ''].join(' ')}
-            onClick={() => void helpers.setValue(cat.id)}
-          >
-            <span aria-hidden>{cat.icon}</span>
-            {cat.name}
-          </button>
-        )
-      })}
-    </div>
+    <>
+      <FormField name="productCategoryId" label="Categoría" labelRight={verTodasBtn}>
+        <div className={styles.chipsWrap} role="group" aria-label="Categoría">
+          {categories.slice(0, TOP_CAT_COUNT).map((cat) => {
+            const selected = field.value === cat.id
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                className={[styles.chip, selected ? styles.chipSelected : ''].join(' ')}
+                onClick={() => void helpers.setValue(cat.id)}
+              >
+                <span aria-hidden>{cat.icon}</span>
+                {cat.name}
+              </button>
+            )
+          })}
+        </div>
+      </FormField>
+      {picker}
+    </>
   )
 }
 
@@ -248,6 +297,7 @@ function NewBrandModal({ onClose, onCreated }: NewBrandModalProps): React.ReactE
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    e.stopPropagation()
     const trimmed = name.trim()
     if (!trimmed) { setError('El nombre es requerido'); return }
     setLoading(true)
@@ -263,7 +313,7 @@ function NewBrandModal({ onClose, onCreated }: NewBrandModalProps): React.ReactE
 
   return (
     <Modal title="Nueva marca" onClose={onClose} width={360}>
-      <form onSubmit={(e) => void handleSubmit(e)} style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '4px 0' }}>
+      <form onSubmit={(e) => void handleSubmit(e)} style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '20px 24px' }}>
         <div>
           <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.06em' }}>
             Nombre
@@ -274,7 +324,7 @@ function NewBrandModal({ onClose, onCreated }: NewBrandModalProps): React.ReactE
             value={name}
             onChange={(e) => { setName(e.target.value); setError('') }}
             autoFocus
-            style={{ width: '100%', boxSizing: 'border-box', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)', padding: '9px 12px', fontSize: 14, fontFamily: 'inherit', color: 'var(--ink)', outline: 'none' }}
+            style={{ width: '100%', boxSizing: 'border-box', border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm, 8px)', padding: '9px 12px', fontSize: 14, fontFamily: 'inherit', color: 'var(--ink)', outline: 'none' }}
           />
         </div>
         {error && <p className={styles.fieldError}>{error}</p>}
@@ -330,9 +380,7 @@ function InnerForm({
         }
       </FormField>
 
-      <FormField name="productCategoryId" label="Categoría">
-        <CategoryChipField />
-      </FormField>
+      <CategoryChipField />
 
       {!editMode && (
         <div className={styles.fieldGroup}>

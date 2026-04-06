@@ -71,6 +71,17 @@ export function PriceHistoryChart({ records, placeNames }: PriceHistoryChartProp
     return <p className={styles.empty}>Sin historial de precios.</p>
   }
 
+  if (records.length < 2) {
+    const r = records[0]!
+    const dt = new Date(r.recordedAt)
+    const dateStr = `${dt.getDate()}/${dt.getMonth() + 1}`
+    return (
+      <p className={styles.empty}>
+        Solo hay 1 registro ({dateStr}: {r.unitPrice} {r.currency}). Agregá más precios para ver la evolución.
+      </p>
+    )
+  }
+
   const placeIds = Object.keys(byPlace)
 
   function toX(dateStr: string) {
@@ -125,17 +136,23 @@ export function PriceHistoryChart({ records, placeNames }: PriceHistoryChartProp
         })}
 
         {/* X axis labels */}
-        {xTicks.map((d) => (
-          <text
-            key={d}
-            x={toX(d)} y={H - PAD.bottom + 14}
-            textAnchor="middle"
-            fontSize={9}
-            fill="var(--muted)"
-          >
-            {formatDate(d)}
-          </text>
-        ))}
+        {xTicks.map((d) => {
+          const x = toX(d)
+          const isFirst = d === allTimes[0]
+          const isLast = d === allTimes[allTimes.length - 1]
+          const anchor = allTimes.length === 1 ? 'middle' : isFirst ? 'start' : isLast ? 'end' : 'middle'
+          return (
+            <text
+              key={d}
+              x={x} y={H - PAD.bottom + 14}
+              textAnchor={anchor}
+              fontSize={9}
+              fill="var(--muted)"
+            >
+              {formatDate(d)}
+            </text>
+          )
+        })}
 
         {/* X axis line */}
         <line

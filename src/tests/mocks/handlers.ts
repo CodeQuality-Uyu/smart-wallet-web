@@ -2,6 +2,7 @@
 
 import { http, HttpResponse } from 'msw'
 import { Currency, RecurringPaymentStatus } from '@/types/enums'
+import type { CategorySpend, ProductCategorySpend } from '@/types/models'
 
 import { mockExpenses } from './data/expenses'
 import { mockCategories } from './data/categories'
@@ -12,6 +13,7 @@ import { mockMetrics } from './data/metrics'
 import { mockSalaries } from './data/salaries'
 import { mockBudget } from './data/budget'
 import { mockCategoryLimits } from './data/categoryLimits'
+import { mockProductCategoryLimits } from './data/productCategoryLimits'
 import { mockMonthClosings } from './data/monthClosings'
 import { mockProductCategories } from './data/productCategories'
 import { mockBrands } from './data/brands'
@@ -141,6 +143,14 @@ export const handlers = [
       if (idx !== -1) expense.ticketLines.splice(idx, 1)
     }
     return new HttpResponse(null, { status: 204 })
+  }),
+
+  http.post(`${BASE}/expenses/:id/receipt`, async ({ params }) => {
+    const expense = mockExpenses.find((e) => e.id === params['id'])
+    if (!expense) return new HttpResponse(null, { status: 404 })
+    const receiptUrl = `https://mock-storage.example.com/receipts/${params['id']}.jpg`
+    Object.assign(expense, { receiptUrl })
+    return HttpResponse.json({ receiptUrl }, { status: 200 })
   }),
 
   http.post(`${BASE}/expenses/:id/duplicate`, ({ params }) => {
@@ -346,6 +356,15 @@ export const handlers = [
     return HttpResponse.json(mockCategoryLimits)
   }),
 
+  // ─── Product category limits ─────────────────────────────
+  http.get(`${BASE}/product-category-limits`, () => HttpResponse.json(mockProductCategoryLimits)),
+  http.put(`${BASE}/product-category-limits`, async ({ request }) => {
+    const body = await request.json() as Record<string, unknown>
+    for (const key of Object.keys(mockProductCategoryLimits)) delete mockProductCategoryLimits[key]
+    Object.assign(mockProductCategoryLimits, body)
+    return HttpResponse.json(mockProductCategoryLimits)
+  }),
+
   // ─── Metrics ────────────────────────────────────────────
   http.get(`${BASE}/metrics`, ({ request }) => {
     const url = new URL(request.url)
@@ -370,7 +389,7 @@ export const handlers = [
       return null
     }
 
-    function computeMetrics(filtered: typeof mockExpenses) {
+    function computeMetrics(filtered: typeof mockExpenses): { totalUsd: number; totalUyu: number; byCategory: CategorySpend[]; byProductCategory: ProductCategorySpend[] } {
       const totalUsd = filtered.filter((e) => e.currency === 'USD').reduce((s, e) => s + e.amount, 0)
       const totalUyu = filtered.filter((e) => e.currency === 'UYU').reduce((s, e) => s + e.amount, 0)
       const catMap = new Map(mockCategories.map((c) => [c.id, c]))
@@ -390,28 +409,35 @@ export const handlers = [
           return { categoryId: catId, categoryName: cat?.name ?? catId, categoryIcon: cat?.icon ?? '📦', ...totals }
         })
         .sort((a, b) => (b.usd + b.uyu) - (a.usd + a.uyu))
-
-      // byProductCategory — aggregate via ticketLines → product → productCategoryId
-      const prodMap = new Map(mockUserProducts.map((p) => [p.id, p]))
-      const pCatMap = new Map(mockProductCategories.map((pc) => [pc.id, pc]))
-      const byProdCatMap = new Map<string, { usd: number; uyu: number }>()
+      const productMap = new Map(mockUserProducts.map((p) => [p.id, p]))
+      const pcatMap = new Map(mockProductCategories.map((c) => [c.id, c]))
+      const byProductCategoryMap = new Map<string, { usd: number; uyu: number }>()
       for (const exp of filtered) {
         for (const line of exp.ticketLines) {
           if (!line.productId) continue
-          const prod = prodMap.get(line.productId)
-          if (!prod?.productCategoryId) continue
-          const entry = byProdCatMap.get(prod.productCategoryId) ?? { usd: 0, uyu: 0 }
+          const product = productMap.get(line.productId)
+          if (!product) continue
+          const entry = byProductCategoryMap.get(product.productCategoryId) ?? { usd: 0, uyu: 0 }
           if (exp.currency === 'USD') entry.usd += line.amount
           else entry.uyu += line.amount
-          byProdCatMap.set(prod.productCategoryId, entry)
+          byProductCategoryMap.set(product.productCategoryId, entry)
         }
       }
-      const byProductCategory = [...byProdCatMap.entries()]
-        .map(([pcId, totals]) => {
-          const pc = pCatMap.get(pcId)
-          return { productCategoryId: pcId, productCategoryName: pc?.name ?? pcId, productCategoryIcon: pc?.icon ?? '📦', ...totals }
-        })
-        .sort((a, b) => (b.usd + b.uyu) - (a.usd + a.uyu))
+      // Merge dynamic data on top of mock baseline
+      const byProductCategory = mockMetrics.byProductCategory.map((base) => {
+        const dynamic = byProductCategoryMap.get(base.productCategoryId)
+        return dynamic
+          ? { ...base, usd: base.usd + dynamic.usd, uyu: base.uyu + dynamic.uyu }
+          : base
+      })
+      // Add any dynamically found categories not in the mock baseline
+      for (const [pcatId, totals] of byProductCategoryMap.entries()) {
+        if (!byProductCategory.find((b) => b.productCategoryId === pcatId)) {
+          const pcat = pcatMap.get(pcatId)
+          byProductCategory.push({ productCategoryId: pcatId, productCategoryName: pcat?.name ?? pcatId, productCategoryIcon: pcat?.icon ?? '📦', ...totals })
+        }
+      }
+      byProductCategory.sort((a, b) => (b.usd + b.uyu) - (a.usd + a.uyu))
 
       return { totalUsd, totalUyu, byCategory, byProductCategory }
     }
@@ -536,7 +562,11 @@ export const handlers = [
     return HttpResponse.json(cat)
   }),
 
-  http.delete(`${BASE}/product-categories/:id`, () => new HttpResponse(null, { status: 204 })),
+  http.delete(`${BASE}/product-categories/:id`, ({ params }) => {
+    const cat = mockProductCategories.find((c) => c.id === params['id'])
+    if (cat) Object.assign(cat, { active: false, updatedAt: new Date().toISOString() })
+    return new HttpResponse(null, { status: 204 })
+  }),
 
   // ─── Brands ───────────────────────────────────────────────
   http.get(`${BASE}/brands`, ({ request }) => {

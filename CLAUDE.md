@@ -38,7 +38,10 @@ src/
 │       ├── components/
 │       ├── hooks/
 │       └── schemas/      ← Yup schemas + tipos de formulario
-├── pages/                ← componentes de ruta
+├── pages/
+│   └── [PageName]/       ← cada página en su propia carpeta
+│       ├── PageName.tsx
+│       └── PageName.module.css
 ├── components/
 │   ├── ui/               ← primitivos (Button, Modal, FormField…)
 │   └── shared/           ← PageHeader, LoadingSpinner, ErrorMessage
@@ -99,6 +102,13 @@ users/{uid}/
 ---
 
 ## 🔄 Sesión anterior — resumen
+
+### Refactor estructura de pages (2026-04-05)
+- Cada página movida a su propia carpeta: `src/pages/PageName/PageName.tsx` + `PageName.module.css`
+- Router actualizado con rutas explícitas (`@/pages/PageName/PageName`)
+- Fix: `MetricsPage` usaba import relativo `../constants/currencyOptions` → cambiado a `@/constants/currencyOptions`
+- Fix: `EditExpensePage` importaba CSS de `NewExpensePage` → path actualizado al nuevo path cross-folder
+- Fix: `ExpenseDetailPage` tenía declaración duplicada de `updatePosition` (bug preexistente)
 
 ### Locales comunitarios (feature completa)
 - Nuevo modelo: `GlobalPlace { id, name, nameLower, address?, icon?, createdAt }` en `/places`
@@ -161,7 +171,17 @@ Archivos de partida relevantes:
 ## ⚠️ Notas importantes
 
 - **Datos reales en producción** (uso familiar). Toda migración de datos debe ser un script aislado, nunca inline en el código de la app.
-- **Deuda técnica prioritaria**: migrar locales privados existentes al pool global (`TECH_DEBT.md` → sección "Migración de locales privados al pool global"). Requiere índice `nameLower ASC` en `/places` y credenciales de admin.
+- **Deuda técnica prioritaria**: ver `TECH_DEBT.md`. Las más urgentes: (1) migrar locales privados al pool global, (2) cobertura de tests (~21% actual — servicios y hooks casi sin cobertura).
 - **Blaze plan pendiente**: la Cloud Function de pagos auto-recurrentes no puede implementarse hasta migrar Firebase al plan Blaze.
 - Cuando se agrega una nueva colección Firestore, **siempre** actualizar `firestore.rules`.
 - Al implementar un nuevo backend method, **siempre** implementarlo en ambos: `src/backend/firestore/` y `src/backend/msw/`, y agregar el handler en `src/tests/mocks/handlers.ts`.
+
+## Approach
+- Think before acting. Read existing files before writing code.
+- Be concise in output but thorough in reasoning.
+- Prefer editing over rewriting whole files.
+- Do not re-read files you have already read unless the file may have changed.
+- Test your code before declaring done.
+- No sycophantic openers or closing fluff.
+- Keep solutions simple and direct.
+- User instructions always override this file.
