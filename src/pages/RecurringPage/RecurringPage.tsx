@@ -576,15 +576,19 @@ export default function RecurringPage(): React.ReactElement {
                 const symbol = item.currency === Currency.USD ? 'U$S' : '$'
                 return (
                   <div key={item.id} className={styles.upcomingPill}>
-                    <span className={styles.upcomingPillIcon}>{item.icon || '💳'}</span>
-                    <span className={styles.upcomingPillName}>{item.name}</span>
+                    <div className={styles.upcomingPillTop}>
+                      <span className={styles.upcomingPillIcon}>{item.icon || '💳'}</span>
+                      <span className={styles.upcomingPillName}>{item.name}</span>
+                    </div>
                     <span className={styles.upcomingPillAmt}>
                       {symbol} {formatCurrency(item.amount, item.currency).replace(/^[^0-9]+/, '')}
                     </span>
-                    <span className={styles.upcomingPillDate}>{getNextDueDate(item.dueDayOfMonth!)}</span>
-                    <span className={[styles.upcomingPillBadge, item.mode === RecurringMode.Auto ? styles.upcomingPillBadgeAuto : styles.upcomingPillBadgeManual].join(' ')}>
-                      {item.mode === RecurringMode.Auto ? 'AUTO' : 'MANUAL'}
-                    </span>
+                    <div className={styles.upcomingPillBottom}>
+                      <span className={styles.upcomingPillDate}>{item.dueDayOfMonth ? getNextDueDate(item.dueDayOfMonth) : '—'}</span>
+                      <span className={[styles.upcomingPillBadge, item.mode === RecurringMode.Auto ? styles.upcomingPillBadgeAuto : styles.upcomingPillBadgeManual].join(' ')}>
+                        {item.mode === RecurringMode.Auto ? 'AUTO' : 'MANUAL'}
+                      </span>
+                    </div>
                   </div>
                 )
               })}

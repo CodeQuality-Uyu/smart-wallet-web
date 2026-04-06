@@ -218,25 +218,31 @@
   }
   .upcomingPills { display: flex; gap: 12px; flex-wrap: wrap; }
   .upcomingPill {
-    display: flex; align-items: center; gap: 8px;
+    display: flex; flex-direction: column; gap: 6px;
     background: rgba(255,255,255,.08);
     border: 1px solid rgba(255,255,255,.12);
-    border-radius: 16px; padding: 10px 14px;
+    border-radius: 16px; padding: 14px 16px;
     flex: 1; min-width: 160px;
+  }
+  .upcomingPillTop {
+    display: flex; align-items: center; gap: 8px;
   }
   .upcomingPillIcon { font-size: 18px; flex-shrink: 0; }
   .upcomingPillName {
-    font-size: 13px; font-weight: 600; color: #fff; flex: 1; min-width: 0;
+    font-size: 13px; font-weight: 600; color: #fff;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .upcomingPillAmt {
     font-family: var(--font-num);
-    font-size: 14px; font-weight: 700; color: #f5b732; flex-shrink: 0;
+    font-size: 15px; font-weight: 700; color: #f5b732;
   }
-  .upcomingPillDate { font-size: 11px; color: rgba(255,255,255,.5); flex-shrink: 0; }
+  .upcomingPillBottom {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .upcomingPillDate { font-size: 11px; color: rgba(255,255,255,.5); flex: 1; }
   .upcomingPillBadge {
     font-size: 9px; font-weight: 700; letter-spacing: .06em;
-    border-radius: 6px; padding: 2px 7px; flex-shrink: 0;
+    border-radius: 6px; padding: 2px 7px;
   }
   .upcomingPillBadgeAuto { background: rgba(16,185,129,.2); color: #6ee7b7; }
   .upcomingPillBadgeManual { background: rgba(245,183,50,.2); color: #f5b732; }
