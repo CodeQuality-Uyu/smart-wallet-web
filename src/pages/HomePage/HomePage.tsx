@@ -11,7 +11,7 @@ import { useCards } from '@/features/cards/hooks/useCards'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { groupExpensesByDate } from '@/utils/groupByDate'
-import { formatAmount, formatCurrency } from '@/utils/formatCurrency'
+import { formatCurrency, formatAmountNoSymbol } from '@/utils/formatCurrency'
 import { PeriodFilter, Currency, RecurringMode, RecurringPaymentStatus } from '@/types/enums'
 import { useAuth } from '@/app/providers/AuthContext'
 import styles from './HomePage.module.css'
@@ -237,7 +237,7 @@ export default function HomePage(): React.ReactElement {
                     </div>
                     <p className={styles.desktopStatValue}>
                       <span className={styles.desktopAmtSymbol}>{symbol} </span>
-                      {formatAmount(total, currency).replace(/^\$/, '')}
+                      {formatAmountNoSymbol(total, currency)}
                     </p>
                     {deltaPct !== 0 && (
                       <div

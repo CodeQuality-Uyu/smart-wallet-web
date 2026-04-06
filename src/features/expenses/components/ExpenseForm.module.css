@@ -124,6 +124,84 @@
   font-family: inherit;
 }
 
+/* ── Receipt upload ── */
+.receiptField {
+  margin-top: 4px;
+}
+
+.receiptLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+.receiptOptional {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.receiptHiddenInput {
+  display: none;
+}
+
+.receiptBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1.5px dashed var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color .15s, color .15s;
+  width: 100%;
+  justify-content: center;
+}
+
+.receiptBtn:hover {
+  border-color: var(--ind);
+  color: var(--ind);
+}
+
+.receiptAttached {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--cream);
+}
+
+.receiptFileName {
+  font-size: 13px;
+  color: var(--ink);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.receiptClear {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.receiptClear:hover {
+  color: var(--ink);
+}
+
 /* ── Actions ── */
 .actions {
   padding: 14px 20px calc(14px + env(safe-area-inset-bottom));

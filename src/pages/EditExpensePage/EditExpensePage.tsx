@@ -4,10 +4,11 @@ import React from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ExpenseForm } from '@/features/expenses/components/ExpenseForm'
 import { useExpense, useUpdateExpense } from '@/features/expenses/hooks/useExpenses'
+import { expensesService } from '@/services/expensesService'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import type { ExpenseFormValues } from '@/features/expenses/schemas/expenseSchema'
-import styles from './NewExpensePage.module.css'
+import styles from '../NewExpensePage/NewExpensePage.module.css'
 
 export default function EditExpensePage(): React.ReactElement {
   const { id } = useParams<{ id: string }>()
@@ -17,6 +18,9 @@ export default function EditExpensePage(): React.ReactElement {
 
   async function handleSubmit(values: ExpenseFormValues): Promise<void> {
     await updateExpense(values)
+    if (values.receiptFile && id) {
+      await expensesService.uploadReceipt(id, values.receiptFile)
+    }
     navigate(`/expenses/${id}`)
   }
 

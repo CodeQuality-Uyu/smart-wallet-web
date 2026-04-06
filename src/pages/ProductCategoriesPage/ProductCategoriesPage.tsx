@@ -1,98 +1,68 @@
-// src/pages/CategoriesPage.tsx
+// src/pages/ProductCategoriesPage.tsx
 
 import React, { useState, useMemo } from 'react'
 import { Formik, Form } from 'formik'
 import {
-  useCategories,
-  useCreateCategory,
-  useUpdateCategory,
-} from '@/features/categories/hooks/useCategories'
-import {
-  categorySchema,
-  type CategoryFormValues,
-} from '@/features/categories/schemas/categorySchema'
+  useProductCategories,
+  useCreateProductCategory,
+  useUpdateProductCategory,
+  useDeleteProductCategory,
+} from '@/features/products/hooks/useProductCategories'
+import { useProducts } from '@/features/products/hooks/useProducts'
+import { useMetrics } from '@/hooks/useMetrics'
+import { useProductCategoryLimits, useSetProductCategoryLimits } from '@/hooks/useProductCategoryLimits'
+import { productCategorySchema, type ProductCategoryFormValues } from '@/features/products/schemas/productCategorySchema'
 import { FormField, TextInput } from '@/components/ui/FormField'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { PeriodControl } from '@/components/ui/PeriodControl'
-import { useMetrics } from '@/hooks/useMetrics'
-import { useCategoryLimits, useSetCategoryLimits } from '@/hooks/useCategoryLimits'
 import { formatCurrency } from '@/utils/formatCurrency'
 import { PeriodFilter, Currency } from '@/types/enums'
-import type { Category } from '@/types/models'
-import styles from './CategoriesPage.module.css'
+import type { ProductCategory } from '@/types/models'
+import styles from './ProductCategoriesPage.module.css'
 
 const ICON_OPTIONS = [
-  '🍔',
-  '🚌',
-  '🏠',
-  '💊',
-  '🎬',
-  '☕',
-  '✈️',
-  '🎓',
-  '🛒',
-  '💄',
-  '🐾',
-  '🎮',
-  '⚡',
-  '🛠',
-  '📚',
-  '🎵',
-  '🏖',
-  '🍕',
-  '🐶',
-  '🧘',
-  '💻',
-  '🎁',
-  '🔧',
-  '🧾',
+  '🛒','🥛','🥦','🍎','🍞','🥩','🐟','🧃','🫙','🍫','🧴','🧹',
+  '💊','🐾','📦','🍳','🧀','🥚','🍗','🌽','🥕','🍋','🧆','🥜',
 ]
 
 const COLOR_OPTIONS = [
-  '#ef4444',
-  '#f97316',
-  '#f5b732',
-  '#10b981',
-  '#3b82f6',
-  '#8b5cf6',
-  '#ec4899',
-  '#6b7280',
-  '#14b8a6',
-  '#84cc16',
-  '#f43f5e',
-  '#a855f7',
-  '#0ea5e9',
-  '#fb923c',
-  '#22c55e',
-  '#64748b',
-  '#e11d48',
-  '#7c3aed',
-  '#0d9488',
-  '#ca8a04',
-  '#1d4ed8',
-  '#be185d',
-  '#15803d',
-  '#374151',
+  '#ef4444','#f97316','#f5b732','#10b981','#3b82f6','#8b5cf6',
+  '#ec4899','#6b7280','#14b8a6','#84cc16','#f43f5e','#a855f7',
+  '#0ea5e9','#fb923c','#22c55e','#64748b','#e11d48','#7c3aed',
+  '#0d9488','#ca8a04','#1d4ed8','#be185d','#15803d','#374151',
 ]
 
-export default function CategoriesPage(): React.ReactElement {
-  const { data: categories = [], isLoading } = useCategories()
-  const { mutateAsync: createCat } = useCreateCategory()
-
-  const [editing, setEditing] = useState<Category | null>(null)
+export default function ProductCategoriesPage(): React.ReactElement {
+  const { data: categories = [], isLoading } = useProductCategories()
+  const { data: products = [] } = useProducts()
+  const { mutateAsync: createCat } = useCreateProductCategory()
+  const { mutateAsync: deleteCat } = useDeleteProductCategory()
+  const [editing, setEditing] = useState<ProductCategory | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [period, setPeriod] = useState(PeriodFilter.Month)
   const [search, setSearch] = useState('')
-  const { mutateAsync: updateCat } = useUpdateCategory(editing?.id ?? '')
+  const { mutateAsync: updateCat } = useUpdateProductCategory(editing?.id ?? '')
   const { data: metrics } = useMetrics(period)
-  const { data: categoryLimits = {} } = useCategoryLimits()
-  const { mutateAsync: setLimits } = useSetCategoryLimits()
+  const { data: categoryLimits = {} } = useProductCategoryLimits()
+  const { mutateAsync: setLimits } = useSetProductCategoryLimits()
 
+  // Count products per category
+  const countMap = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const p of products) {
+      if (p.active) {
+        map.set(p.productCategoryId, (map.get(p.productCategoryId) ?? 0) + 1)
+      }
+    }
+    return map
+  }, [products])
+
+  // Spending per product category from metrics
   const spendMap = useMemo(() => {
-    const map = new Map<string, { usd: number; uyu: number; expenseCount: number }>()
-    for (const c of metrics?.byCategory ?? []) {
-      map.set(c.categoryId, { usd: c.usd, uyu: c.uyu, expenseCount: c.expenseCount })
+    const map = new Map<string, { usd: number; uyu: number }>()
+    for (const c of metrics?.byProductCategory ?? []) {
+      map.set(c.productCategoryId, { usd: c.usd, uyu: c.uyu })
     }
     return map
   }, [metrics])
@@ -103,16 +73,40 @@ export default function CategoriesPage(): React.ReactElement {
     return categories.filter((c) => c.name.toLowerCase().includes(q))
   }, [categories, search])
 
+  // Most used category (by product count)
+  const mostUsed = useMemo(() => {
+    let best: ProductCategory | null = null
+    let bestCount = 0
+    for (const cat of categories) {
+      const count = countMap.get(cat.id) ?? 0
+      if (count > bestCount) { bestCount = count; best = cat }
+    }
+    return best
+  }, [categories, countMap])
+
+  const catsWithProducts = useMemo(
+    () => categories.filter((c) => (countMap.get(c.id) ?? 0) > 0).length,
+    [categories, countMap],
+  )
+
   if (isLoading) return <LoadingSpinner fullPage />
 
   async function handleSubmit(
-    values: CategoryFormValues,
-    { setStatus }: { setStatus: (status: string) => void }
+    values: ProductCategoryFormValues,
+    { setStatus }: { setStatus: (s: string) => void },
   ): Promise<void> {
+    const nameLower = values.name.trim().toLowerCase()
+    const duplicate = categories.find(
+      (c) => c.name.toLowerCase() === nameLower && c.id !== editing?.id,
+    )
+    if (duplicate) {
+      setStatus(`Ya existe una categoría llamada "${duplicate.name}"`)
+      return
+    }
     try {
       const catId = editing
         ? (await updateCat(values), editing.id)
-        : (await createCat({ ...values, active: true })).id
+        : (await createCat(values)).id
       const prev = categoryLimits[catId] ?? {}
       await setLimits({
         ...categoryLimits,
@@ -125,20 +119,16 @@ export default function CategoriesPage(): React.ReactElement {
       setShowForm(false)
       setEditing(null)
     } catch (err) {
-      const msg =
-        err instanceof Error
-          ? err.message
-          : ((err as { message?: string })?.message ?? 'Error al guardar')
-      setStatus(msg)
+      setStatus(err instanceof Error ? err.message : 'Error al guardar')
     }
   }
 
-  function startEdit(cat: Category): void {
+  function startEdit(cat: ProductCategory): void {
     setEditing(cat)
     setShowForm(true)
   }
 
-  const initialValues: CategoryFormValues = {
+  const initialValues: ProductCategoryFormValues = {
     name: editing?.name ?? '',
     icon: editing?.icon ?? '',
     color: editing?.color ?? '',
@@ -151,15 +141,12 @@ export default function CategoriesPage(): React.ReactElement {
   return (
     <div>
       <PageHeader
-        title="Categorías"
-        subtitle="Organizá tus gastos en categorías para entender mejor tus hábitos financieros"
+        title="Categorías de productos"
+        subtitle="Organizá tus productos en categorías para encontrarlos más fácil"
         rightAction={
           <button
             className={styles.newBtn}
-            onClick={() => {
-              setEditing(null)
-              setShowForm(true)
-            }}
+            onClick={() => { setEditing(null); setShowForm(true) }}
           >
             + Nueva categoría
           </button>
@@ -174,15 +161,13 @@ export default function CategoriesPage(): React.ReactElement {
           </div>
           <div className={styles.statCard}>
             <span className={styles.statLabel}>Más usada</span>
-            <span className={styles.statValue}>{metrics?.byCategory[0]?.categoryIcon ?? '—'}</span>
-            <span className={styles.statSub}>
-              {metrics?.byCategory[0]?.categoryName ?? 'Sin datos'}
-            </span>
+            <span className={styles.statValue}>{mostUsed?.icon ?? '—'}</span>
+            <span className={styles.statSub}>{mostUsed?.name ?? 'Sin datos'}</span>
           </div>
           <div className={styles.statCard}>
-            <span className={styles.statLabel}>Con gastos</span>
-            <span className={styles.statValue}>{metrics?.byCategory.length ?? 0}</span>
-            <span className={styles.statSub}>en el período</span>
+            <span className={styles.statLabel}>Con productos</span>
+            <span className={styles.statValue}>{catsWithProducts}</span>
+            <span className={styles.statSub}>de {categories.length}</span>
           </div>
         </div>
 
@@ -209,10 +194,12 @@ export default function CategoriesPage(): React.ReactElement {
         {/* Inline edit/create form */}
         {showForm && (
           <div className={styles.form}>
-            <h2 className={styles.formTitle}>{editing ? 'Editar categoría' : 'Nueva categoría'}</h2>
+            <h2 className={styles.formTitle}>
+              {editing ? 'Editar categoría' : 'Nueva categoría'}
+            </h2>
             <Formik
               initialValues={initialValues}
-              validationSchema={categorySchema}
+              validationSchema={productCategorySchema}
               onSubmit={handleSubmit}
               enableReinitialize
             >
@@ -222,19 +209,12 @@ export default function CategoriesPage(): React.ReactElement {
                   <div className={styles.formPickersRow}>
                     <div className={styles.formPickerGroup}>
                       <p className={styles.formPickerLabel}>Ícono</p>
-                      <div
-                        className={styles.iconPicker}
-                        role="group"
-                        aria-label="Seleccionar ícono"
-                      >
+                      <div className={styles.iconPicker} role="group" aria-label="Seleccionar ícono">
                         {ICON_OPTIONS.map((ico) => (
                           <button
                             key={ico}
                             type="button"
-                            className={[
-                              styles.icoBtn,
-                              values.icon === ico ? styles.icoBtnActive : '',
-                            ].join(' ')}
+                            className={[styles.icoBtn, values.icon === ico ? styles.icoBtnActive : ''].join(' ')}
                             onClick={() => void setFieldValue('icon', ico)}
                             aria-label={ico}
                             aria-pressed={values.icon === ico}
@@ -246,19 +226,12 @@ export default function CategoriesPage(): React.ReactElement {
                     </div>
                     <div className={styles.formPickerGroup}>
                       <p className={styles.formPickerLabel}>Color</p>
-                      <div
-                        className={styles.colorPicker}
-                        role="group"
-                        aria-label="Seleccionar color"
-                      >
+                      <div className={styles.colorPicker} role="group" aria-label="Seleccionar color">
                         {COLOR_OPTIONS.map((col) => (
                           <button
                             key={col}
                             type="button"
-                            className={[
-                              styles.colorBtn,
-                              values.color === col ? styles.colorBtnActive : '',
-                            ].join(' ')}
+                            className={[styles.colorBtn, values.color === col ? styles.colorBtnActive : ''].join(' ')}
                             style={{ background: col, '--swatch-color': col } as React.CSSProperties}
                             onClick={() => void setFieldValue('color', col)}
                             aria-label={col}
@@ -271,10 +244,9 @@ export default function CategoriesPage(): React.ReactElement {
 
                   {/* Nombre */}
                   <FormField name="name" label="Nombre">
-                    <TextInput name="name" placeholder="ej. Comida" />
+                    <TextInput name="name" placeholder="ej. Lácteos" />
                   </FormField>
 
-                  {/* Límites */}
                   <FormField name="limitUYU" label="Límite UYU">
                     <TextInput name="limitUYU" type="number" min={0} placeholder="Sin límite" />
                   </FormField>
@@ -288,23 +260,28 @@ export default function CategoriesPage(): React.ReactElement {
                     <button
                       type="button"
                       className={styles.formCancelBtn}
-                      onClick={() => {
+                      onClick={() => { setShowForm(false); setEditing(null) }}
+                    >
+                      Cancelar
+                    </button>
+                    <button type="submit" className={styles.formSaveBtn} disabled={isSubmitting}>
+                      {isSubmitting ? 'Guardando…' : editing ? 'Guardar' : 'Crear categoría'}
+                    </button>
+                  </div>
+                  {editing && (
+                    <button
+                      type="button"
+                      className={styles.formDeleteBtn}
+                      onClick={async () => {
+                        if (!window.confirm(`¿Eliminar la categoría "${editing.name}"?`)) return
+                        await deleteCat(editing.id)
                         setShowForm(false)
                         setEditing(null)
                       }}
                     >
-                      Cancelar
+                      Eliminar categoría
                     </button>
-                    <div className={styles.formActionsRight}>
-                      <button type="submit" className={styles.formSaveBtn} disabled={isSubmitting}>
-                        {isSubmitting
-                          ? 'Guardando…'
-                          : editing
-                            ? 'Guardar cambios'
-                            : 'Crear categoría'}
-                      </button>
-                    </div>
-                  </div>
+                  )}
                 </Form>
               )}
             </Formik>
@@ -315,34 +292,33 @@ export default function CategoriesPage(): React.ReactElement {
 
         <div className={styles.grid}>
           {filteredCategories.map((cat) => {
+            const count = countMap.get(cat.id) ?? 0
             const spend = spendMap.get(cat.id)
             return (
-              <div key={cat.id} className={styles.tile}>
+              <div key={cat.id} className={styles.tile} style={cat.color ? { borderColor: cat.color } : undefined}>
                 <div className={styles.tileIconWrap}>
                   <span className={styles.tileIcon}>{cat.icon}</span>
                 </div>
                 <div className={styles.tileInfo}>
                   <span className={styles.tileName}>{cat.name}</span>
-                  {spend ? (
+                  {count > 0 ? (
                     <div className={styles.tileSpend}>
-                      <span>
-                        {spend.expenseCount} gasto{spend.expenseCount !== 1 ? 's' : ''}
-                      </span>
-                      {(spend.uyu > 0 || spend.usd > 0) && <span>·</span>}
-                      {spend.uyu > 0 && (
+                      <span>{count} producto{count !== 1 ? 's' : ''}</span>
+                      {spend && (spend.uyu > 0 || spend.usd > 0) && <span>·</span>}
+                      {spend?.uyu && spend.uyu > 0 ? (
                         <span className={styles.tileSpendAmount}>
                           {formatCurrency(spend.uyu, Currency.UYU)}
                         </span>
-                      )}
-                      {spend.uyu > 0 && spend.usd > 0 && <span>·</span>}
-                      {spend.usd > 0 && (
+                      ) : null}
+                      {spend?.uyu && spend.uyu > 0 && spend?.usd && spend.usd > 0 ? <span>·</span> : null}
+                      {spend?.usd && spend.usd > 0 ? (
                         <span className={styles.tileSpendAmount}>
                           {formatCurrency(spend.usd, Currency.USD)}
                         </span>
-                      )}
+                      ) : null}
                     </div>
                   ) : (
-                    <span className={styles.tileEmpty}>Sin gastos</span>
+                    <span className={styles.tileEmpty}>Sin productos</span>
                   )}
                 </div>
                 <button
@@ -360,15 +336,16 @@ export default function CategoriesPage(): React.ReactElement {
           )}
         </div>
 
-        {/* Límites por categoría */}
+        {/* Limits section */}
         {(() => {
-          const byCategory = metrics?.byCategory ?? []
           const configuredIds = Object.keys(categoryLimits).filter((id) => {
             const e = categoryLimits[id]
             return (e?.[Currency.UYU] ?? 0) > 0 || (e?.[Currency.USD] ?? 0) > 0
           })
           const configuredCount = configuredIds.length
-          const catsWithLimit = byCategory.filter((c) => configuredIds.includes(c.categoryId))
+          const catsWithLimit = (metrics?.byProductCategory ?? []).filter((c) =>
+            configuredIds.includes(c.productCategoryId),
+          )
           return (
             <div className={styles.limitsCard}>
               <div className={styles.limitsHeader}>
@@ -385,44 +362,34 @@ export default function CategoriesPage(): React.ReactElement {
                   <span className={styles.limitsEmptyIcon}>🎯</span>
                   <p className={styles.limitsEmptyTitle}>Sin límites configurados</p>
                   <p className={styles.limitsEmptyHint}>
-                    Hacé click en ✏ de cualquier categoría para configurar tu primer límite mensual.
+                    Tocá ✏ en cualquier categoría para configurar un límite mensual.
                   </p>
                 </div>
               )}
               {catsWithLimit.map((c, idx) => {
-                const entry = categoryLimits[c.categoryId] ?? {}
+                const entry = categoryLimits[c.productCategoryId] ?? {}
                 const totalCats = catsWithLimit.length
                 const colorPct = idx / (totalCats - 1 || 1)
                 const color = colorPct < 0.33 ? '#10b981' : colorPct < 0.66 ? '#f5b732' : '#ef4444'
                 const limitUyu = entry[Currency.UYU] ?? 0
                 const limitUsd = entry[Currency.USD] ?? 0
-                const spentUyu = c.uyu
-                const spentUsd = c.usd
-                const pctUyu =
-                  limitUyu > 0 ? Math.min(Math.round((spentUyu / limitUyu) * 100), 100) : 0
-                const pctUsd =
-                  limitUsd > 0 ? Math.min(Math.round((spentUsd / limitUsd) * 100), 100) : 0
+                const pctUyu = limitUyu > 0 ? Math.min(Math.round((c.uyu / limitUyu) * 100), 100) : 0
+                const pctUsd = limitUsd > 0 ? Math.min(Math.round((c.usd / limitUsd) * 100), 100) : 0
                 return (
-                  <div key={c.categoryId} className={styles.limitRow}>
-                    <span className={styles.limitIcon}>{c.categoryIcon}</span>
+                  <div key={c.productCategoryId} className={styles.limitRow}>
+                    <span className={styles.limitIcon}>{c.productCategoryIcon}</span>
                     <div className={styles.limitInfo}>
-                      <span className={styles.limitName}>{c.categoryName}</span>
+                      <span className={styles.limitName}>{c.productCategoryName}</span>
                       {limitUyu > 0 && (
                         <>
                           <div className={styles.limitTopRow}>
                             <span className={styles.limitAmt}>
-                              UYU: {formatCurrency(spentUyu, Currency.UYU)} /{' '}
-                              {formatCurrency(limitUyu, Currency.UYU)}
+                              UYU: {formatCurrency(c.uyu, Currency.UYU)} / {formatCurrency(limitUyu, Currency.UYU)}
                             </span>
-                            <span className={styles.limitPct} style={{ color }}>
-                              {pctUyu}%
-                            </span>
+                            <span className={styles.limitPct} style={{ color }}>{pctUyu}%</span>
                           </div>
                           <div className={styles.limitBarTrack}>
-                            <div
-                              className={styles.limitBarFill}
-                              style={{ width: `${pctUyu}%`, background: color }}
-                            />
+                            <div className={styles.limitBarFill} style={{ width: `${pctUyu}%`, background: color }} />
                           </div>
                         </>
                       )}
@@ -430,18 +397,12 @@ export default function CategoriesPage(): React.ReactElement {
                         <>
                           <div className={styles.limitTopRow}>
                             <span className={styles.limitAmt}>
-                              USD: {formatCurrency(spentUsd, Currency.USD)} /{' '}
-                              {formatCurrency(limitUsd, Currency.USD)}
+                              USD: {formatCurrency(c.usd, Currency.USD)} / {formatCurrency(limitUsd, Currency.USD)}
                             </span>
-                            <span className={styles.limitPct} style={{ color }}>
-                              {pctUsd}%
-                            </span>
+                            <span className={styles.limitPct} style={{ color }}>{pctUsd}%</span>
                           </div>
                           <div className={styles.limitBarTrack}>
-                            <div
-                              className={styles.limitBarFill}
-                              style={{ width: `${pctUsd}%`, background: color }}
-                            />
+                            <div className={styles.limitBarFill} style={{ width: `${pctUsd}%`, background: color }} />
                           </div>
                         </>
                       )}
@@ -457,6 +418,14 @@ export default function CategoriesPage(): React.ReactElement {
             </div>
           )
         })()}
+
+        {/* Mobile add button */}
+        <button
+          className={styles.addBtn}
+          onClick={() => { setEditing(null); setShowForm(true) }}
+        >
+          ＋ Agregar categoría
+        </button>
       </div>
     </div>
   )

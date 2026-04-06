@@ -202,6 +202,9 @@ export interface ICategoryLimitsBackend {
   set(limits: CategoryLimits): Promise<CategoryLimits>
 }
 
+// ─── Product category limits ──────────────────────────────
+// Reuses ICategoryLimitsBackend — same shape, different storage key
+
 // ─── Salaries ─────────────────────────────────────────────
 
 export interface Salary {
@@ -279,6 +282,17 @@ export interface IProductsBackend {
   getPriceHistory(globalProductId: string): Promise<ProductPriceRecord[]>
   getPriceByPlace(globalProductId: string): Promise<PriceByPlace[]>
   addPriceRecord(payload: CreateProductPriceRecordPayload): Promise<ProductPriceRecord>
+  updatePriceRecord(id: string, payload: { unitPrice: number; currency: Currency }): Promise<ProductPriceRecord>
+}
+
+// ─── Notifications ────────────────────────────────────────
+
+export interface INotificationsBackend {
+  list(): Promise<Notification[]>
+  markRead(id: string): Promise<Notification>
+  markAllRead(): Promise<void>
+  getPrefs(): Promise<NotificationPrefs>
+  setPrefs(prefs: NotificationPrefs): Promise<NotificationPrefs>
 }
 
 // ─── Notifications ────────────────────────────────────────

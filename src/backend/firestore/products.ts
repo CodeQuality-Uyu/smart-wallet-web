@@ -7,6 +7,7 @@ import {
   collection, getDocs, addDoc, doc, updateDoc, getDoc, query, orderBy, where, limit,
 } from 'firebase/firestore'
 import { firebaseAuth, firestore } from './config'
+import type { Currency } from '@/types/enums'
 import type {
   IProductsBackend,
   GlobalProductSuggestion,
@@ -57,7 +58,7 @@ export const firestoreProductsBackend: IProductsBackend = {
 
   async searchGlobal(queryStr: string): Promise<GlobalProductSuggestion[]> {
     if (queryStr.length < 2) return []
-    requireUid()
+    const uid = requireUid()
     const lower = queryStr.toLowerCase()
     const upper = lower + '\uf8ff'
     const q = query(
@@ -68,21 +69,38 @@ export const firestoreProductsBackend: IProductsBackend = {
       limit(8),
     )
     const snap = await getDocs(q)
-    return snap.docs.map((d) => {
-      const data = d.data()
-      return {
-        id: d.id,
-        name: data['name'] as string,
-        pricingType: data['pricingType'],
-        weightUnit: data['weightUnit'],
-        brandId: data['brandId'],
-        lastPlaceId: data['lastPlaceId'],
-        lastPlaceName: data['lastPlaceName'],
-        lastUnitPrice: data['lastUnitPrice'],
-        lastCurrency: data['lastCurrency'],
-        lastRecordedAt: data['lastRecordedAt'],
-      } as GlobalProductSuggestion
-    })
+    const raw = snap.docs.map((d) => ({ id: d.id, ...d.data() })) as Array<Record<string, unknown> & { id: string }>
+
+    // Collect unique brandIds and placeIds to resolve names
+    const brandIds  = [...new Set(raw.map((r) => r['brandId'] as string).filter(Boolean))]
+    const placeIds  = [...new Set(raw.map((r) => r['lastPlaceId'] as string).filter(Boolean))]
+
+    // Fetch brands and places in parallel
+    const [brandSnaps, globalPlaceSnaps, personalPlaceSnaps] = await Promise.all([
+      brandIds.length  ? Promise.all(brandIds.map((id) => getDoc(doc(firestore, 'brands', id)))) : Promise.resolve([]),
+      placeIds.length  ? Promise.all(placeIds.map((id) => getDoc(doc(firestore, 'places', id)))) : Promise.resolve([]),
+      placeIds.length  ? Promise.all(placeIds.map((id) => getDoc(doc(firestore, 'users', uid, 'places', id)))) : Promise.resolve([]),
+    ])
+
+    const brandNames  = new Map(brandSnaps.filter((s) => s.exists()).map((s) => [s.id, s.data()!['name'] as string]))
+    const placeNames  = new Map([
+      ...personalPlaceSnaps.filter((s) => s.exists()).map((s) => [s.id, s.data()!['name'] as string] as [string, string]),
+      ...globalPlaceSnaps.filter((s) => s.exists()).map((s) => [s.id, s.data()!['name'] as string] as [string, string]),
+    ])
+
+    return raw.map((r) => ({
+      id: r.id,
+      name: r['name'] as string,
+      pricingType: r['pricingType'],
+      weightUnit: r['weightUnit'],
+      brandId: r['brandId'] as string | undefined,
+      brandName: r['brandId'] ? brandNames.get(r['brandId'] as string) : undefined,
+      lastPlaceId: r['lastPlaceId'] as string | undefined,
+      lastPlaceName: r['lastPlaceId'] ? placeNames.get(r['lastPlaceId'] as string) : undefined,
+      lastUnitPrice: r['lastUnitPrice'] as number | undefined,
+      lastCurrency: r['lastCurrency'],
+      lastRecordedAt: r['lastRecordedAt'] as string | undefined,
+    } as GlobalProductSuggestion))
   },
 
   async create(payload: CreateProductPayload): Promise<Product> {
@@ -190,16 +208,21 @@ export const firestoreProductsBackend: IProductsBackend = {
 
     // Denormalize last price info onto global product for searchGlobal suggestions
     const globalRef = doc(firestore, 'products', payload.productId)
-    const placeSnap = await getDoc(doc(firestore, 'places', payload.placeId)).catch(() => null)
-    const placeName = placeSnap?.data()?.['name'] as string | undefined
     await updateDoc(globalRef, {
       lastPlaceId: payload.placeId,
-      lastPlaceName: placeName ?? payload.placeId,
       lastUnitPrice: payload.unitPrice,
       lastCurrency: payload.currency,
       lastRecordedAt: payload.recordedAt,
     }).catch(() => { /* ignore if global product not found */ })
 
     return { id: ref.id, ...data }
+  },
+
+  async updatePriceRecord(id: string, payload: { unitPrice: number; currency: Currency }): Promise<ProductPriceRecord> {
+    requireUid()
+    const ref = doc(firestore, 'priceHistory', id)
+    await updateDoc(ref, payload)
+    const snap = await getDoc(ref)
+    return { id: snap.id, ...snap.data() } as ProductPriceRecord
   },
 }
