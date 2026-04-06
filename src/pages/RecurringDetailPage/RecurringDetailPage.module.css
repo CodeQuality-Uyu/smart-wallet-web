@@ -1,6 +1,14 @@
 /* src/pages/RecurringDetailPage.module.css */
 
+/* ── Responsive wrappers ── */
+.mobileOnly  { display: block; }
+.desktopOnly { display: none; }
+
 .page { display: flex; flex-direction: column; }
+
+/* ════════════════════════════════════════
+   MOBILE
+════════════════════════════════════════ */
 
 .header {
   background: linear-gradient(155deg, var(--g800), var(--g600));
@@ -35,8 +43,6 @@
 .pausedText { color: var(--muted); }
 .activeText { color: var(--g600); font-weight: 600; }
 
-.confirmSection { padding: 0 20px 16px; }
-.confirmTitle { font-family: var(--font-head); font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 12px; }
 .uploadArea { border: 2px dashed var(--border); border-radius: var(--radius); padding: 14px; text-align: center; font-size: 12px; color: var(--muted); margin-bottom: 12px; }
 
 .historySection { padding: 0 20px 16px; }
@@ -54,8 +60,7 @@
 .histCheck { width: 20px; height: 20px; border-radius: 50%; background: var(--g50); color: var(--g600); font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
 .emptyHistory { font-size: 12px; color: var(--muted); padding: 8px 0; }
 
-/* ─── Edit form ─────────────────────────────────────────── */
-
+/* ─── Edit form (mobile) ─── */
 .editHeader {
   display: flex; align-items: center; gap: 12px;
   padding: 14px 20px; border-bottom: 1px solid var(--border);
@@ -74,7 +79,7 @@
   background: #fff; border: 1.5px solid var(--border);
   font-size: 17px; display: flex; align-items: center; justify-content: center; cursor: pointer;
 }
-.icoBtnActive { border-color: var(--ind); background: var(--ind-lt); box-shadow: 0 0 0 2px rgba(79,70,229,.18); }
+.icoBtnActive { border-color: var(--gold); background: var(--gold-lt); box-shadow: 0 0 0 2px rgba(196,125,16,.18); }
 
 .modeSelector { display: flex; gap: 8px; }
 .modeOpt {
@@ -82,7 +87,201 @@
   border: 1.5px solid var(--border); text-align: center;
   cursor: pointer; font-size: 12px; font-weight: 600; color: var(--muted); font-family: inherit;
 }
-.modeOptActive { border-color: var(--ind); background: var(--ind-lt); color: var(--ind); }
+.modeOptActive { border-color: var(--gold-dk); background: var(--gold-lt); color: var(--gold-dk); }
 
 .createHint { font-size: 11px; color: var(--muted); margin-top: 5px; padding-left: 2px; }
-.createLink { color: var(--ind); font-weight: 600; text-decoration: none; }
+.createLink { color: var(--gold-dk); font-weight: 600; text-decoration: none; }
+
+/* Mobile/desktop form field toggling */
+.mobileFormFields  { display: block; }
+.desktopFormFields { display: none; }
+
+/* ════════════════════════════════════════
+   DESKTOP  (≥768px)
+════════════════════════════════════════ */
+@media (min-width: 768px) {
+  .mobileOnly  { display: none; }
+  .desktopOnly { display: block; }
+
+  .mobileFormFields  { display: none; }
+  .desktopFormFields { display: block; }
+
+  /* ── Wrapper ── */
+  .dkWrap { padding: 32px 40px 48px; }
+
+  /* ── Top bar: title + amount + edit button ── */
+  .dkTopBar {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 20px; margin-bottom: 24px;
+  }
+  .dkTopLeft { flex: 1; min-width: 0; }
+  .dkTopRight { display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+  .dkPageTitle {
+    font-family: var(--font-head);
+    font-size: 22px; font-weight: 700; color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .dkPageDesc { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+  .dkEditTopBtn {
+    padding: 8px 20px; border-radius: 12px;
+    border: 1px solid var(--border); cursor: pointer;
+    background: #fff; color: var(--ink);
+    font-size: 13px; font-weight: 600; font-family: inherit;
+    transition: border-color .15s, background .15s;
+  }
+  .dkEditTopBtn:hover { border-color: var(--g500); background: var(--g50, #f0fdf4); }
+
+  /* ── Pending alert (desktop) ── */
+  .dkPendingAlert {
+    display: flex; align-items: center; gap: 12px;
+    background: #fffbeb; border: 1px solid #fde68a;
+    border-radius: 16px; padding: 14px 20px; margin-bottom: 20px;
+  }
+  .dkPendingIcon { font-size: 20px; flex-shrink: 0; }
+  .dkPendingTitle { font-size: 13px; font-weight: 700; color: #92400e; }
+  .dkPendingSub { font-size: 11px; color: #a16207; margin-top: 2px; }
+  .dkPendingAction {
+    margin-left: auto; flex-shrink: 0;
+    background: none; border: 1.5px solid #e09422; border-radius: 10px;
+    padding: 6px 14px; font-size: 12px; font-weight: 600;
+    color: #b45309; cursor: pointer; font-family: inherit;
+    transition: background .15s;
+  }
+  .dkPendingAction:hover { background: rgba(245,183,50,.1); }
+
+  /* ── Main card ── */
+  .dkMainCard {
+    background: #fff; border: 1px solid var(--border);
+    border-radius: 24px; overflow: hidden;
+    margin-bottom: 16px;
+  }
+
+  .dkHeroBadges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .dkBadge {
+    font-size: 10px; font-weight: 700; letter-spacing: .04em;
+    border-radius: 8px; padding: 3px 10px;
+  }
+  .dkBadgeAuto { background: rgba(16,185,129,.12); color: #059669; }
+  .dkBadgeManual { background: rgba(245,183,50,.15); color: #b45309; }
+  .dkBadgeFreq { background: var(--cream, #f5f0e8); color: var(--muted); font-size: 10px; font-weight: 700; border-radius: 8px; padding: 3px 10px; }
+  .dkBadgeStatus { font-size: 10px; font-weight: 700; border-radius: 8px; padding: 3px 10px; }
+  .dkBadgeActive { background: rgba(16,185,129,.1); color: #059669; }
+  .dkBadgePaused { background: #f1f5f9; color: var(--muted); }
+
+  .dkHeroAmount { display: flex; align-items: baseline; gap: 4px; }
+  .dkAmtNumber {
+    font-family: var(--font-num);
+    font-size: 26px; font-weight: 700; color: var(--ink);
+    letter-spacing: -.02em;
+  }
+  .dkAmtPeriod { font-size: 14px; color: var(--muted); font-weight: 500; }
+
+  /* Info list — one row per field */
+  .dkInfoList { padding: 0; }
+  .dkInfoItem {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 13px 28px; border-bottom: 1px solid var(--border);
+  }
+  .dkInfoItem:last-child { border-bottom: none; }
+  .dkInfoLabel {
+    font-size: 12px; color: var(--muted); font-weight: 500;
+  }
+  .dkInfoValue { font-size: 14px; font-weight: 500; color: var(--ink); }
+
+  /* ── History card ── */
+  .dkHistoryCard {
+    background: #fff; border: 1px solid var(--border);
+    border-radius: 24px; overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .dkHistHeader {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 20px; border-bottom: 1px solid var(--border);
+  }
+  .dkHistTitle {
+    font-family: var(--font-head);
+    font-size: 14px; font-weight: 700; color: var(--ink);
+  }
+  .dkConfirmBtn {
+    font-size: 11px; font-weight: 600; padding: 5px 12px;
+    border-radius: 99px; border: 1.5px solid var(--g500);
+    background: none; color: var(--g600); cursor: pointer;
+    font-family: inherit; transition: background .15s;
+  }
+  .dkConfirmBtn:hover:not(:disabled) { background: var(--g50); }
+  .dkConfirmBtn:disabled { border-color: var(--border); color: var(--muted); cursor: default; }
+
+  .dkHistList { padding: 4px 0; }
+  .dkHistRow {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 20px; border-bottom: 1px solid var(--border);
+    transition: background .1s;
+  }
+  .dkHistRow:last-child { border-bottom: none; }
+  .dkHistRow:hover { background: var(--cream, #faf8f5); }
+  .dkHistCheck {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--g50); color: var(--g600);
+    font-size: 10px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .dkHistDate { font-size: 13px; color: var(--muted); flex: 1; }
+  .dkHistAmt {
+    font-family: var(--font-num);
+    font-size: 14px; font-weight: 700; color: var(--ink); flex-shrink: 0;
+  }
+  .dkHistEmpty { font-size: 13px; color: var(--muted); padding: 24px 20px; text-align: center; }
+
+  /* ── Pause / activate button ── */
+  .dkPauseBtn {
+    width: 100%; padding: 14px;
+    border-radius: 16px; border: 1.5px solid var(--border);
+    background: #fff; color: var(--muted);
+    font-family: var(--font-head); font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all .15s;
+  }
+  .dkPauseBtn:hover { border-color: var(--rose, #f43f5e); color: var(--rose, #f43f5e); background: #fff5f6; }
+  .dkPauseBtnActivate { border-color: var(--g500); color: var(--g600); }
+  .dkPauseBtnActivate:hover { background: var(--g50, #f0fdf4); border-color: var(--g600); }
+
+  /* ── Desktop edit ── */
+  .dkEditWrap { padding: 32px 40px 48px; }
+  .dkBreadcrumb { margin-bottom: 20px; }
+  .dkEditCard {
+    background: #fff; border: 1px solid var(--border);
+    border-radius: 24px; padding: 28px 32px;
+    max-width: 720px;
+  }
+  .dkEditCardTitle {
+    font-family: var(--font-head);
+    font-size: 18px; font-weight: 700; color: var(--ink);
+    margin-bottom: 24px;
+  }
+
+  /* Desktop form grid */
+  .dkFormGrid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  }
+  .dkFormSpan2 { grid-column: span 2; }
+
+  .dkToggle { display: flex; gap: 8px; }
+  .dkToggleOpt {
+    flex: 1; padding: 8px 12px; border-radius: 10px;
+    border: 1.5px solid var(--border); text-align: center;
+    cursor: pointer; font-size: 13px; font-weight: 600; color: var(--muted);
+    font-family: inherit; transition: all .15s;
+  }
+  .dkToggleOptActive {
+    border-color: #f5b732;
+    background: rgba(245,183,50,.1);
+    color: #b45309;
+  }
+
+  /* Desktop inline form overrides */
+  .dkHistoryCard .inlineForm {
+    margin: 0; border-radius: 0;
+    border-left: none; border-right: none;
+    border-top: none;
+  }
+}

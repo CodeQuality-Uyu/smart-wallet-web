@@ -54,7 +54,21 @@ function resolveCurrentMonthStatus(rec: RecurringExpense): RecurringPaymentStatu
 }
 
 function toRecurring(id: string, data: Record<string, unknown>): RecurringExpense {
-  const rec = { id, ...data, paymentHistory: (data['paymentHistory'] ?? []) as RecurringExpense['paymentHistory'] } as RecurringExpense
+  // Backward compat: documents written before the categoryIds migration
+  // may still have the old singular `categoryId` field.
+  const categoryIds: string[] =
+    Array.isArray(data['categoryIds'])
+      ? (data['categoryIds'] as string[])
+      : typeof data['categoryId'] === 'string' && data['categoryId']
+        ? [data['categoryId'] as string]
+        : []
+
+  const rec = {
+    id,
+    ...data,
+    categoryIds,
+    paymentHistory: (data['paymentHistory'] ?? []) as RecurringExpense['paymentHistory'],
+  } as RecurringExpense
   rec.currentMonthStatus = resolveCurrentMonthStatus(rec)
   return rec
 }

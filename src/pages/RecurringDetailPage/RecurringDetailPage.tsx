@@ -49,7 +49,11 @@ export default function RecurringDetailPage(): React.ReactElement {
   const isPaused = rec.status === RecurringStatus.Paused
   const isPending = rec.currentMonthStatus === RecurringPaymentStatus.Pending
   const isManual = rec.mode === RecurringMode.Manual
-  const category = categories.find((c) => c.id === rec.categoryId)
+  const categoryLabels = rec.categoryIds
+    .map((id) => categories.find((c) => c.id === id))
+    .filter(Boolean)
+    .map((c) => `${c!.icon ?? ''} ${c!.name}`.trim())
+    .join(', ')
   const card = cards.find((c) => c.id === rec.cardId)
   const freqLabel = rec.frequency === RecurringFrequency.Annual ? 'año' : 'mes'
 
@@ -78,11 +82,11 @@ export default function RecurringDetailPage(): React.ReactElement {
         description: values.description || undefined,
         amount: values.amount,
         currency: values.currency,
-        categoryId: values.categoryId,
+        categoryIds: values.categoryIds as string[],
         cardId: values.cardId,
         mode: values.mode,
         frequency: values.frequency,
-        dueDayOfMonth: values.mode === RecurringMode.Manual ? values.dueDayOfMonth : undefined,
+        dueDayOfMonth: values.dueDayOfMonth,
       })
       setIsEditing(false)
     } catch (err) {
@@ -91,140 +95,307 @@ export default function RecurringDetailPage(): React.ReactElement {
     }
   }
 
+  // ─── Shared edit form content ──────────────────────────────
+  const editFormContent = (
+    <Formik<RecurringFormValues>
+      initialValues={{
+        name: rec.name,
+        icon: rec.icon,
+        description: rec.description ?? '',
+        amount: rec.amount,
+        currency: rec.currency,
+        categoryIds: rec.categoryIds,
+        cardId: rec.cardId,
+        mode: rec.mode,
+        frequency: rec.frequency ?? RecurringFrequency.Monthly,
+        status: rec.status,
+        dueDayOfMonth: rec.dueDayOfMonth,
+      }}
+      validationSchema={recurringSchema}
+      onSubmit={handleUpdate}
+    >
+      {({ isSubmitting, values, setFieldValue, status }) => (
+        <Form noValidate>
+          {/* Mobile form layout */}
+          <div className={styles.mobileFormFields}>
+            <FormField name="name" label="Nombre">
+              <TextInput name="name" placeholder="ej. Netflix" />
+            </FormField>
+
+            <FormField name="icon" label="Ícono">
+              <div className={styles.iconPicker}>
+                {ICON_OPTIONS.map((ico) => (
+                  <button
+                    key={ico}
+                    type="button"
+                    className={[styles.icoBtn, values.icon === ico ? styles.icoBtnActive : ''].join(' ')}
+                    onClick={() => void setFieldValue('icon', ico)}
+                    aria-pressed={values.icon === ico}
+                  >
+                    {ico}
+                  </button>
+                ))}
+              </div>
+            </FormField>
+
+            <FormField name="description" label="Descripción (opcional)">
+              <TextInput name="description" placeholder="ej. Plan familiar" maxLength={100} />
+            </FormField>
+
+            <div className={styles.formRow}>
+              <div style={{ flex: 1 }}>
+                <FormField name="amount" label="Monto">
+                  <TextInput name="amount" type="number" min="0" step="any" placeholder="0" />
+                </FormField>
+              </div>
+              <div style={{ width: 100 }}>
+                <FormField name="currency" label="Moneda">
+                  <SelectInput name="currency" options={CURRENCY_OPTIONS} />
+                </FormField>
+              </div>
+            </div>
+
+            <FormField name="categoryIds" label="Categorías">
+              <CategoryChips
+                categories={categories}
+                selected={values.categoryIds as string[]}
+                onChange={(ids) => void setFieldValue('categoryIds', ids)}
+              />
+              <p className={styles.createHint}>
+                ¿No encontrás la categoría?{' '}
+                <a href="/settings/categories" className={styles.createLink}>Crear nueva →</a>
+              </p>
+            </FormField>
+
+            <FormField name="cardId" label="Medio de pago">
+              <SelectInput name="cardId" options={cardOptions} />
+            </FormField>
+
+            <FormField name="mode" label="Modo de pago">
+              <div className={styles.modeSelector}>
+                {([RecurringMode.Auto, RecurringMode.Manual] as const).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    className={[styles.modeOpt, values.mode === m ? styles.modeOptActive : ''].join(' ')}
+                    onClick={() => void setFieldValue('mode', m)}
+                  >
+                    {m === RecurringMode.Auto ? '⚡ Automático' : '✋ Manual'}
+                  </button>
+                ))}
+              </div>
+            </FormField>
+
+            <FormField name="frequency" label="Frecuencia">
+              <div className={styles.modeSelector}>
+                {([RecurringFrequency.Monthly, RecurringFrequency.Annual] as const).map((f) => (
+                  <button
+                    key={f}
+                    type="button"
+                    className={[styles.modeOpt, values.frequency === f ? styles.modeOptActive : ''].join(' ')}
+                    onClick={() => void setFieldValue('frequency', f)}
+                  >
+                    {f === RecurringFrequency.Monthly ? '📅 Mensual' : '📆 Anual'}
+                  </button>
+                ))}
+              </div>
+            </FormField>
+
+            <FormField name="dueDayOfMonth" label="Día de vencimiento">
+              <TextInput name="dueDayOfMonth" type="number" min="1" max="31" placeholder="ej. 15" />
+            </FormField>
+          </div>
+
+          {/* Desktop form layout */}
+          <div className={styles.desktopFormFields}>
+            <div className={styles.dkFormGrid}>
+              <FormField name="name" label="Nombre del servicio">
+                <TextInput name="name" placeholder="Ej: Netflix, Internet..." />
+              </FormField>
+              <FormField name="icon" label="Ícono">
+                <div className={styles.iconPicker}>
+                  {ICON_OPTIONS.map((ico) => (
+                    <button
+                      key={ico}
+                      type="button"
+                      className={[styles.icoBtn, values.icon === ico ? styles.icoBtnActive : ''].join(' ')}
+                      onClick={() => void setFieldValue('icon', ico)}
+                      aria-pressed={values.icon === ico}
+                    >
+                      {ico}
+                    </button>
+                  ))}
+                </div>
+              </FormField>
+              <div className={styles.dkFormSpan2}>
+                <FormField name="description" label="Descripción (opcional)">
+                  <TextInput name="description" placeholder="ej. Plan familiar" maxLength={100} />
+                </FormField>
+              </div>
+              <FormField name="amount" label="Monto">
+                <TextInput name="amount" type="number" min="0" step="any" placeholder="0.00" />
+              </FormField>
+              <FormField name="currency" label="Moneda">
+                <SelectInput name="currency" options={CURRENCY_OPTIONS} />
+              </FormField>
+              <FormField name="frequency" label="Frecuencia">
+                <div className={styles.dkToggle}>
+                  {([RecurringFrequency.Monthly, RecurringFrequency.Annual] as const).map((f) => (
+                    <button
+                      key={f}
+                      type="button"
+                      className={[styles.dkToggleOpt, values.frequency === f ? styles.dkToggleOptActive : ''].join(' ')}
+                      onClick={() => void setFieldValue('frequency', f)}
+                    >
+                      {f === RecurringFrequency.Monthly ? '📅 Mensual' : '📆 Anual'}
+                    </button>
+                  ))}
+                </div>
+              </FormField>
+              <FormField name="mode" label="Naturaleza">
+                <div className={styles.dkToggle}>
+                  {([RecurringMode.Auto, RecurringMode.Manual] as const).map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      className={[styles.dkToggleOpt, values.mode === m ? styles.dkToggleOptActive : ''].join(' ')}
+                      onClick={() => void setFieldValue('mode', m)}
+                    >
+                      {m === RecurringMode.Auto ? '⚡ Automático' : '✋ Manual'}
+                    </button>
+                  ))}
+                </div>
+              </FormField>
+              <FormField name="categoryIds" label="Categorías">
+                <CategoryChips
+                  categories={categories}
+                  selected={values.categoryIds as string[]}
+                  onChange={(ids) => void setFieldValue('categoryIds', ids)}
+                  maxVisible={6}
+                />
+              </FormField>
+              <FormField name="cardId" label="Método de pago">
+                <SelectInput name="cardId" options={cardOptions} />
+              </FormField>
+              <FormField name="dueDayOfMonth" label="Día de vencimiento">
+                <TextInput name="dueDayOfMonth" type="number" min="1" max="31" placeholder="15" />
+              </FormField>
+            </div>
+          </div>
+
+          {status && <p className={styles.formError}>{status}</p>}
+
+          <div className={styles.formActions}>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" variant="secondary" size="sm" loading={isSubmitting}>
+              Guardar cambios
+            </Button>
+          </div>
+        </Form>
+      )}
+    </Formik>
+  )
+
+  // ─── Confirm payment form ──────────────────────────────────
+  const paymentFormContent = (
+    <div className={styles.inlineForm}>
+      <Formik<ConfirmPaymentFormValues>
+        initialValues={{ amount: rec.amount, receiptFile: undefined }}
+        validationSchema={confirmPaymentSchema}
+        onSubmit={handleConfirmPayment}
+      >
+        {({ isSubmitting, setFieldValue, values, errors, touched }) => (
+          <Form>
+            <FormField name="amount" label="Monto de esta factura">
+              <TextInput name="amount" type="number" inputMode="decimal" icon="$" />
+            </FormField>
+
+            <input
+              ref={receiptFileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,application/pdf"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const file = e.target.files?.[0] ?? null
+                void setFieldValue('receiptFile', file)
+              }}
+            />
+            <div
+              className={styles.uploadArea}
+              onClick={() => receiptFileInputRef.current?.click()}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && receiptFileInputRef.current?.click()}
+              style={{ cursor: 'pointer' }}
+            >
+              {values.receiptFile ? (
+                <p>📄 {values.receiptFile.name}</p>
+              ) : (
+                <p>📄 Subir factura <span style={{ color: 'var(--muted)' }}>(opcional)</span></p>
+              )}
+            </div>
+            {touched.receiptFile && errors.receiptFile && (
+              <p className={styles.fieldError}>{errors.receiptFile as string}</p>
+            )}
+
+            <div className={styles.inlineFormActions}>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setShowPaymentForm(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" variant="secondary" size="sm" loading={isSubmitting}>
+                Confirmar pago
+              </Button>
+            </div>
+          </Form>
+        )}
+      </Formik>
+    </div>
+  )
+
+  // ─── History rows ──────────────────────────────────────────
+  const historyContent = (
+    <>
+      {rec.paymentHistory.map((h) => (
+        <div key={h.id} className={styles.histRow}>
+          <span className={styles.histDate}>{h.month}/{h.year}</span>
+          <span className={styles.histAmt}>{formatCurrency(h.amount, h.currency)}</span>
+          <span className={styles.histCheck}>✓</span>
+        </div>
+      ))}
+      {rec.paymentHistory.length === 0 && (
+        <p className={styles.emptyHistory}>Sin historial de pagos.</p>
+      )}
+    </>
+  )
+
   // ─── Edit form ────────────────────────────────────────────
   if (isEditing) {
     return (
       <div>
-        <div className={styles.editHeader}>
-          <button className={styles.back} onClick={() => setIsEditing(false)}>←</button>
-          <span className={styles.editTitle}>Editar recurrente</span>
+        {/* Mobile edit */}
+        <div className={styles.mobileOnly}>
+          <div className={styles.editHeader}>
+            <button className={styles.back} onClick={() => setIsEditing(false)}>←</button>
+            <span className={styles.editTitle}>Editar recurrente</span>
+          </div>
+          <div className={styles.editBody}>
+            {editFormContent}
+          </div>
         </div>
 
-        <div className={styles.editBody}>
-          <Formik<RecurringFormValues>
-            initialValues={{
-              name: rec.name,
-              icon: rec.icon,
-              description: rec.description ?? '',
-              amount: rec.amount,
-              currency: rec.currency,
-              categoryId: rec.categoryId,
-              cardId: rec.cardId,
-              mode: rec.mode,
-              frequency: rec.frequency ?? RecurringFrequency.Monthly,
-              status: rec.status,
-              dueDayOfMonth: rec.dueDayOfMonth,
-            }}
-            validationSchema={recurringSchema}
-            onSubmit={handleUpdate}
-          >
-            {({ isSubmitting, values, setFieldValue, status }) => (
-              <Form noValidate>
-                <FormField name="name" label="Nombre">
-                  <TextInput name="name" placeholder="ej. Netflix" />
-                </FormField>
-
-                <FormField name="icon" label="Ícono">
-                  <div className={styles.iconPicker}>
-                    {ICON_OPTIONS.map((ico) => (
-                      <button
-                        key={ico}
-                        type="button"
-                        className={[styles.icoBtn, values.icon === ico ? styles.icoBtnActive : ''].join(' ')}
-                        onClick={() => void setFieldValue('icon', ico)}
-                        aria-pressed={values.icon === ico}
-                      >
-                        {ico}
-                      </button>
-                    ))}
-                  </div>
-                </FormField>
-
-                <FormField name="description" label="Descripción (opcional)">
-                  <TextInput name="description" placeholder="ej. Plan familiar" maxLength={100} />
-                </FormField>
-
-                <div className={styles.formRow}>
-                  <div style={{ flex: 1 }}>
-                    <FormField name="amount" label="Monto">
-                      <TextInput name="amount" type="number" min="0" step="any" placeholder="0" />
-                    </FormField>
-                  </div>
-                  <div style={{ width: 100 }}>
-                    <FormField name="currency" label="Moneda">
-                      <SelectInput name="currency" options={CURRENCY_OPTIONS} />
-                    </FormField>
-                  </div>
-                </div>
-
-                <FormField name="categoryId" label="Categoría">
-                  <CategoryChips
-                    categories={categories}
-                    selected={values.categoryId ? [values.categoryId] : []}
-                    onChange={(ids) => {
-                      const newId = ids.find((id) => id !== values.categoryId) ?? ''
-                      void setFieldValue('categoryId', newId)
-                    }}
-                  />
-                  <p className={styles.createHint}>
-                    ¿No encontrás la categoría?{' '}
-                    <a href="/settings/categories" className={styles.createLink}>Crear nueva →</a>
-                  </p>
-                </FormField>
-
-                <FormField name="cardId" label="Medio de pago">
-                  <SelectInput name="cardId" options={cardOptions} />
-                </FormField>
-
-                <FormField name="mode" label="Modo de pago">
-                  <div className={styles.modeSelector}>
-                    {([RecurringMode.Auto, RecurringMode.Manual] as const).map((m) => (
-                      <button
-                        key={m}
-                        type="button"
-                        className={[styles.modeOpt, values.mode === m ? styles.modeOptActive : ''].join(' ')}
-                        onClick={() => void setFieldValue('mode', m)}
-                      >
-                        {m === RecurringMode.Auto ? '⚡ Automático' : '✋ Manual'}
-                      </button>
-                    ))}
-                  </div>
-                </FormField>
-
-                <FormField name="frequency" label="Frecuencia">
-                  <div className={styles.modeSelector}>
-                    {([RecurringFrequency.Monthly, RecurringFrequency.Annual] as const).map((f) => (
-                      <button
-                        key={f}
-                        type="button"
-                        className={[styles.modeOpt, values.frequency === f ? styles.modeOptActive : ''].join(' ')}
-                        onClick={() => void setFieldValue('frequency', f)}
-                      >
-                        {f === RecurringFrequency.Monthly ? '📅 Mensual' : '📆 Anual'}
-                      </button>
-                    ))}
-                  </div>
-                </FormField>
-
-                {values.mode === RecurringMode.Manual && (
-                  <FormField name="dueDayOfMonth" label="Día de vencimiento">
-                    <TextInput name="dueDayOfMonth" type="number" min="1" max="31" placeholder="ej. 15" />
-                  </FormField>
-                )}
-
-                {status && <p className={styles.formError}>{status}</p>}
-
-                <div className={styles.formActions}>
-                  <Button type="button" variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
-                    Cancelar
-                  </Button>
-                  <Button type="submit" variant="secondary" size="sm" loading={isSubmitting}>
-                    Guardar cambios
-                  </Button>
-                </div>
-              </Form>
-            )}
-          </Formik>
+        {/* Desktop edit */}
+        <div className={styles.desktopOnly}>
+          <div className={styles.dkEditWrap}>
+            <div className={styles.dkBreadcrumb}>
+              <button className={styles.dkBackBtn} onClick={() => setIsEditing(false)}>← Volver</button>
+            </div>
+            <div className={styles.dkEditCard}>
+              <h2 className={styles.dkEditCardTitle}>✏️ Editar pago recurrente</h2>
+              {editFormContent}
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -233,150 +404,193 @@ export default function RecurringDetailPage(): React.ReactElement {
   // ─── Detail view ─────────────────────────────────────────
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <div className={styles.headerTop}>
-          <button className={styles.back} onClick={() => navigate(-1)}>←</button>
-          <button className={styles.editBtn} onClick={() => setIsEditing(true)}>✏️ Editar</button>
-        </div>
-        <div className={styles.icon}>{rec.icon}</div>
-        <h1 className={styles.name}>{rec.name}</h1>
-        {rec.description && <p className={styles.description}>{rec.description}</p>}
-        <p className={styles.amount}>
-          {formatCurrency(rec.amount, rec.currency)}{' '}
-          <span className={styles.currency}>{rec.currency}/{freqLabel}</span>
-        </p>
-        <div className={styles.badges}>
-          <span className={[styles.modeBadge, isManual ? styles.manual : styles.auto].join(' ')}>
-            {isManual ? 'Manual' : 'Auto'}
-          </span>
-          <span className={styles.payBadge}>
-            {rec.frequency === RecurringFrequency.Annual ? '📆 Anual' : '📅 Mensual'}
-          </span>
-        </div>
-      </header>
-
-      {isPending && isManual && (
-        <div className={styles.pendingAlert}>
-          <span>⚠️</span>
-          <div>
-            <p className={styles.pendingTitle}>Pago pendiente</p>
-            <p className={styles.pendingSub}>Vence el {rec.dueDayOfMonth} de este mes</p>
+      {/* ── Mobile detail ── */}
+      <div className={styles.mobileOnly}>
+        <header className={styles.header}>
+          <div className={styles.headerTop}>
+            <button className={styles.back} onClick={() => navigate(-1)}>←</button>
+            <button className={styles.editBtn} onClick={() => setIsEditing(true)}>✏️ Editar</button>
           </div>
-        </div>
-      )}
+          <div className={styles.icon}>{rec.icon}</div>
+          <h1 className={styles.name}>{rec.name}</h1>
+          {rec.description && <p className={styles.description}>{rec.description}</p>}
+          <p className={styles.amount}>
+            {formatCurrency(rec.amount, rec.currency)}{' '}
+            <span className={styles.currency}>{rec.currency}/{freqLabel}</span>
+          </p>
+          <div className={styles.badges}>
+            <span className={[styles.modeBadge, isManual ? styles.manual : styles.auto].join(' ')}>
+              {isManual ? 'Manual' : 'Auto'}
+            </span>
+            <span className={styles.payBadge}>
+              {rec.frequency === RecurringFrequency.Annual ? '📆 Anual' : '📅 Mensual'}
+            </span>
+          </div>
+        </header>
 
-      <div className={styles.body}>
-        <div className={styles.row}>
-          <span className={styles.lbl}>📂 Categoría</span>
-          <span className={styles.val}>{category ? `${category.icon} ${category.name}` : '—'}</span>
-        </div>
-        <div className={styles.row}>
-          <span className={styles.lbl}>💳 Tarjeta</span>
-          <span className={styles.val}>
-            {card ? `${card.bank} ···· ${card.lastFour ?? '—'}` : '—'}
-          </span>
-        </div>
-        {isManual && (
+        {isPending && isManual && (
+          <div className={styles.pendingAlert}>
+            <span>⚠️</span>
+            <div>
+              <p className={styles.pendingTitle}>Pago pendiente</p>
+              <p className={styles.pendingSub}>Vence el {rec.dueDayOfMonth} de este mes</p>
+            </div>
+          </div>
+        )}
+
+        <div className={styles.body}>
+          <div className={styles.row}>
+            <span className={styles.lbl}>📂 Categoría</span>
+            <span className={styles.val}>{categoryLabels || '—'}</span>
+          </div>
+          <div className={styles.row}>
+            <span className={styles.lbl}>💳 Tarjeta</span>
+            <span className={styles.val}>
+              {card ? `${card.bank} ···· ${card.lastFour ?? '—'}` : '—'}
+            </span>
+          </div>
           <div className={styles.row}>
             <span className={styles.lbl}>📅 Vencimiento</span>
-            <span className={styles.val}>Día {rec.dueDayOfMonth} de cada mes</span>
+            <span className={styles.val}>{rec.dueDayOfMonth ? `Día ${rec.dueDayOfMonth} de cada mes` : '—'}</span>
           </div>
-        )}
-        <div className={styles.row}><span className={styles.lbl}>💱 Moneda</span><span className={styles.val}>{rec.currency}</span></div>
-        <div className={styles.row}>
-          <span className={styles.lbl}>📊 Estado</span>
-          <span className={[styles.val, isPaused ? styles.pausedText : styles.activeText].join(' ')}>
-            {isPaused ? 'Pausado' : 'Activo'}
-          </span>
+          <div className={styles.row}><span className={styles.lbl}>💱 Moneda</span><span className={styles.val}>{rec.currency}</span></div>
+          <div className={styles.row}>
+            <span className={styles.lbl}>📊 Estado</span>
+            <span className={[styles.val, isPaused ? styles.pausedText : styles.activeText].join(' ')}>
+              {isPaused ? 'Pausado' : 'Activo'}
+            </span>
+          </div>
+        </div>
+
+        <div className={styles.historySection}>
+          <div className={styles.historyHeader}>
+            <h2 className={styles.historyTitle}>Historial</h2>
+            {isManual && (
+              <button
+                className={styles.addPaymentBtn}
+                onClick={() => setShowPaymentForm((v) => !v)}
+                disabled={!isPending}
+                title={isPending ? 'Registrar pago del mes' : 'El mes ya está pagado'}
+              >
+                {isPending ? '+ Registrar pago' : '✓ Pagado'}
+              </button>
+            )}
+          </div>
+          {isManual && showPaymentForm && paymentFormContent}
+          {historyContent}
+        </div>
+
+        <div style={{ padding: '0 20px 32px' }}>
+          <Button variant="ghost" fullWidth onClick={() => void handleToggle()}>
+            {isPaused ? '▶ Activar servicio' : '⏸ Pausar servicio'}
+          </Button>
         </div>
       </div>
 
-      <div className={styles.historySection}>
-        <div className={styles.historyHeader}>
-          <h2 className={styles.historyTitle}>Historial</h2>
-          {isManual && (
-            <button
-              className={styles.addPaymentBtn}
-              onClick={() => setShowPaymentForm((v) => !v)}
-              disabled={!isPending}
-              title={isPending ? 'Registrar pago del mes' : 'El mes ya está pagado'}
-            >
-              {isPending ? '+ Registrar pago' : '✓ Pagado'}
-            </button>
-          )}
-        </div>
+      {/* ── Desktop detail ── */}
+      <div className={styles.desktopOnly}>
+        <div className={styles.dkWrap}>
+          {/* Top bar */}
+          <div className={styles.dkTopBar}>
+            <div className={styles.dkTopLeft}>
+              <h1 className={styles.dkPageTitle}>{rec.icon} {rec.name}</h1>
+              {rec.description && <p className={styles.dkPageDesc}>{rec.description}</p>}
+              <div className={styles.dkHeroBadges}>
+                <span className={[styles.dkBadge, isManual ? styles.dkBadgeManual : styles.dkBadgeAuto].join(' ')}>
+                  {isManual ? '✋ Manual' : '⚡ Automático'}
+                </span>
+                <span className={[styles.dkBadgeStatus, isPaused ? styles.dkBadgePaused : styles.dkBadgeActive].join(' ')}>
+                  {isPaused ? 'Pausado' : 'Activo'}
+                </span>
+              </div>
+            </div>
+            <div className={styles.dkTopRight}>
+              <div className={styles.dkHeroAmount}>
+                <span className={styles.dkAmtNumber}>{formatCurrency(rec.amount, rec.currency)}</span>
+                <span className={styles.dkAmtPeriod}>/{freqLabel}</span>
+              </div>
+              <button className={styles.dkEditTopBtn} onClick={() => setIsEditing(true)}>
+                Editar
+              </button>
+            </div>
+          </div>
 
-        {isManual && showPaymentForm && (
-          <div className={styles.inlineForm}>
-            <Formik<ConfirmPaymentFormValues>
-              initialValues={{ amount: rec.amount, receiptFile: undefined }}
-              validationSchema={confirmPaymentSchema}
-              onSubmit={handleConfirmPayment}
-            >
-              {({ isSubmitting, setFieldValue, values, errors, touched }) => (
-                <Form>
-                  <FormField name="amount" label="Monto de esta factura">
-                    <TextInput name="amount" type="number" inputMode="decimal" icon="$" />
-                  </FormField>
-
-                  <input
-                    ref={receiptFileInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,application/pdf"
-                    style={{ display: 'none' }}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0] ?? null
-                      void setFieldValue('receiptFile', file)
-                    }}
-                  />
-                  <div
-                    className={styles.uploadArea}
-                    onClick={() => receiptFileInputRef.current?.click()}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => e.key === 'Enter' && receiptFileInputRef.current?.click()}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    {values.receiptFile ? (
-                      <p>📄 {values.receiptFile.name}</p>
-                    ) : (
-                      <p>📄 Subir factura <span style={{ color: 'var(--muted)' }}>(opcional)</span></p>
-                    )}
-                  </div>
-                  {touched.receiptFile && errors.receiptFile && (
-                    <p className={styles.fieldError}>{errors.receiptFile as string}</p>
-                  )}
-
-                  <div className={styles.inlineFormActions}>
-                    <Button type="button" variant="ghost" size="sm" onClick={() => setShowPaymentForm(false)}>
-                      Cancelar
-                    </Button>
-                    <Button type="submit" variant="secondary" size="sm" loading={isSubmitting}>
-                      Confirmar pago
-                    </Button>
-                  </div>
-                </Form>
+          {/* Pending alert */}
+          {isPending && isManual && (
+            <div className={styles.dkPendingAlert}>
+              <span className={styles.dkPendingIcon}>⚠️</span>
+              <div>
+                <p className={styles.dkPendingTitle}>Pago pendiente este mes</p>
+                <p className={styles.dkPendingSub}>Vence el día {rec.dueDayOfMonth}</p>
+              </div>
+              {!showPaymentForm && (
+                <button className={styles.dkPendingAction} onClick={() => setShowPaymentForm(true)}>
+                  Registrar pago →
+                </button>
               )}
-            </Formik>
-          </div>
-        )}
+            </div>
+          )}
 
-        {rec.paymentHistory.map((h) => (
-          <div key={h.id} className={styles.histRow}>
-            <span className={styles.histDate}>{h.month}/{h.year}</span>
-            <span className={styles.histAmt}>{formatCurrency(h.amount, h.currency)}</span>
-            <span className={styles.histCheck}>✓</span>
+          {/* Main info card */}
+          <div className={styles.dkMainCard}>
+            <div className={styles.dkInfoList}>
+              <div className={styles.dkInfoItem}>
+                <span className={styles.dkInfoLabel}>Categoría</span>
+                <span className={styles.dkInfoValue}>{categoryLabels || '—'}</span>
+              </div>
+              <div className={styles.dkInfoItem}>
+                <span className={styles.dkInfoLabel}>Método de pago</span>
+                <span className={styles.dkInfoValue}>
+                  {card ? `${card.bank} ···· ${card.lastFour ?? '—'}` : '—'}
+                </span>
+              </div>
+              <div className={styles.dkInfoItem}>
+                <span className={styles.dkInfoLabel}>Día de vencimiento</span>
+                <span className={styles.dkInfoValue}>Día {rec.dueDayOfMonth} de cada mes</span>
+              </div>
+            </div>
           </div>
-        ))}
-        {rec.paymentHistory.length === 0 && (
-          <p className={styles.emptyHistory}>Sin historial de pagos.</p>
-        )}
-      </div>
 
-      <div style={{ padding: '0 20px 32px' }}>
-        <Button variant="ghost" fullWidth onClick={() => void handleToggle()}>
-          {isPaused ? '▶ Activar servicio' : '⏸ Pausar servicio'}
-        </Button>
+          {/* History card */}
+          <div className={styles.dkHistoryCard}>
+            <div className={styles.dkHistHeader}>
+              <h3 className={styles.dkHistTitle}>Historial de pagos</h3>
+              {isManual && (
+                <button
+                  className={styles.dkConfirmBtn}
+                  onClick={() => setShowPaymentForm((v) => !v)}
+                  disabled={!isPending}
+                >
+                  {isPending ? '+ Registrar pago' : '✓ Al día'}
+                </button>
+              )}
+            </div>
+
+            {isManual && showPaymentForm && paymentFormContent}
+
+            <div className={styles.dkHistList}>
+              {rec.paymentHistory.length === 0 ? (
+                <p className={styles.dkHistEmpty}>Sin historial de pagos aún.</p>
+              ) : (
+                rec.paymentHistory.map((h) => (
+                  <div key={h.id} className={styles.dkHistRow}>
+                    <span className={styles.dkHistCheck}>✓</span>
+                    <span className={styles.dkHistDate}>{h.month}/{h.year}</span>
+                    <span className={styles.dkHistAmt}>{formatCurrency(h.amount, h.currency)}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Pause / activate — full width */}
+          <button
+            className={[styles.dkPauseBtn, isPaused ? styles.dkPauseBtnActivate : ''].join(' ')}
+            onClick={() => void handleToggle()}
+          >
+            {isPaused ? '▶ Activar servicio' : '⏸ Pausar servicio'}
+          </button>
+        </div>
       </div>
     </div>
   )

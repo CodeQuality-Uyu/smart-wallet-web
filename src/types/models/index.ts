@@ -139,7 +139,7 @@ export interface RecurringExpense extends Timestamps {
   description?: string
   amount: number
   currency: Currency
-  categoryId: string
+  categoryIds: string[]
   cardId: string
   mode: RecurringMode
   frequency: RecurringFrequency
