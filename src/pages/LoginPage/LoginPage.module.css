@@ -32,8 +32,11 @@
 .logoMark {
   width: 34px; height: 34px; background: var(--gold); border-radius: 11px;
   display: flex; align-items: center; justify-content: center; font-size: 19px;
+  font-family: var(--font-head); font-weight: 800; color: #fff;
 }
 .logoName { font-family: var(--font-head); font-size: 22px; font-weight: 800; color: #fff; }
+
+.heroEmoji { display: none; }
 
 .heroText { margin-top: auto; position: relative; z-index: 1; }
 .title { font-family: var(--font-head); font-size: 34px; font-weight: 800; color: #fff; line-height: 1.15; }
@@ -45,6 +48,9 @@
   background: var(--cream); padding: 28px 22px 32px;
   border-radius: 26px 26px 0 0; margin-top: -22px; position: relative; z-index: 2;
 }
+
+.formTag { display: none; }
+.formSubtitle { display: none; }
 
 .formTitle { font-family: var(--font-head); font-size: 18px; font-weight: 800; color: var(--ink); margin-bottom: 18px; }
 
@@ -85,10 +91,43 @@
   font-family: inherit;
 }
 
-/* features list — hidden on mobile, shown on desktop */
+/* features list — hidden on mobile */
 .features { display: none; }
 
+/* stat badges — hidden on mobile */
+.statBadges { display: none; }
+
+/* separator + social — hidden on mobile */
+.separator { display: none; }
+.socialRow { display: none; }
+.socialBtn { display: none; }
+
+/* magic link inline box — visible on both mobile and desktop */
+.magicBox {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
 .nameRow { display: contents; }
+
+/* step indicator — hidden on mobile */
+.stepIndicator { display: none; }
+
+/* password toggle */
+.passwordWrapper { position: relative; }
+.passwordInput { padding-right: 44px; }
+.passwordToggle {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; cursor: pointer; font-size: 16px;
+  padding: 4px; line-height: 1;
+}
+
+/* tip card — hidden on mobile */
+.tipCard { display: none; }
+.tipIcon { display: none; }
+.tipText { display: none; }
 
 /* ── Desktop ─────────────────────────────────────── */
 @media (min-width: 768px) {
@@ -99,49 +138,74 @@
   }
 
   .hero {
-    width: 44%;
+    width: 45%;
     flex: none;
     min-height: 100%;
-    padding: 52px 48px;
+    padding: 48px 48px 40px;
     justify-content: flex-start;
+    background: #0c1f1a;
   }
 
-  .orb1 { width: 520px; height: 520px; top: -160px; right: -160px; }
-  .orb2 { width: 380px; height: 380px; bottom: -80px; left: -110px; }
+  .orb1 { width: 520px; height: 520px; top: -160px; right: -160px; opacity: .5; }
+  .orb2 { width: 380px; height: 380px; bottom: -80px; left: -110px; opacity: .5; }
 
-  .dollar { font-size: 200px; bottom: 44px; right: 20px; }
+  .dollar { font-size: 200px; bottom: 44px; right: 20px; color: rgba(255,255,255,.03); }
 
-  .logoMark { width: 42px; height: 42px; font-size: 22px; border-radius: 14px; }
-  .logoName { font-size: 26px; }
+  .logoMark { width: 40px; height: 40px; font-size: 18px; border-radius: 12px; }
+  .logoName { font-size: 24px; }
 
-  .heroText { margin-top: 52px; }
+  .heroEmoji {
+    display: block;
+    font-size: 64px;
+    margin-bottom: 16px;
+  }
 
-  .title { font-size: 52px; }
-  .subtitle { font-size: 15px; margin-top: 10px; }
+  .heroText { margin-top: auto; }
 
-  .features {
+  .title { font-size: 44px; line-height: 1.1; }
+  .em { color: var(--gold); }
+  .subtitle { font-size: 15px; margin-top: 10px; color: rgba(255,255,255,.5); }
+
+  .features { display: none; }
+
+  .statBadges {
     display: flex;
-    flex-direction: column;
     gap: 12px;
-    margin-top: 40px;
-    padding: 0;
-    list-style: none;
+    margin-top: 32px;
   }
 
-  .feature {
+  .statBadge {
     display: flex;
     align-items: center;
-    gap: 12px;
-    color: rgba(255,255,255,.8);
-    font-size: 13px;
+    gap: 10px;
+    background: rgba(255,255,255,.07);
+    border-radius: 14px;
+    padding: 10px 16px;
+    backdrop-filter: blur(8px);
   }
 
-  .featureIcon {
-    width: 32px; height: 32px; flex-shrink: 0;
-    background: rgba(255,255,255,.1);
-    border-radius: 9px;
+  .statIcon {
+    font-size: 16px;
+    width: 28px; height: 28px;
     display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,.08);
+    border-radius: 8px;
+  }
+
+  .statNumber {
+    display: block;
+    font-family: var(--font-num);
     font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.2;
+  }
+
+  .statLabel {
+    display: block;
+    font-size: 11px;
+    color: rgba(255,255,255,.5);
+    line-height: 1.2;
   }
 
   .form {
@@ -149,26 +213,150 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: 48px clamp(40px, 7%, 88px);
+    padding: 48px clamp(48px, 8%, 96px);
     border-radius: 0;
     margin-top: 0;
     overflow-y: auto;
-    box-shadow: -10px 0 48px rgba(0,0,0,.06);
+    background: #fff;
   }
 
-  .formTitle { font-size: 26px; margin-bottom: 22px; }
+  .formTag {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    margin-bottom: 8px;
+  }
 
-  .field { margin-bottom: 16px; }
+  .formTitle { font-size: 28px; margin-bottom: 6px; }
 
-  .input { padding: 13px 15px; font-size: 15px; }
+  .formSubtitle {
+    display: block;
+    font-size: 14px;
+    color: var(--muted);
+    margin-bottom: 28px;
+  }
 
-  .submitBtn { padding: 15px; font-size: 15px; margin-top: 20px; }
+  .field { margin-bottom: 18px; }
 
-  .hint { font-size: 13px; margin-top: 16px; }
+  .input { padding: 13px 15px; font-size: 15px; border-radius: 12px; }
+
+  .submitBtn {
+    padding: 15px;
+    font-size: 15px;
+    margin-top: 20px;
+    border-radius: 14px;
+  }
+
+  .separator {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 24px 0;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .separator::before,
+  .separator::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .socialRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .socialBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: transparent;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink);
+    cursor: pointer;
+    font-family: var(--font-body);
+    transition: border-color .15s, background .15s;
+  }
+  .socialBtn:hover {
+    border-color: var(--muted);
+    background: var(--cream);
+  }
+
+  .hint { font-size: 13px; margin-top: 20px; }
 
   .nameRow {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
+  }
+
+  .stepIndicator {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  .stepText {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .stepBar {
+    flex: 1;
+    height: 4px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .stepBarFill {
+    width: 33.33%;
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold-dk), var(--gold));
+    border-radius: 99px;
+  }
+
+  .tipCard {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: rgba(245, 183, 50, .08);
+    border: 1px solid rgba(245, 183, 50, .25);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-top: 8px;
+  }
+
+  .tipIcon {
+    display: block;
+    font-size: 18px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .tipText {
+    display: block;
+    font-size: 13px;
+    color: var(--ink);
+    line-height: 1.45;
+  }
+
+  .tipText strong {
+    color: var(--gold-dk);
+    margin-right: 4px;
   }
 }

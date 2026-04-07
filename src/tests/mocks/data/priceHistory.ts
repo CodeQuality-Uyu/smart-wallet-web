@@ -119,4 +119,64 @@ export const mockPriceHistory: ProductPriceRecord[] = [
     recordedAt: d(95),
     createdAt: d(95),
   },
+
+  // ── gprod-2 Milanesa de Pollo en place-1 ────────────────────────────
+  {
+    id: 'ph-11',
+    productId: 'gprod-2',
+    placeId: 'place-1',
+    unitPrice: 295,
+    currency: Currency.UYU,
+    recordedAt: d(30),
+    createdAt: d(30),
+  },
+  {
+    id: 'ph-12',
+    productId: 'gprod-2',
+    placeId: 'place-1',
+    unitPrice: 320,
+    currency: Currency.UYU,
+    recordedAt: d(7),
+    createdAt: d(7),
+  },
+
+  // ── gprod-5 Alfajor Fulbito en place-1 ──────────────────────────────
+  {
+    id: 'ph-13',
+    productId: 'gprod-5',
+    placeId: 'place-1',
+    unitPrice: 48,
+    currency: Currency.UYU,
+    recordedAt: d(20),
+    createdAt: d(20),
+  },
+  {
+    id: 'ph-14',
+    productId: 'gprod-5',
+    placeId: 'place-1',
+    unitPrice: 45,
+    currency: Currency.UYU,
+    recordedAt: d(4),
+    createdAt: d(4),
+  },
+
+  // ── gprod-6 Medialunas (x6) en place-2 ──────────────────────────────
+  {
+    id: 'ph-15',
+    productId: 'gprod-6',
+    placeId: 'place-2',
+    unitPrice: 110,
+    currency: Currency.UYU,
+    recordedAt: d(14),
+    createdAt: d(14),
+  },
+  {
+    id: 'ph-16',
+    productId: 'gprod-6',
+    placeId: 'place-2',
+    unitPrice: 120,
+    currency: Currency.UYU,
+    recordedAt: d(2),
+    createdAt: d(2),
+  },
 ]

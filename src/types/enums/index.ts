@@ -92,3 +92,9 @@ export enum NotificationType {
   WeeklySummary = 'weekly_summary',
   Recurring = 'recurring',
 }
+
+export enum SavingsGoalStatus {
+  InProgress = 'in_progress',
+  Completed = 'completed',
+  AtRisk = 'at_risk',
+}

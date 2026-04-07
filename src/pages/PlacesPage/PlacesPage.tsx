@@ -1,12 +1,10 @@
-// src/pages/PlacesPage.tsx
+// src/pages/PlacesPage/PlacesPage.tsx
 
 import React, { useState, useMemo } from 'react'
-import { Formik, Form } from 'formik'
+import { useNavigate } from 'react-router-dom'
 import { usePlaces, useCreatePlace } from '@/features/places/hooks/usePlaces'
-import { placeSchema, type PlaceFormValues } from '@/features/places/schemas/placeSchema'
-import { PlaceNameInput } from '@/features/places/components/PlaceNameInput'
-import { FormField, TextInput } from '@/components/ui/FormField'
-import { Button } from '@/components/ui/Button'
+import { PlaceFormModal } from '@/features/places/components/PlaceFormModal'
+import type { PlaceFormValues } from '@/features/places/schemas/placeSchema'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { PeriodControl } from '@/components/ui/PeriodControl'
@@ -24,9 +22,9 @@ const PERIODS = [
 const DEFAULT_ICON = '🏪'
 
 export default function PlacesPage(): React.ReactElement {
+  const navigate = useNavigate()
   const [period, setPeriod] = useState(LocaleFilterPeriod.CurrentMonth)
   const [showForm, setShowForm] = useState(false)
-  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
 
   const { data: places = [], isLoading } = usePlaces(period)
@@ -45,73 +43,28 @@ export default function PlacesPage(): React.ReactElement {
 
   if (isLoading) return <LoadingSpinner fullPage />
 
-  async function handleSubmit(
-    values: PlaceFormValues,
-    { setStatus }: { setStatus: (status: string) => void },
-  ): Promise<void> {
-    try {
-      await createPlace(values)
-      setShowForm(false)
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : (err as { message?: string })?.message ?? 'Error al guardar'
-      setStatus(msg)
-    }
+  async function handleCreate(values: PlaceFormValues): Promise<void> {
+    await createPlace(values)
+    setShowForm(false)
   }
-
-  function handleCardClick(place: Place): void {
-    setSelectedPlace((prev) => (prev?.id === place.id ? null : place))
-  }
-
-  const rightAction = (
-    <button className={styles.addBtnDesktop} onClick={() => setShowForm((s) => !s)}>
-      ＋ Agregar local
-    </button>
-  )
 
   return (
     <div>
       <PageHeader
         title="Locales"
         subtitle="Gestiona los comercios donde comprás tus productos"
-        rightAction={rightAction}
+        rightAction={
+          <button className={styles.addBtn} onClick={() => setShowForm(true)}>
+            ＋ Agregar local
+          </button>
+        }
       />
 
-      <div className={styles.page}>
-        {/* Add form modal */}
-        {showForm && (
-          <div className={styles.formOverlay} onClick={() => setShowForm(false)}>
-            <div className={styles.formModal} onClick={(e) => e.stopPropagation()}>
-              <h3 className={styles.formTitle}>Agregar local</h3>
-              <Formik<PlaceFormValues>
-                initialValues={{ name: '', address: '', icon: '', globalPlaceId: '' }}
-                validationSchema={placeSchema}
-                onSubmit={handleSubmit}
-              >
-                {({ isSubmitting, status }) => (
-                  <Form>
-                    <FormField name="name" label="Nombre">
-                      <PlaceNameInput />
-                    </FormField>
-                    <FormField name="address" label="Dirección (opcional)">
-                      <TextInput name="address" placeholder="ej. Av. Brasil, Pocitos" icon="📍" />
-                    </FormField>
-                    {status && <p className={styles.formError}>{status}</p>}
-                    <div className={styles.formActions}>
-                      <Button type="button" variant="ghost" size="md" onClick={() => setShowForm(false)}>
-                        Cancelar
-                      </Button>
-                      <Button type="submit" variant="primary" size="md" loading={isSubmitting}>
-                        Crear local
-                      </Button>
-                    </div>
-                  </Form>
-                )}
-              </Formik>
-            </div>
-          </div>
-        )}
+      {showForm && (
+        <PlaceFormModal mode="create" onSubmit={handleCreate} onClose={() => setShowForm(false)} />
+      )}
 
-        {/* Stats row */}
+      <div className={styles.page}>
         <div className={styles.statsRow}>
           <div className={styles.statCard}>
             <span className={styles.statIcon}>🏪</span>
@@ -125,7 +78,6 @@ export default function PlacesPage(): React.ReactElement {
           </div>
         </div>
 
-        {/* Search + period */}
         <div className={styles.toolbar}>
           <div className={styles.searchWrap}>
             <span className={styles.searchIcon}>🔍</span>
@@ -140,7 +92,6 @@ export default function PlacesPage(): React.ReactElement {
           <PeriodControl options={PERIODS} value={period} onChange={setPeriod} />
         </div>
 
-        {/* Place cards grid */}
         {filteredPlaces.length === 0 ? (
           <div className={styles.empty}>
             <span className={styles.emptyIcon}>🏪</span>
@@ -151,8 +102,8 @@ export default function PlacesPage(): React.ReactElement {
             {filteredPlaces.map((place) => (
               <div
                 key={place.id}
-                className={`${styles.placeCard} ${selectedPlace?.id === place.id ? styles.placeCardActive : ''}`}
-                onClick={() => handleCardClick(place)}
+                className={styles.placeCard}
+                onClick={() => navigate(`/settings/places/${place.id}`)}
               >
                 <div className={styles.placeCardTop}>
                   <div className={styles.placeIconWrap}>{place.icon ?? DEFAULT_ICON}</div>
@@ -166,71 +117,6 @@ export default function PlacesPage(): React.ReactElement {
                 </div>
               </div>
             ))}
-          </div>
-        )}
-
-        {/* Detail panel */}
-        {selectedPlace && (
-          <div className={styles.detailPanel}>
-            <div className={styles.detailHeader}>
-              <div className={styles.detailIconWrap}>{selectedPlace.icon ?? DEFAULT_ICON}</div>
-              <div className={styles.detailMeta}>
-                <h3 className={styles.detailName}>{selectedPlace.name}</h3>
-                {selectedPlace.address && <p className={styles.detailAddr}>📍 {selectedPlace.address}</p>}
-              </div>
-              <div className={styles.detailActions}>
-                <button className={styles.detailEditBtn}>Editar</button>
-                <button className={styles.detailDeleteBtn}>Eliminar</button>
-              </div>
-            </div>
-
-            <div className={styles.detailBody}>
-              <div className={styles.detailTable}>
-                <div className={styles.tableHeader}>
-                  <span>Producto</span>
-                  <span>Categoría</span>
-                  <span>Tipo</span>
-                  <span>Último precio</span>
-                  <span>Variación</span>
-                  <span>Vs. mejor</span>
-                </div>
-                <div className={styles.tableEmpty}>
-                  <span className={styles.tableEmptyIcon}>📦</span>
-                  <p>Aún no hay productos registrados para este local.</p>
-                </div>
-              </div>
-
-              <div className={styles.detailSidebar}>
-                <div className={styles.sidebarCard}>
-                  <h4 className={styles.sidebarTitle}>Ubicación</h4>
-                  <div className={styles.mapPlaceholder}>
-                    <span>📍</span>
-                    <p>{selectedPlace.address ?? 'Sin dirección registrada'}</p>
-                  </div>
-                </div>
-                <div className={styles.sidebarCard}>
-                  <h4 className={styles.sidebarTitle}>Estadísticas</h4>
-                  <ul className={styles.statsList}>
-                    <li>
-                      <span className={styles.statsListLabel}>Total visitas</span>
-                      <span className={styles.statsListVal}>{selectedPlace.visitCount}</span>
-                    </li>
-                    <li>
-                      <span className={styles.statsListLabel}>Productos únicos</span>
-                      <span className={styles.statsListVal}>–</span>
-                    </li>
-                    <li>
-                      <span className={styles.statsListLabel}>Total ahorrado</span>
-                      <span className={styles.statsListVal}>–</span>
-                    </li>
-                    <li>
-                      <span className={styles.statsListLabel}>Último gasto</span>
-                      <span className={styles.statsListVal}>–</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
           </div>
         )}
       </div>

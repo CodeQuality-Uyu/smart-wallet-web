@@ -1,0 +1,22 @@
+/* src/features/places/components/PlaceFormModal.module.css */
+
+.overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(0,0,0,.35);
+  display: flex; align-items: center; justify-content: center;
+}
+.modal {
+  background: #fff; border-radius: 20px;
+  padding: 28px 32px; width: 480px; max-width: 92vw;
+  box-shadow: 0 16px 48px rgba(0,0,0,.18);
+}
+.title {
+  font-family: var(--font-head, 'Space Grotesk', sans-serif);
+  font-size: 17px; font-weight: 700; color: var(--ink, #1a2e1f);
+  margin-bottom: 20px;
+}
+.error { font-size: 12px; color: #dc2626; margin-bottom: 10px; }
+.actions {
+  display: flex; justify-content: space-between;
+  margin-top: 16px;
+}

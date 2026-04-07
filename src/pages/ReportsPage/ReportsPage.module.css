@@ -1,4 +1,7 @@
-/* src/pages/ReportsPage.module.css */
+/* src/pages/ReportsPage/ReportsPage.module.css */
+
+/* ── Base (mobile) ── */
+.page { min-height: 100vh; }
 
 .body { padding: 14px 16px 32px; }
 
@@ -44,3 +47,294 @@
 .arrow    { font-size: 14px; color: var(--muted); flex-shrink: 0; }
 
 .empty { padding: 32px 0; text-align: center; font-size: 13px; color: var(--muted); }
+
+/* Hide desktop-only elements on mobile */
+.desktopHeader,
+.monthSelector,
+.statRow,
+.chartCard { display: none; }
+
+/* Hide mobile-only elements on desktop (default: show) */
+.mobileOnly { display: block; }
+
+
+/* ─────────────────────────────────────────────
+   Desktop (≥768px)
+───────────────────────────────────────────── */
+@media (min-width: 768px) {
+  .page {
+    background: #fff;
+    padding: 32px 40px 48px;
+    min-height: 100vh;
+  }
+
+  .body { padding: 0; }
+
+  /* Mobile-only hidden on desktop */
+  .mobileOnly { display: none !important; }
+
+  /* ── Desktop header ── */
+  .mobileHeader { display: none; }
+
+  .desktopHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 28px;
+  }
+
+  .desktopTitle {
+    font-family: var(--font-head);
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--ink-desktop);
+    line-height: 1.2;
+  }
+
+  .desktopSubtitle {
+    font-size: 14px;
+    color: var(--muted-desktop);
+    margin-top: 4px;
+  }
+
+  .exportBtn {
+    background: transparent;
+    border: 1.5px solid #e53e3e;
+    border-radius: 12px;
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #e53e3e;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    white-space: nowrap;
+    font-family: var(--font-body);
+    flex-shrink: 0;
+  }
+  .exportBtn:hover {
+    border-color: #c53030;
+    background: #fff5f5;
+  }
+
+  /* ── Month selector (full-width) ── */
+  .monthSelector {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 28px;
+    background: var(--border-subtle);
+    border-radius: 12px;
+    padding: 4px;
+    width: 100%;
+  }
+
+  .navArrow {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: var(--muted-desktop);
+    cursor: pointer;
+    padding: 6px 10px;
+    line-height: 1;
+    transition: color .15s;
+    flex-shrink: 0;
+  }
+  .navArrow:hover:not(:disabled) { color: var(--ink-desktop); }
+  .navArrow:disabled { opacity: 0.3; cursor: default; }
+
+  .monthPills {
+    display: flex;
+    flex: 1;
+    gap: 4px;
+  }
+
+  .monthPill {
+    flex: 1;
+    background: none;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted-desktop);
+    cursor: pointer;
+    font-family: var(--font-body);
+    transition: background .15s, color .15s;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+  }
+  .monthPill:hover { background: rgba(255,255,255,.6); }
+
+  .monthPillActive {
+    color: var(--gold-dk);
+    font-weight: 700;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+  }
+
+  .monthPillYear {
+    font-size: 9px;
+    font-weight: 600;
+    opacity: 0.6;
+    line-height: 1;
+  }
+
+  /* ── Stat cards row ── */
+  .statRow {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .statCard {
+    background: #fff;
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-card);
+    padding: 20px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .statLabel {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--muted-desktop);
+  }
+
+  .statValue {
+    font-family: var(--font-num);
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--ink-desktop);
+    line-height: 1.1;
+  }
+
+  .statValueGreen {
+    color: var(--g500);
+  }
+
+  .statBadge {
+    display: inline-block;
+    background: var(--g50);
+    color: var(--g600);
+    border-radius: var(--radius-pill);
+    padding: 2px 8px;
+    font-size: 10px;
+    font-weight: 700;
+    width: fit-content;
+  }
+
+  .statBadgeGold {
+    display: inline-block;
+    background: var(--gold-lt);
+    color: var(--gold-dk);
+    border-radius: var(--radius-pill);
+    padding: 2px 8px;
+    font-size: 10px;
+    font-weight: 700;
+    width: fit-content;
+  }
+
+  /* ── Chart cards (stacked full-width) ── */
+  .chartCard {
+    display: block;
+    background: #fff;
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-card);
+    padding: 22px 24px;
+    margin-bottom: 16px;
+  }
+
+  .chartTitle {
+    font-family: var(--font-head);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink-desktop);
+    margin-bottom: 16px;
+  }
+
+  .chartPlaceholder {
+    height: 140px;
+    background: var(--border-subtle);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .chartPlaceholderText {
+    font-size: 13px;
+    color: var(--muted-desktop);
+  }
+
+  /* ── Category bars ── */
+  .catList {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .catRow {
+    margin-bottom: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .catRow:last-child { margin-bottom: 0; }
+
+  .catName {
+    font-size: 12px;
+    color: var(--ink-desktop);
+  }
+
+  .catBars {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .catBarRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .catBar {
+    flex: 1;
+    height: 8px;
+    border-radius: 99px;
+    background: #ede8dd;
+    overflow: hidden;
+  }
+
+  .catBarFill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width .4s;
+    min-width: 0;
+  }
+
+  .catAmt {
+    font-family: var(--font-num);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink-desktop);
+    white-space: nowrap;
+  }
+
+  .catCurBadge {
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--muted-desktop);
+    letter-spacing: .04em;
+    width: 26px;
+  }
+
+}

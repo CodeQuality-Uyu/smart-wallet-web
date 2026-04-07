@@ -1,6 +1,5 @@
 // src/features/products/components/PriceByPlaceTable.tsx
 // Columns: Local | Último precio | Hace cuántos días | Δ vs más barato
-// Row color reflects data confidence (fresh / stale / old).
 
 import React from 'react'
 import type { PriceByPlace } from '@/backend/types'

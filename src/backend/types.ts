@@ -109,11 +109,20 @@ export type LoginResult =
   | { authenticated: true; token: string; user: SessionUser }
   | { authenticated: false }
 
+export interface SocialAuthResult {
+  token: string
+  user: SessionUser
+  isNewUser: boolean
+}
+
 export interface IAuthBackend {
   login(email: string, password: string): Promise<LoginResult>
   register(name: string, email: string, password: string): Promise<void>
   verifyCode(email: string, code: string): Promise<AuthResponse>
   resetPassword(email: string): Promise<void>
+  loginWithGoogle(): Promise<SocialAuthResult>
+  sendMagicLink(email: string): Promise<void>
+  confirmMagicLink(email: string): Promise<SocialAuthResult>
 }
 
 // ─── Cards / Payment methods ──────────────────────────────

@@ -1,0 +1,795 @@
+/* src/pages/SecurityPage/SecurityPage.module.css */
+
+.page {
+  padding: 8px 16px 32px;
+}
+
+/* ─── Header ─────────────────────────────────────────── */
+
+.title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 4px 0 0;
+}
+
+/* ─── Top grid ───────────────────────────────────────── */
+
+.topGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+/* ─── Level card ─────────────────────────────────────── */
+
+.levelCard {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 24px;
+  background: white;
+  border: 1px solid #f0ebe0;
+  border-radius: 20px;
+}
+
+.ringWrapper {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  flex-shrink: 0;
+}
+
+.ring {
+  width: 100%;
+  height: 100%;
+}
+
+.ringLabel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ringScore {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--g600);
+}
+
+.levelInfo {
+  flex: 1;
+}
+
+.levelTitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  margin: 0 0 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.levelBadge {
+  display: inline-block;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--g600);
+  margin-bottom: 8px;
+}
+
+.levelDesc {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* ─── 2FA card ───────────────────────────────────────── */
+
+.twoFactorCard {
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  background: white;
+  border: 1px solid #f0ebe0;
+  border-radius: 20px;
+}
+
+.twoFactorHeader {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.twoFactorIconWrap {
+  width: 44px;
+  height: 44px;
+  background: var(--g50);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.twoFactorMeta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.twoFactorTitle {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 99px;
+}
+
+.badgeActive {
+  background: var(--g50);
+  color: var(--g700);
+}
+
+.badgeInactive {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.twoFactorDesc {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+
+/* ─── Radio method options ───────────────────────────── */
+
+.methodOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex: 1;
+}
+
+.methodOption {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: var(--cream);
+  border: 2px solid transparent;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.methodOptionSelected {
+  background: var(--g50);
+  border-color: var(--g500);
+}
+
+.radioInput {
+  display: none;
+}
+
+.radioCustom {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #d1cdc4;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s;
+  background: white;
+}
+
+.methodOptionSelected .radioCustom {
+  border-color: var(--g500);
+  border-width: 5px;
+}
+
+.methodIcon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.methodInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.methodName {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.methodSub {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ─── Full-width buttons ─────────────────────────────── */
+
+.greenBtnFull {
+  width: 100%;
+  padding: 12px;
+  background: var(--g500);
+  color: white;
+  font-weight: 700;
+  font-size: 14px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: auto;
+}
+
+.greenBtnFull:hover {
+  background: var(--g600);
+}
+
+.outlineBtnFull {
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 14px;
+  border: 1px solid #e2ddd3;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  margin-top: auto;
+}
+
+.outlineBtnFull:hover {
+  border-color: var(--ink);
+}
+
+/* ─── Card header row ────────────────────────────────── */
+
+.cardHeaderRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.cardHeaderRow .sectionTitle {
+  margin-bottom: 2px;
+}
+
+.cardTitleGroup {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.cardTitleIconWrap {
+  width: 40px;
+  height: 40px;
+  background: var(--cream);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.sectionDesc {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.textDangerBtn {
+  font-size: 12px;
+  font-weight: 600;
+  color: #dc2626;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.textDangerBtn:hover {
+  opacity: 0.7;
+}
+
+/* ─── Mid grid ───────────────────────────────────────── */
+
+.midGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.card {
+  padding: 20px;
+  background: white;
+  border: 1px solid #f0ebe0;
+  border-radius: 16px;
+}
+
+.sectionTitle {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 16px;
+}
+
+/* ─── Sessions ───────────────────────────────────────── */
+
+.sessionList {
+  display: flex;
+  flex-direction: column;
+}
+
+.sessionItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0ebe0;
+}
+
+.sessionItem:first-child {
+  padding-top: 0;
+}
+
+.sessionItem:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.sessionIconWrap {
+  width: 40px;
+  height: 40px;
+  background: var(--cream);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.sessionInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.sessionDevice {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.sessionBrowser {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.sessionMeta {
+  font-size: 12px;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.activeBadge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 99px;
+  background: var(--g50);
+  color: var(--g700);
+  flex-shrink: 0;
+}
+
+.closeSessionBtn {
+  padding: 5px 12px;
+  background: transparent;
+  color: #dc2626;
+  font-weight: 600;
+  font-size: 12px;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.closeSessionBtn:hover {
+  background: #fef2f2;
+}
+
+.closeAllBtn {
+  width: 100%;
+  margin-top: 14px;
+  padding: 10px;
+  background: transparent;
+  color: #dc2626;
+  font-weight: 600;
+  font-size: 13px;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.closeAllBtn:hover {
+  background: #fef2f2;
+}
+
+/* ─── Privacy toggles ───────────────────────────────── */
+
+.toggleList {
+  display: flex;
+  flex-direction: column;
+}
+
+.toggleRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 0;
+  border-bottom: 1px solid #f0ebe0;
+}
+
+.toggleRow:first-child {
+  padding-top: 0;
+}
+
+.toggleRow:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.toggleIconWrap {
+  width: 38px;
+  height: 38px;
+  background: var(--cream);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+
+.toggleTextGroup {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.toggleLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.toggleDesc {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.3;
+}
+
+.toggle {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: #d1cdc4;
+  border: none;
+  border-radius: 99px;
+  cursor: pointer;
+  transition: background 0.2s;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.toggleOn {
+  background: var(--g500);
+}
+
+.toggleKnob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  display: block;
+}
+
+.toggleOn .toggleKnob {
+  transform: translateX(20px);
+}
+
+/* ─── Activity card ──────────────────────────────────── */
+
+.activityCard {
+  margin-top: 20px;
+  padding: 20px;
+  background: white;
+  border: 1px solid #f0ebe0;
+  border-radius: 16px;
+}
+
+.tableWrapper {
+  border: 1px solid #f0ebe0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table th {
+  text-align: left;
+  padding: 10px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  background: var(--cream);
+  border-bottom: 1px solid #f0ebe0;
+}
+
+.table td {
+  padding: 12px 16px;
+  color: var(--ink);
+  border-bottom: 1px solid #f0ebe0;
+  vertical-align: middle;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table tbody tr:hover {
+  background: #faf8f5;
+}
+
+.activityCell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.activityIconWrap {
+  width: 32px;
+  height: 32px;
+  background: var(--cream);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.mono {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+
+/* ─── Danger zone ────────────────────────────────────── */
+
+.dangerCard {
+  margin-top: 20px;
+  padding: 20px;
+  background: #fff5f5;
+  border: 1px solid #fecaca;
+  border-radius: 16px;
+}
+
+.dangerHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.dangerIcon {
+  font-size: 24px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.dangerTitle {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #991b1b;
+  margin: 0 0 4px;
+}
+
+.dangerDesc {
+  font-size: 13px;
+  color: #b91c1c;
+  margin: 0;
+}
+
+.dangerActions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dangerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px;
+  background: white;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+}
+
+.dangerRowTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #991b1b;
+  margin: 0 0 3px;
+}
+
+.dangerRowDesc {
+  font-size: 12px;
+  color: #b91c1c;
+  margin: 0;
+}
+
+.dangerBtn {
+  padding: 8px 18px;
+  background: #dc2626;
+  color: white;
+  font-weight: 700;
+  font-size: 13px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+
+.dangerBtn:hover {
+  background: #b91c1c;
+}
+
+/* ─── Desktop ────────────────────────────────────────── */
+
+@media (min-width: 768px) {
+  .page {
+    padding: 0;
+  }
+
+  .title {
+    font-size: 24px;
+  }
+
+  .subtitle {
+    font-size: 14px;
+  }
+
+  .topGrid {
+    flex-direction: row;
+    gap: 20px;
+    align-items: stretch;
+  }
+
+  .levelCard {
+    flex: 1;
+    border-radius: 24px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 28px;
+  }
+
+  .ringWrapper {
+    width: 110px;
+    height: 110px;
+  }
+
+  .ringScore {
+    font-size: 24px;
+  }
+
+  .levelBadge {
+    font-size: 24px;
+  }
+
+  .twoFactorCard {
+    flex: 1.6;
+    border-radius: 24px;
+    padding: 28px;
+  }
+
+  .twoFactorTitle {
+    font-size: 16px;
+  }
+
+  .midGrid {
+    flex-direction: row;
+    gap: 20px;
+    margin-top: 20px;
+  }
+
+  .midGrid .card {
+    flex: 1;
+    border-radius: 20px;
+  }
+
+  .sectionTitle {
+    font-size: 16px;
+  }
+
+  .activityCard {
+    border-radius: 20px;
+    padding: 24px;
+  }
+
+  .dangerCard {
+    border-radius: 20px;
+    padding: 24px;
+  }
+
+  .dangerTitle {
+    font-size: 16px;
+  }
+
+  .table td,
+  .table th {
+    padding: 13px 20px;
+  }
+}

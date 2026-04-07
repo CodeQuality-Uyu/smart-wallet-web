@@ -10,6 +10,7 @@ import {
   ProductPricingType,
   WeightUnit,
   NotificationType,
+  SavingsGoalStatus,
 } from '@/types/enums'
 
 // ─── Shared ───────────────────────────────────────────────
@@ -348,6 +349,23 @@ export interface ProductPriceRecord {
 }
 
 export type CreateProductPriceRecordPayload = Omit<ProductPriceRecord, 'id' | 'createdAt'>
+
+// ─── Savings Goals ───────────────────────────────────
+
+export interface SavingsGoal extends Timestamps {
+  id: string
+  name: string
+  icon: string
+  targetAmount: number
+  savedAmount: number
+  currency: Currency
+  targetDate: string
+  status: SavingsGoalStatus
+  active: boolean
+}
+
+export type CreateSavingsGoalPayload = Omit<SavingsGoal, 'id' | 'createdAt' | 'updatedAt' | 'savedAmount' | 'status'>
+export type UpdateSavingsGoalPayload = Partial<Omit<CreateSavingsGoalPayload, 'active'>>
 
 // ─── Auth / User ──────────────────────────────────────────
 

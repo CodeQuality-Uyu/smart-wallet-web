@@ -1,0 +1,95 @@
+/* src/pages/PlaceDetailPage/PlaceDetailPage.module.css */
+
+.notFound {
+  padding: 48px 32px;
+  color: var(--muted, #92886f);
+  font-size: 14px;
+}
+
+.page { padding: 0 32px 40px; display: flex; flex-direction: column; gap: 20px; }
+
+/* ── Header actions ── */
+.headerActions { display: flex; gap: 10px; align-items: center; }
+.editBtn {
+  padding: 8px 18px; border-radius: 10px;
+  border: 1.5px solid #f0ebe0; background: #fff;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-size: 12px; font-weight: 600; color: var(--ink, #1a2e1f); cursor: pointer;
+}
+.editBtn:hover { border-color: var(--g300, #6ee7b7); }
+.deleteBtn {
+  padding: 8px 18px; border-radius: 10px;
+  border: 1.5px solid #fecaca; background: #fff;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-size: 12px; font-weight: 600; color: #dc2626; cursor: pointer;
+}
+.deleteBtn:hover { background: #fef2f2; }
+
+/* ── Delete confirm modal ── */
+.overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(0,0,0,.35);
+  display: flex; align-items: center; justify-content: center;
+}
+.modal {
+  background: #fff; border-radius: 20px;
+  padding: 28px 32px; width: 440px; max-width: 92vw;
+  box-shadow: 0 16px 48px rgba(0,0,0,.18);
+}
+.modalTitle {
+  font-family: var(--font-head, 'Space Grotesk', sans-serif);
+  font-size: 17px; font-weight: 700; color: var(--ink, #1a2e1f);
+  margin-bottom: 12px;
+}
+.modalBody {
+  font-size: 14px; color: var(--muted, #92886f);
+  margin-bottom: 24px; line-height: 1.5;
+}
+.modalBody strong { color: var(--ink, #1a2e1f); }
+.modalActions { display: flex; justify-content: space-between; }
+
+/* ── Card ── */
+.card {
+  background: #fff; border: 1.5px solid #f0ebe0;
+  border-radius: 18px; padding: 24px 28px;
+}
+.cardTitle {
+  font-family: var(--font-head, 'Space Grotesk', sans-serif);
+  font-size: 15px; font-weight: 700; color: var(--ink, #1a2e1f);
+  margin-bottom: 18px;
+}
+
+/* ── Products table ── */
+.tableHeader {
+  display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;
+  gap: 8px; padding: 10px 12px;
+  background: #faf8f5; border-radius: 10px;
+  font-size: 10px; font-weight: 700; color: var(--muted, #92886f);
+  text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px;
+}
+.tableEmpty {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 8px; padding: 40px 0;
+  color: var(--muted, #92886f); font-size: 12px; text-align: center;
+}
+.tableEmptyIcon { font-size: 28px; }
+
+/* ── Location + stats row ── */
+.metaRow { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+.mapPlaceholder {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 6px; padding: 28px 0;
+  background: #f0ebe0; border-radius: 10px;
+  font-size: 24px; color: var(--muted, #92886f);
+}
+.mapPlaceholder p { font-size: 11px; text-align: center; color: var(--muted, #92886f); }
+
+.statsList { display: flex; flex-direction: column; gap: 12px; list-style: none; }
+.statsList li { display: flex; justify-content: space-between; align-items: center; }
+.statsLabel { font-size: 13px; color: var(--muted, #92886f); display: flex; align-items: center; gap: 6px; }
+.statsIcon { font-size: 14px; }
+.statsVal {
+  font-family: var(--font-num, 'JetBrains Mono', monospace);
+  font-size: 14px; font-weight: 600; color: var(--ink, #1a2e1f);
+}

@@ -25,6 +25,9 @@ const BASE = '/api'
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const DEMO_CODE = '123456'
 const pendingRegistrations = new Map<string, { name: string; email: string }>()
+// Social auth state
+const knownUsers = new Set<string>(['user@demo.com'])
+const pendingMagicLinks = new Map<string, string>() // email → email (just tracking)
 
 export const handlers = [
   // ─── Auth ────────────────────────────────────────────────
@@ -69,6 +72,43 @@ export const handlers = [
     return HttpResponse.json({
       token: 'mock-token-smart-wallet-123',
       user: { id: 'user-1', email, name: pending.name },
+    })
+  }),
+
+  http.post(`${BASE}/auth/google`, async () => {
+    const email = 'google@demo.com'
+    const isNewUser = !knownUsers.has(email)
+    knownUsers.add(email)
+    return HttpResponse.json({
+      token: 'mock-token-smart-wallet-123',
+      user: { id: 'google-user-1', email, name: 'Usuario Google' },
+      isNewUser,
+    })
+  }),
+
+  http.post(`${BASE}/auth/magic-link/send`, async ({ request }) => {
+    const body = await request.json() as { email?: string }
+    const email = body.email?.trim() ?? ''
+    if (!email || !EMAIL_RE.test(email)) {
+      return HttpResponse.json({ message: 'Ingresá un email válido.' }, { status: 400 })
+    }
+    pendingMagicLinks.set(email, email)
+    return HttpResponse.json({ message: 'Link enviado. En modo demo usá el botón "Simular link".' })
+  }),
+
+  http.post(`${BASE}/auth/magic-link/confirm`, async ({ request }) => {
+    const body = await request.json() as { email?: string }
+    const email = body.email?.trim() ?? ''
+    if (!pendingMagicLinks.has(email)) {
+      return HttpResponse.json({ message: 'No hay un link pendiente para ese email.' }, { status: 400 })
+    }
+    const isNewUser = !knownUsers.has(email)
+    knownUsers.add(email)
+    pendingMagicLinks.delete(email)
+    return HttpResponse.json({
+      token: 'mock-token-smart-wallet-123',
+      user: { id: `magic-${email}`, email, name: email.split('@')[0] },
+      isNewUser,
     })
   }),
 
