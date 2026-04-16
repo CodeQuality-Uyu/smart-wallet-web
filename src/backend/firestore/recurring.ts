@@ -159,4 +159,31 @@ export const firestoreRecurringBackend: IRecurringBackend = {
 
     return entry
   },
+
+  async uploadPaymentReceipt(
+    recurringId: string,
+    paymentId: string,
+    file: File,
+  ): Promise<{ receiptUrl: string }> {
+    const uid = requireUid()
+    const ext = file.name.split('.').pop() ?? 'jpg'
+    const storageRef = ref(
+      firebaseStorage,
+      `receipts/${uid}/recurring/${recurringId}/${paymentId}.${ext}`,
+    )
+    const snapshot = await uploadBytes(storageRef, file)
+    const receiptUrl = await getDownloadURL(snapshot.ref)
+
+    const docRef = doc(firestore, 'users', uid, 'recurring', recurringId)
+    const snap = await getDoc(docRef)
+    if (!snap.exists()) throw { message: 'No encontrado', statusCode: 404 }
+
+    const history = (snap.data()['paymentHistory'] ?? []) as RecurringPaymentHistory[]
+    const updated = history.map((h) =>
+      h.id === paymentId ? { ...h, receiptUrl } : h,
+    )
+    await updateDoc(docRef, { paymentHistory: updated, updatedAt: new Date().toISOString() })
+
+    return { receiptUrl }
+  },
 }

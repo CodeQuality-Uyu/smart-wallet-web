@@ -1,7 +1,7 @@
 // src/backend/index.ts
 // Factory: returns the correct backend implementation based on VITE_BACKEND
 
-import type { IAuthBackend, IBudgetBackend, ICardsBackend, ICategoriesBackend, IExpensesBackend, IMetricsBackend, IPlacesBackend, IRecurringBackend, ISalariesBackend, IMonthClosingsBackend, IProductCategoriesBackend, IBrandsBackend, IProductsBackend, ICategoryLimitsBackend, INotificationsBackend } from './types'
+import type { IAuthBackend, IBudgetBackend, ICardsBackend, ICategoriesBackend, IExpensesBackend, IMetricsBackend, IPlacesBackend, IRecurringBackend, ISalariesBackend, IMonthClosingsBackend, IProductCategoriesBackend, IBrandsBackend, IProductsBackend, ICategoryLimitsBackend, INotificationsBackend, IReportAttachmentsBackend } from './types'
 
 type BackendType = 'msw' | 'firestore' | 'aws'
 
@@ -23,6 +23,7 @@ let _brandsBackend: IBrandsBackend | null = null
 let _productsBackend: IProductsBackend | null = null
 let _productCategoryLimitsBackend: ICategoryLimitsBackend | null = null
 let _notificationsBackend: INotificationsBackend | null = null
+let _reportAttachmentsBackend: IReportAttachmentsBackend | null = null
 
 export async function getAuthBackend(): Promise<IAuthBackend> {
   if (_authBackend) return _authBackend
@@ -203,6 +204,18 @@ export async function getNotificationsBackend(): Promise<INotificationsBackend> 
     _notificationsBackend = mswNotificationsBackend
   }
   return _notificationsBackend
+}
+
+export async function getReportAttachmentsBackend(): Promise<IReportAttachmentsBackend> {
+  if (_reportAttachmentsBackend) return _reportAttachmentsBackend
+  if (backend === 'firestore') {
+    const { firestoreReportAttachmentsBackend } = await import('./firestore/reportAttachments')
+    _reportAttachmentsBackend = firestoreReportAttachmentsBackend
+  } else {
+    const { mswReportAttachmentsBackend } = await import('./msw/reportAttachments')
+    _reportAttachmentsBackend = mswReportAttachmentsBackend
+  }
+  return _reportAttachmentsBackend
 }
 
 export { backend as activeBackend }

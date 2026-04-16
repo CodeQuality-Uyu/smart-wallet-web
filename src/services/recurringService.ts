@@ -41,4 +41,12 @@ export const recurringService = {
   ): Promise<RecurringPaymentHistory> {
     return (await getRecurringBackend()).confirmPayment(id, payload)
   },
+
+  async uploadPaymentReceipt(
+    recurringId: string,
+    paymentId: string,
+    file: File,
+  ): Promise<{ receiptUrl: string }> {
+    return (await getRecurringBackend()).uploadPaymentReceipt(recurringId, paymentId, file)
+  },
 }

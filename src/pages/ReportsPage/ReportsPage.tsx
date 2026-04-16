@@ -1,41 +1,35 @@
 // src/pages/ReportsPage.tsx
 import React, { useState, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useMonthClosings } from '@/hooks/useMonthClosings'
-import { useRecurringList } from '@/features/recurring/hooks/useRecurring'
 import { useMetrics } from '@/hooks/useMetrics'
 import { useBudget } from '@/hooks/useBudget'
 import { useCategories } from '@/features/categories/hooks/useCategories'
 import { useProductCategories } from '@/features/products/hooks/useProductCategories'
 import { useExpenses } from '@/features/expenses/hooks/useExpenses'
 import { usePlaces } from '@/features/places/hooks/usePlaces'
-import { PageHeader } from '@/components/shared/PageHeader'
+import { useReportAttachments, useUploadReportAttachment, useRemoveReportAttachment } from '@/hooks/useReportAttachments'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { formatAmount } from '@/utils/formatCurrency'
-import { Currency, PeriodFilter, RecurringMode, RecurringPaymentStatus } from '@/types/enums'
+import { Currency, PeriodFilter } from '@/types/enums'
 import styles from './ReportsPage.module.css'
 
-const MONTH_NAMES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 const MONTH_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
 
 export default function ReportsPage(): React.ReactElement {
-  const navigate = useNavigate()
-  const { data: closings = [], isLoading: loadingClosings } = useMonthClosings()
-  const { data: recurring = [], isLoading: loadingRecurring } = useRecurringList()
-
   const now = new Date()
   const [selectedYear, setSelectedYear] = useState(now.getFullYear())
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth()) // 0-indexed
 
   const selectedYearMonth = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`
-  const { data: metrics } = useMetrics(PeriodFilter.Month, selectedYearMonth)
+  const { data: metrics, isLoading } = useMetrics(PeriodFilter.Month, selectedYearMonth)
   const { data: budget } = useBudget()
   const { data: categories } = useCategories()
   const { data: productCategories } = useProductCategories()
-  const { data: expensesData } = useExpenses({ period: selectedYearMonth })
+  const { data: expensesData } = useExpenses()
   const { data: places } = usePlaces()
+  const { data: attachments = [] } = useReportAttachments(selectedYearMonth)
+  const uploadAttachment = useUploadReportAttachment(selectedYearMonth)
+  const removeAttachment = useRemoveReportAttachment(selectedYearMonth)
 
-  // Category data from metrics, sorted by total desc — must be before early return
   const sortedCategories = useMemo(() => {
     if (!metrics?.byCategory) return []
     return [...metrics.byCategory].sort((a, b) => (b.uyu + b.usd) - (a.uyu + a.usd))
@@ -46,9 +40,11 @@ export default function ReportsPage(): React.ReactElement {
     return [...metrics.byProductCategory].sort((a, b) => (b.uyu + b.usd) - (a.uyu + a.usd))
   }, [metrics?.byProductCategory])
 
-  // Gasto por local — computed from expenses
   const sortedByPlace = useMemo(() => {
-    const expenses = expensesData?.data ?? []
+    const expenses = (expensesData?.data ?? []).filter((exp) => {
+      const d = new Date(exp.date)
+      return d.getFullYear() === selectedYear && d.getMonth() === selectedMonth
+    })
     const map = new Map<string, { placeId: string; uyu: number; usd: number }>()
     for (const exp of expenses) {
       if (!exp.placeId) continue
@@ -58,32 +54,9 @@ export default function ReportsPage(): React.ReactElement {
       map.set(exp.placeId, entry)
     }
     return [...map.values()].sort((a, b) => (b.uyu + b.usd) - (a.uyu + a.usd))
-  }, [expensesData])
+  }, [expensesData, selectedYear, selectedMonth])
 
-  if (loadingClosings || loadingRecurring) return <LoadingSpinner fullPage />
-
-  const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-  const monthLabel = `${MONTH_NAMES[now.getMonth()] ?? ''} ${now.getFullYear()}`
-  const currentClosing = closings.find((c) => c.id === currentYearMonth)
-
-  // Build list of past months without a closing (up to 6 months back)
-  const pendingMonths: { id: string; year: number; month: number; label: string }[] = []
-  for (let i = 1; i <= 6; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-    const id = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-    if (!closings.find((c) => c.id === id)) {
-      pendingMonths.push({
-        id,
-        year: d.getFullYear(),
-        month: d.getMonth() + 1,
-        label: `${MONTH_NAMES[d.getMonth()] ?? ''} ${d.getFullYear()}`,
-      })
-    }
-  }
-
-  const pendingRecurring = recurring.filter(
-    (r) => r.mode === RecurringMode.Manual && r.currentMonthStatus === RecurringPaymentStatus.Pending,
-  )
+  if (isLoading) return <LoadingSpinner fullPage />
 
   // Build 6 visible month pills (ending at current month)
   const visibleMonths: { month: number; year: number; id: string }[] = []
@@ -92,18 +65,27 @@ export default function ReportsPage(): React.ReactElement {
     visibleMonths.push({ month: d.getMonth(), year: d.getFullYear(), id: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` })
   }
 
-  // Check if pills span multiple years
   const yearsInPills = new Set(visibleMonths.map((m) => m.year))
   const showYearInPills = yearsInPills.size > 1
 
   const maxCatUyu = Math.max(...sortedCategories.map((c) => c.uyu), 1)
   const maxCatUsd = Math.max(...sortedCategories.map((c) => c.usd), 1)
 
-  // Totals
   const totalUyu = metrics?.totalUyu ?? 0
   const totalUsd = metrics?.totalUsd ?? 0
   const incomeUyu = budget?.uyu ?? 0
   const savedUyu = Math.max(0, incomeUyu - totalUyu)
+
+  function formatSize(bytes: number): string {
+    if (bytes >= 1_000_000) return `${(bytes / 1_000_000).toFixed(1)} MB`
+    return `${Math.round(bytes / 1_000)} KB`
+  }
+
+  function fileIcon(mimeType: string): string {
+    if (mimeType === 'application/pdf') return '📄'
+    if (mimeType.startsWith('image/')) return '🖼️'
+    return '📎'
+  }
 
   function prevMonth() {
     const d = new Date(selectedYear, selectedMonth - 1, 1)
@@ -120,21 +102,16 @@ export default function ReportsPage(): React.ReactElement {
 
   return (
     <div className={styles.page}>
-      {/* ── Mobile header ── */}
-      <div className={styles.mobileHeader}>
-        <PageHeader title="Reportes" subtitle="Cierres mensuales e historial de gastos" />
-      </div>
-
-      {/* ── Desktop header ── */}
+      {/* ── Header ── */}
       <div className={styles.desktopHeader}>
-        <div className={styles.desktopHeaderLeft}>
+        <div>
           <h1 className={styles.desktopTitle}>Reportes mensuales</h1>
           <p className={styles.desktopSubtitle}>Mirá el resumen de gastos de cada mes</p>
         </div>
         <button className={styles.exportBtn}>Exportar PDF</button>
       </div>
 
-      {/* ── Desktop month selector ── */}
+      {/* ── Month selector ── */}
       <div className={styles.monthSelector}>
         <button className={styles.navArrow} onClick={prevMonth}>‹</button>
         <div className={styles.monthPills}>
@@ -156,7 +133,7 @@ export default function ReportsPage(): React.ReactElement {
         >›</button>
       </div>
 
-      {/* ── Desktop stat cards ── */}
+      {/* ── Stat cards ── */}
       <div className={styles.statRow}>
         <div className={styles.statCard}>
           <p className={styles.statLabel}>Total gastado en UYU</p>
@@ -170,13 +147,11 @@ export default function ReportsPage(): React.ReactElement {
         </div>
         <div className={styles.statCard}>
           <p className={styles.statLabel}>Total ahorrado</p>
-          <p className={`${styles.statValue} ${styles.statValueGreen}`}>
-            {formatAmount(savedUyu, Currency.UYU)}
-          </p>
+          <p className={`${styles.statValue} ${styles.statValueGreen}`}>{formatAmount(savedUyu, Currency.UYU)}</p>
         </div>
       </div>
 
-      {/* ── Category chart (full-width, bars like MetricsPage) ── */}
+      {/* ── Gasto por categoría ── */}
       <div className={styles.chartCard}>
         <p className={styles.chartTitle}>Gasto por categoría</p>
         {sortedCategories.length === 0 ? (
@@ -187,22 +162,20 @@ export default function ReportsPage(): React.ReactElement {
           <div className={styles.catList}>
             {sortedCategories.map((cat) => {
               const catColor = categories?.find((c) => c.id === cat.categoryId)?.color ?? 'var(--g500)'
-              const pctUyu = Math.round((cat.uyu / maxCatUyu) * 100)
-              const pctUsd = Math.round((cat.usd / maxCatUsd) * 100)
               return (
                 <div key={cat.categoryId} className={styles.catRow}>
                   <span className={styles.catName}>{cat.categoryIcon} {cat.categoryName}</span>
                   <div className={styles.catBars}>
                     <div className={styles.catBarRow}>
                       <div className={styles.catBar}>
-                        <div className={styles.catBarFill} style={{ width: `${pctUyu}%`, background: catColor }} />
+                        <div className={styles.catBarFill} style={{ width: `${Math.round((cat.uyu / maxCatUyu) * 100)}%`, background: catColor }} />
                       </div>
                       <span className={styles.catAmt}>{formatAmount(cat.uyu, Currency.UYU)}</span>
                       <span className={styles.catCurBadge}>UYU</span>
                     </div>
                     <div className={styles.catBarRow}>
                       <div className={styles.catBar}>
-                        <div className={styles.catBarFill} style={{ width: `${pctUsd}%`, background: catColor }} />
+                        <div className={styles.catBarFill} style={{ width: `${Math.round((cat.usd / maxCatUsd) * 100)}%`, background: catColor }} />
                       </div>
                       <span className={styles.catAmt}>{formatAmount(cat.usd, Currency.USD)}</span>
                       <span className={styles.catCurBadge}>USD</span>
@@ -215,7 +188,7 @@ export default function ReportsPage(): React.ReactElement {
         )}
       </div>
 
-      {/* ── Product category chart ── */}
+      {/* ── Gasto por producto ── */}
       <div className={styles.chartCard}>
         <p className={styles.chartTitle}>Gasto por producto</p>
         {sortedProductCategories.length === 0 ? (
@@ -229,22 +202,20 @@ export default function ReportsPage(): React.ReactElement {
               const maxPcUsd = Math.max(...sortedProductCategories.map((c) => c.usd), 1)
               return sortedProductCategories.map((pcat) => {
                 const pcatColor = productCategories?.find((c) => c.id === pcat.productCategoryId)?.color ?? 'var(--g500)'
-                const pctUyu = Math.round((pcat.uyu / maxPcUyu) * 100)
-                const pctUsd = Math.round((pcat.usd / maxPcUsd) * 100)
                 return (
                   <div key={pcat.productCategoryId} className={styles.catRow}>
                     <span className={styles.catName}>{pcat.productCategoryIcon} {pcat.productCategoryName}</span>
                     <div className={styles.catBars}>
                       <div className={styles.catBarRow}>
                         <div className={styles.catBar}>
-                          <div className={styles.catBarFill} style={{ width: `${pctUyu}%`, background: pcatColor }} />
+                          <div className={styles.catBarFill} style={{ width: `${Math.round((pcat.uyu / maxPcUyu) * 100)}%`, background: pcatColor }} />
                         </div>
                         <span className={styles.catAmt}>{formatAmount(pcat.uyu, Currency.UYU)}</span>
                         <span className={styles.catCurBadge}>UYU</span>
                       </div>
                       <div className={styles.catBarRow}>
                         <div className={styles.catBar}>
-                          <div className={styles.catBarFill} style={{ width: `${pctUsd}%`, background: pcatColor }} />
+                          <div className={styles.catBarFill} style={{ width: `${Math.round((pcat.usd / maxPcUsd) * 100)}%`, background: pcatColor }} />
                         </div>
                         <span className={styles.catAmt}>{formatAmount(pcat.usd, Currency.USD)}</span>
                         <span className={styles.catCurBadge}>USD</span>
@@ -258,7 +229,7 @@ export default function ReportsPage(): React.ReactElement {
         )}
       </div>
 
-      {/* ── Place chart ── */}
+      {/* ── Gasto por local ── */}
       <div className={styles.chartCard}>
         <p className={styles.chartTitle}>Gasto por local</p>
         {sortedByPlace.length === 0 ? (
@@ -272,11 +243,9 @@ export default function ReportsPage(): React.ReactElement {
               const maxPlUsd = Math.max(...sortedByPlace.map((c) => c.usd), 1)
               return sortedByPlace.map((pl) => {
                 const place = places?.find((p) => p.id === pl.placeId)
-                const placeName = place?.name ?? 'Sin local'
-                const placeIcon = place?.icon ?? '📍'
                 return (
                   <div key={pl.placeId} className={styles.catRow}>
-                    <span className={styles.catName}>{placeIcon} {placeName}</span>
+                    <span className={styles.catName}>{place?.icon ?? '📍'} {place?.name ?? 'Sin local'}</span>
                     <div className={styles.catBars}>
                       <div className={styles.catBarRow}>
                         <div className={styles.catBar}>
@@ -301,55 +270,62 @@ export default function ReportsPage(): React.ReactElement {
         )}
       </div>
 
-      {/* ── Mobile body ── */}
-      <div className={`${styles.body} ${styles.mobileOnly}`}>
-        {/* ── Mes actual ── */}
-        <div className={styles.section}>
-          <p className={styles.sectionLabel}>Mes actual</p>
-          <button
-            className={styles.currentCard}
-            onClick={() => navigate(`/settings/reports/${currentYearMonth}`)}
-          >
-            <div className={styles.currentLeft}>
-              <p className={styles.currentMonth}>{monthLabel}</p>
-              {currentClosing ? (
-                <p className={styles.statusClosed}>
-                  ✓ Cerrado el {new Date(currentClosing.closedAt).toLocaleDateString('es-UY', { day: 'numeric', month: 'short' })}
-                </p>
-              ) : pendingRecurring.length > 0 ? (
-                <p className={styles.statusPending}>
-                  ⚠️ {pendingRecurring.length} pago{pendingRecurring.length > 1 ? 's' : ''} manual{pendingRecurring.length > 1 ? 'es' : ''} pendiente{pendingRecurring.length > 1 ? 's' : ''}
-                </p>
-              ) : (
-                <p className={styles.statusReady}>✅ Listo para cerrar</p>
-              )}
-            </div>
-            <span className={styles.arrow}>
-              {currentClosing ? 'Ver →' : 'Generar →'}
-            </span>
-          </button>
+      {/* ── Documentos del mes ── */}
+      <div className={styles.attachmentsCard}>
+        <div className={styles.attachmentsHeader}>
+          <p className={styles.chartTitle} style={{ marginBottom: 0 }}>Documentos del mes</p>
+          <label className={styles.uploadBtn}>
+            {uploadAttachment.isPending ? 'Subiendo…' : '＋ Subir archivo'}
+            <input
+              type="file"
+              accept="image/*,application/pdf,.pdf,.jpg,.jpeg,.png,.webp"
+              multiple
+              style={{ display: 'none' }}
+              disabled={uploadAttachment.isPending}
+              onChange={(e) => {
+                const files = Array.from(e.target.files ?? [])
+                files.forEach((f) => uploadAttachment.mutate(f))
+                e.target.value = ''
+              }}
+            />
+          </label>
         </div>
 
-        {/* ── Historial (mobile) ── */}
-        <div className={styles.section}>
-          <p className={styles.sectionLabel}>Historial</p>
-          {pendingMonths.map((pm) => (
-            <button
-              key={pm.id}
-              className={styles.row}
-              onClick={() => navigate(`/settings/reports/${pm.id}`)}
-            >
-              <div className={styles.rowLeft}>
-                <p className={styles.rowMonth}>{pm.label}</p>
-                <p className={styles.statusPending}>⚠️ Pendiente de cierre</p>
+        {attachments.length === 0 ? (
+          <div className={styles.attachmentsEmpty}>
+            <span className={styles.attachmentsEmptyIcon}>📂</span>
+            <p>No hay documentos subidos para este mes.</p>
+            <p className={styles.attachmentsEmptyHint}>Podés subir estados de cuenta, comprobantes o cualquier archivo relevante.</p>
+          </div>
+        ) : (
+          <div className={styles.attachmentsList}>
+            {attachments.map((att) => (
+              <div key={att.id} className={styles.attachmentRow}>
+                <span className={styles.attachmentIcon}>{fileIcon(att.mimeType)}</span>
+                <div className={styles.attachmentInfo}>
+                  <a
+                    href={att.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.attachmentName}
+                  >
+                    {att.name}
+                  </a>
+                  <span className={styles.attachmentMeta}>
+                    {formatSize(att.size)} · {new Date(att.uploadedAt).toLocaleDateString('es-UY', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </span>
+                </div>
+                <button
+                  className={styles.attachmentRemove}
+                  onClick={() => removeAttachment.mutate(att.id)}
+                  title="Eliminar"
+                >
+                  ✕
+                </button>
               </div>
-              <span className={styles.arrow}>Generar →</span>
-            </button>
-          ))}
-          {pendingMonths.length === 0 && (
-            <p className={styles.empty}>No hay cierres anteriores registrados.</p>
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

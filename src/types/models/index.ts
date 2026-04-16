@@ -419,3 +419,15 @@ export interface NotificationPrefs {
   channels: NotificationChannelPrefs
   quietHours: NotificationQuietHours
 }
+
+// ─── Report attachments ───────────────────────────────────
+
+export interface ReportAttachment {
+  id: string
+  yearMonth: string   // "2026-04"
+  name: string        // original filename
+  url: string         // download URL
+  mimeType: string
+  size: number        // bytes
+  uploadedAt: string
+}

@@ -9,6 +9,7 @@ import {
   useUpdateRecurring,
   useToggleRecurringStatus,
   useConfirmRecurringPayment,
+  useUploadRecurringPaymentReceipt,
 } from '@/features/recurring/hooks/useRecurring'
 import { useCategories } from '@/features/categories/hooks/useCategories'
 import { useCards } from '@/features/cards/hooks/useCards'
@@ -37,6 +38,8 @@ export default function RecurringDetailPage(): React.ReactElement {
   const { mutateAsync: updateRecurring } = useUpdateRecurring(id ?? '')
   const { mutateAsync: toggleStatus } = useToggleRecurringStatus(id ?? '')
   const { mutateAsync: confirmPayment } = useConfirmRecurringPayment(id ?? '')
+  const { mutateAsync: uploadReceipt, isPending: isUploadingReceipt } = useUploadRecurringPaymentReceipt(id ?? '')
+  const [uploadingPaymentId, setUploadingPaymentId] = useState<string | null>(null)
   const { data: categories = [] } = useCategories()
   const { data: cards = [] } = useCards()
   const [isEditing, setIsEditing] = useState(false)
@@ -109,7 +112,7 @@ export default function RecurringDetailPage(): React.ReactElement {
         mode: rec.mode,
         frequency: rec.frequency ?? RecurringFrequency.Monthly,
         status: rec.status,
-        dueDayOfMonth: rec.dueDayOfMonth,
+        dueDayOfMonth: rec.dueDayOfMonth ?? ('' as unknown as number),
       }}
       validationSchema={recurringSchema}
       onSubmit={handleUpdate}
@@ -354,14 +357,75 @@ export default function RecurringDetailPage(): React.ReactElement {
     </div>
   )
 
+  function formatPaidAt(paidAt?: string, month?: number, year?: number): string {
+    if (paidAt) {
+      return new Date(paidAt).toLocaleDateString('es-UY', { day: '2-digit', month: 'short', year: 'numeric' })
+    }
+    if (month && year) {
+      const d = new Date(year, month - 1, 1)
+      return d.toLocaleDateString('es-UY', { month: 'short', year: 'numeric' })
+    }
+    return '—'
+  }
+
+  async function handleReceiptUpload(paymentId: string, file: File): Promise<void> {
+    setUploadingPaymentId(paymentId)
+    try {
+      await uploadReceipt({ paymentId, file })
+    } finally {
+      setUploadingPaymentId(null)
+    }
+  }
+
   // ─── History rows ──────────────────────────────────────────
+  const sortedHistory = [...rec.paymentHistory].sort((a, b) => {
+    const da = a.paidAt ? new Date(a.paidAt).getTime() : new Date(a.year, a.month - 1).getTime()
+    const db = b.paidAt ? new Date(b.paidAt).getTime() : new Date(b.year, b.month - 1).getTime()
+    return db - da
+  })
+
   const historyContent = (
     <>
-      {rec.paymentHistory.map((h) => (
+      {sortedHistory.map((h) => (
         <div key={h.id} className={styles.histRow}>
-          <span className={styles.histDate}>{h.month}/{h.year}</span>
-          <span className={styles.histAmt}>{formatCurrency(h.amount, h.currency)}</span>
           <span className={styles.histCheck}>✓</span>
+          <div className={styles.histInfo}>
+            <span className={styles.histDate}>{formatPaidAt(h.paidAt, h.month, h.year)}</span>
+            <span className={styles.histAmt}>{formatCurrency(h.amount, h.currency)}</span>
+          </div>
+          <div className={styles.histReceipt}>
+            {h.receiptUrl ? (
+              <a
+                href={h.receiptUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.histReceiptLink}
+              >
+                📄 Comprobante
+              </a>
+            ) : (
+              <>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  style={{ display: 'none' }}
+                  id={`receipt-upload-${h.id}`}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) void handleReceiptUpload(h.id, file)
+                    e.target.value = ''
+                  }}
+                />
+                <label
+                  htmlFor={`receipt-upload-${h.id}`}
+                  className={styles.histUploadBtn}
+                  aria-disabled={uploadingPaymentId === h.id || isUploadingReceipt}
+                >
+                  {uploadingPaymentId === h.id ? '⏳' : '+ Comprobante'}
+                </label>
+              </>
+            )}
+          </div>
         </div>
       ))}
       {rec.paymentHistory.length === 0 && (
@@ -569,14 +633,49 @@ export default function RecurringDetailPage(): React.ReactElement {
             {isManual && showPaymentForm && paymentFormContent}
 
             <div className={styles.dkHistList}>
-              {rec.paymentHistory.length === 0 ? (
+              {sortedHistory.length === 0 ? (
                 <p className={styles.dkHistEmpty}>Sin historial de pagos aún.</p>
               ) : (
-                rec.paymentHistory.map((h) => (
+                sortedHistory.map((h) => (
                   <div key={h.id} className={styles.dkHistRow}>
                     <span className={styles.dkHistCheck}>✓</span>
-                    <span className={styles.dkHistDate}>{h.month}/{h.year}</span>
-                    <span className={styles.dkHistAmt}>{formatCurrency(h.amount, h.currency)}</span>
+                    <div className={styles.dkHistInfo}>
+                      <span className={styles.dkHistDate}>{formatPaidAt(h.paidAt, h.month, h.year)}</span>
+                      <span className={styles.dkHistAmt}>{formatCurrency(h.amount, h.currency)}</span>
+                    </div>
+                    <div className={styles.dkHistReceiptCol}>
+                      {h.receiptUrl ? (
+                        <a
+                          href={h.receiptUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={styles.dkHistReceiptLink}
+                        >
+                          📄 Comprobante
+                        </a>
+                      ) : (
+                        <>
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,application/pdf"
+                            style={{ display: 'none' }}
+                            id={`dk-receipt-${h.id}`}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0]
+                              if (file) void handleReceiptUpload(h.id, file)
+                              e.target.value = ''
+                            }}
+                          />
+                          <label
+                            htmlFor={`dk-receipt-${h.id}`}
+                            className={styles.dkHistUploadBtn}
+                            aria-disabled={uploadingPaymentId === h.id || isUploadingReceipt}
+                          >
+                            {uploadingPaymentId === h.id ? '⏳' : '+ Comprobante'}
+                          </label>
+                        </>
+                      )}
+                    </div>
                   </div>
                 ))
               )}

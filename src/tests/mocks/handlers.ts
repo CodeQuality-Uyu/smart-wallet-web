@@ -19,6 +19,7 @@ import { mockBrands } from './data/brands'
 import { mockUserProducts, mockGlobalProductSuggestions } from './data/products'
 import { mockPriceHistory } from './data/priceHistory'
 import { mockNotifications, mockNotificationPrefs } from './data/notifications'
+import { mockReportAttachments } from './data/reportAttachments'
 
 const BASE = '/api'
 
@@ -374,6 +375,18 @@ export const handlers = [
       rec.currentMonthStatus = RecurringPaymentStatus.Paid
     }
     return HttpResponse.json(history, { status: 201 })
+  }),
+
+  http.post(`${BASE}/recurring/:id/payments/:paymentId/receipt`, async ({ params }) => {
+    const rec = mockRecurring.find((r) => r.id === params['id'])
+    const paymentId = params['paymentId'] as string
+    const receiptUrl = `https://storage.example.com/receipts/mock-${paymentId}.jpg`
+    if (rec) {
+      rec.paymentHistory = rec.paymentHistory.map((h) =>
+        h.id === paymentId ? { ...h, receiptUrl } : h,
+      )
+    }
+    return HttpResponse.json({ receiptUrl })
   }),
 
   // ─── Budget ──────────────────────────────────────────────
@@ -754,5 +767,67 @@ export const handlers = [
     const body = await request.json() as typeof mockNotificationPrefs
     Object.assign(mockNotificationPrefs, body)
     return HttpResponse.json(mockNotificationPrefs)
+  }),
+
+  // ─── Gemini AI (category suggestion mock) ────────────────
+  http.post('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', async ({ request }) => {
+    const body = await request.json() as { contents?: { parts?: { text?: string }[] }[] }
+    const promptText = body.contents?.[0]?.parts?.[0]?.text ?? ''
+
+    // Extract expense name from prompt
+    const match = promptText.match(/Nombre del gasto: "([^"]+)"/)
+    const expenseName = match?.[1]?.toLowerCase() ?? ''
+
+    // Simple keyword-based mock responses
+    let result: { match: string | null; suggestions: { name: string; icon: string; color: string; monthlyLimit?: number }[] }
+
+    if (expenseName.includes('super') || expenseName.includes('mercado') || expenseName.includes('almacén')) {
+      result = { match: null, suggestions: [{ name: 'Supermercado', icon: '🛒', color: '#4caf50' }] }
+    } else if (expenseName.includes('restau') || expenseName.includes('lunch') || expenseName.includes('pizza') || expenseName.includes('sushi')) {
+      result = { match: null, suggestions: [{ name: 'Restaurantes', icon: '🍽️', color: '#ff7043' }] }
+    } else if (expenseName.includes('farmacia') || expenseName.includes('medicamento') || expenseName.includes('farmac')) {
+      result = { match: null, suggestions: [{ name: 'Salud', icon: '💊', color: '#42a5f5' }] }
+    } else if (expenseName.includes('uber') || expenseName.includes('taxi') || expenseName.includes('bus') || expenseName.includes('nafta')) {
+      result = { match: null, suggestions: [{ name: 'Transporte', icon: '🚗', color: '#7e57c2' }] }
+    } else {
+      // Return first category as a plausible match mock
+      result = { match: null, suggestions: [{ name: 'Varios', icon: '📦', color: '#90a4ae' }] }
+    }
+
+    const responseText = JSON.stringify(result)
+    return HttpResponse.json({
+      candidates: [{ content: { parts: [{ text: responseText }] } }],
+    })
+  }),
+
+  // ── Report attachments ───────────────────────────────────
+  http.get(`${BASE}/report-attachments`, ({ request }) => {
+    const url = new URL(request.url)
+    const yearMonth = url.searchParams.get('yearMonth') ?? ''
+    return HttpResponse.json(mockReportAttachments.filter((a) => a.yearMonth === yearMonth))
+  }),
+
+  http.post(`${BASE}/report-attachments`, async ({ request }) => {
+    const form = await request.formData()
+    const yearMonth = (form.get('yearMonth') as string) ?? ''
+    const file = form.get('file') as File | null
+    const now = new Date().toISOString()
+    const newAtt = {
+      id: `att-${Date.now()}`,
+      yearMonth,
+      name: file?.name ?? 'archivo',
+      url: `https://example.com/mock/${file?.name ?? 'archivo'}`,
+      mimeType: file?.type ?? 'application/octet-stream',
+      size: file?.size ?? 0,
+      uploadedAt: now,
+    }
+    mockReportAttachments.push(newAtt)
+    return HttpResponse.json(newAtt, { status: 201 })
+  }),
+
+  http.delete(`${BASE}/report-attachments/:id`, ({ params }) => {
+    const idx = mockReportAttachments.findIndex((a) => a.id === params.id)
+    if (idx !== -1) mockReportAttachments.splice(idx, 1)
+    return new HttpResponse(null, { status: 204 })
   }),
 ]

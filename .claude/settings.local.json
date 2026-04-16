@@ -23,7 +23,10 @@
       "Bash(grep:*)",
       "Bash(sed:*)",
       "Bash(source ~/.nvm/nvm.sh && npm run:*)",
-      "Bash(which:*)"
+      "Bash(which:*)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); t=d.get\\('tokens',{}\\); print\\(list\\(d.keys\\(\\)\\)[:5]\\)\")",
+      "Bash(node -e \"const fs=require\\('fs'\\); const d=JSON.parse\\(fs.readFileSync\\('/c/Users/Odin/.config/configstore/firebase-tools.json','utf8'\\)\\); const tok=d.tokens?.refresh_token||d.user?.tokens?.refresh_token; console.log\\('keys:',Object.keys\\(d\\)\\); console.log\\('tok:',tok?tok.substring\\(0,30\\)+'...':'none'\\);\")",
+      "Bash(node -e ':*)"
     ]
   }
 }

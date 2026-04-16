@@ -3,13 +3,13 @@
 import React, { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePlaces, useCreatePlace } from '@/features/places/hooks/usePlaces'
+import { useExpenses } from '@/features/expenses/hooks/useExpenses'
 import { PlaceFormModal } from '@/features/places/components/PlaceFormModal'
 import type { PlaceFormValues } from '@/features/places/schemas/placeSchema'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { PeriodControl } from '@/components/ui/PeriodControl'
 import { LocaleFilterPeriod } from '@/types/enums'
-import type { Place } from '@/types/models'
 import styles from './PlacesPage.module.css'
 
 const PERIODS = [
@@ -27,21 +27,42 @@ export default function PlacesPage(): React.ReactElement {
   const [showForm, setShowForm] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
-  const { data: places = [], isLoading } = usePlaces(period)
+  const { data: places = [], isLoading: loadingPlaces } = usePlaces()
+  const { data: expensesResult, isLoading: loadingExpenses } = useExpenses({ period })
+  const expenses = expensesResult?.data ?? []
   const { mutateAsync: createPlace } = useCreatePlace()
 
-  const filteredPlaces = useMemo(() => {
-    if (!searchQuery) return places
-    const q = searchQuery.toLowerCase()
-    return places.filter((p) => p.name.toLowerCase().includes(q))
-  }, [places, searchQuery])
+  // Compute visit counts from expenses for the selected period
+  const visitCountMap = useMemo(() => {
+    const map: Record<string, number> = {}
+    for (const expense of expenses) {
+      if (expense.placeId) {
+        map[expense.placeId] = (map[expense.placeId] ?? 0) + 1
+      }
+    }
+    return map
+  }, [expenses])
 
-  const mostVisited = useMemo(
-    () => places.reduce<Place | null>((max, p) => (!max || p.visitCount > max.visitCount ? p : max), null),
-    [places],
+  const placesWithVisits = useMemo(
+    () => places.map((p) => ({ ...p, visitCount: visitCountMap[p.id] ?? 0 })),
+    [places, visitCountMap],
   )
 
-  if (isLoading) return <LoadingSpinner fullPage />
+  const filteredPlaces = useMemo(() => {
+    if (!searchQuery) return placesWithVisits
+    const q = searchQuery.toLowerCase()
+    return placesWithVisits.filter((p) => p.name.toLowerCase().includes(q))
+  }, [placesWithVisits, searchQuery])
+
+  const mostVisited = useMemo(
+    () => placesWithVisits.reduce<(typeof placesWithVisits)[0] | null>(
+      (max, p) => (!max || p.visitCount > max.visitCount ? p : max),
+      null,
+    ),
+    [placesWithVisits],
+  )
+
+  if (loadingPlaces || loadingExpenses) return <LoadingSpinner fullPage />
 
   async function handleCreate(values: PlaceFormValues): Promise<void> {
     await createPlace(values)
@@ -74,7 +95,12 @@ export default function PlacesPage(): React.ReactElement {
           <div className={styles.statCard}>
             <span className={styles.statIcon}>🏆</span>
             <span className={styles.statLabel}>Más visitado</span>
-            <span className={styles.statValue}>{mostVisited ? mostVisited.name : '–'}</span>
+            <span className={styles.statValue}>
+              {mostVisited && mostVisited.visitCount > 0 ? mostVisited.name : '–'}
+            </span>
+            {mostVisited && mostVisited.visitCount > 0 && (
+              <span className={styles.statSub}>{mostVisited.visitCount} visitas</span>
+            )}
           </div>
         </div>
 

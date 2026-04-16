@@ -166,6 +166,11 @@ export interface IRecurringBackend {
     id: string,
     payload: ConfirmRecurringPaymentPayload
   ): Promise<RecurringPaymentHistory>
+  uploadPaymentReceipt(
+    recurringId: string,
+    paymentId: string,
+    file: File
+  ): Promise<{ receiptUrl: string }>
 }
 
 // ─── Expenses ─────────────────────────────────────────────
@@ -314,4 +319,22 @@ export interface INotificationsBackend {
   markAllRead(): Promise<void>
   getPrefs(): Promise<NotificationPrefs>
   setPrefs(prefs: NotificationPrefs): Promise<NotificationPrefs>
+}
+
+// ─── Report attachments ───────────────────────────────────
+
+export interface ReportAttachment {
+  id: string
+  yearMonth: string
+  name: string
+  url: string
+  mimeType: string
+  size: number
+  uploadedAt: string
+}
+
+export interface IReportAttachmentsBackend {
+  list(yearMonth: string): Promise<ReportAttachment[]>
+  upload(yearMonth: string, file: File): Promise<ReportAttachment>
+  remove(id: string): Promise<void>
 }

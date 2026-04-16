@@ -1,8 +1,9 @@
 // src/pages/PlaceDetailPage/PlaceDetailPage.tsx
 
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { usePlaces, useUpdatePlace, useDeletePlace } from '@/features/places/hooks/usePlaces'
+import { useExpenses } from '@/features/expenses/hooks/useExpenses'
 import { PlaceFormModal } from '@/features/places/components/PlaceFormModal'
 import type { PlaceFormValues } from '@/features/places/schemas/placeSchema'
 import { Button } from '@/components/ui/Button'
@@ -19,13 +20,21 @@ export default function PlaceDetailPage(): React.ReactElement {
   const [showEdit, setShowEdit] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
-  const { data: places = [], isLoading } = usePlaces(LocaleFilterPeriod.AllTime)
+  const { data: places = [], isLoading: loadingPlaces } = usePlaces()
+  const { data: expensesResult, isLoading: loadingExpenses } = useExpenses({
+    period: LocaleFilterPeriod.CurrentMonth,
+  })
+  const expensesThisMonth = expensesResult?.data ?? []
   const { mutateAsync: updatePlace } = useUpdatePlace(id!)
   const { mutateAsync: deletePlace, isPending: isDeleting } = useDeletePlace()
 
   const place = places.find((p) => p.id === id)
+  const visitsThisMonth = useMemo(
+    () => expensesThisMonth.filter((e) => e.placeId === id).length,
+    [expensesThisMonth, id],
+  )
 
-  if (isLoading) return <LoadingSpinner fullPage />
+  if (loadingPlaces || loadingExpenses) return <LoadingSpinner fullPage />
   if (!place) return <div className={styles.notFound}>Local no encontrado.</div>
 
   async function handleUpdate(values: PlaceFormValues): Promise<void> {
@@ -110,7 +119,7 @@ export default function PlaceDetailPage(): React.ReactElement {
             <ul className={styles.statsList}>
               <li>
                 <span className={styles.statsLabel}><span className={styles.statsIcon}>📅</span>Total visitas en el mes</span>
-                <span className={styles.statsVal}>{place.visitCount}</span>
+                <span className={styles.statsVal}>{visitsThisMonth}</span>
               </li>
               <li>
                 <span className={styles.statsLabel}><span className={styles.statsIcon}>💵</span>Total gastado USD</span>

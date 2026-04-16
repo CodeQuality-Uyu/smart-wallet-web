@@ -53,6 +53,7 @@
   font-size: 22px; font-weight: 700; color: var(--ink, #1a2e1f);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+.statSub { font-size: 11px; color: var(--muted, #92886f); }
 
 /* ── Toolbar ── */
 .toolbar {
