@@ -247,13 +247,24 @@ export default function ProductDetailPage(): React.ReactElement {
                   </span>
                 )}
               </div>
-              <div className={styles.dtBadges}>
+              <div className={styles.dtMeta}>
                 {category && (
-                  <span className={styles.dtBadge} style={{ background: `${category.color}22`, color: category.color, borderColor: `${category.color}55` }}>
-                    {category.icon} {category.name}
+                  <span className={styles.dtMetaItem}>
+                    <span className={styles.dtMetaLabel}>Categoría</span>
+                    <span
+                      className={styles.dtMetaValue}
+                      style={{ background: `${category.color}18`, color: category.color, borderColor: `${category.color}40` }}
+                    >
+                      {category.icon} {category.name}
+                    </span>
                   </span>
                 )}
-                {brand && <span className={styles.dtBadge}>{brand.name}</span>}
+                {brand && (
+                  <span className={styles.dtMetaItem}>
+                    <span className={styles.dtMetaLabel}>Marca</span>
+                    <span className={styles.dtMetaValue}>🏷️ {brand.name}</span>
+                  </span>
+                )}
               </div>
             </div>
           </div>

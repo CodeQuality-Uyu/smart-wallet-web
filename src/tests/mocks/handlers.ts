@@ -774,24 +774,24 @@ export const handlers = [
     const body = await request.json() as { contents?: { parts?: { text?: string }[] }[] }
     const promptText = body.contents?.[0]?.parts?.[0]?.text ?? ''
 
-    // Extract expense name from prompt
-    const match = promptText.match(/Nombre del gasto: "([^"]+)"/)
-    const expenseName = match?.[1]?.toLowerCase() ?? ''
+    // Extract expense or product name from prompt
+    const expenseMatch = promptText.match(/Nombre del gasto: "([^"]+)"/)
+    const productMatch = promptText.match(/Nombre del producto: "([^"]+)"/)
+    const expenseName = (expenseMatch?.[1] ?? productMatch?.[1] ?? '').toLowerCase()
 
     // Simple keyword-based mock responses
-    let result: { match: string | null; suggestions: { name: string; icon: string; color: string; monthlyLimit?: number }[] }
+    let result: { matches: string[]; suggestions: { name: string; icon: string; color: string; monthlyLimit?: number }[] }
 
     if (expenseName.includes('super') || expenseName.includes('mercado') || expenseName.includes('almacén')) {
-      result = { match: null, suggestions: [{ name: 'Supermercado', icon: '🛒', color: '#4caf50' }] }
+      result = { matches: [], suggestions: [{ name: 'Supermercado', icon: '🛒', color: '#4caf50' }, { name: 'Alimentación', icon: '🥦', color: '#66bb6a' }] }
     } else if (expenseName.includes('restau') || expenseName.includes('lunch') || expenseName.includes('pizza') || expenseName.includes('sushi')) {
-      result = { match: null, suggestions: [{ name: 'Restaurantes', icon: '🍽️', color: '#ff7043' }] }
+      result = { matches: [], suggestions: [{ name: 'Restaurantes', icon: '🍽️', color: '#ff7043' }, { name: 'Salidas', icon: '🎉', color: '#ffa726' }] }
     } else if (expenseName.includes('farmacia') || expenseName.includes('medicamento') || expenseName.includes('farmac')) {
-      result = { match: null, suggestions: [{ name: 'Salud', icon: '💊', color: '#42a5f5' }] }
+      result = { matches: [], suggestions: [{ name: 'Salud', icon: '💊', color: '#42a5f5' }] }
     } else if (expenseName.includes('uber') || expenseName.includes('taxi') || expenseName.includes('bus') || expenseName.includes('nafta')) {
-      result = { match: null, suggestions: [{ name: 'Transporte', icon: '🚗', color: '#7e57c2' }] }
+      result = { matches: [], suggestions: [{ name: 'Transporte', icon: '🚗', color: '#7e57c2' }] }
     } else {
-      // Return first category as a plausible match mock
-      result = { match: null, suggestions: [{ name: 'Varios', icon: '📦', color: '#90a4ae' }] }
+      result = { matches: [], suggestions: [{ name: 'Varios', icon: '📦', color: '#90a4ae' }] }
     }
 
     const responseText = JSON.stringify(result)

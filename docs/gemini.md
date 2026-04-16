@@ -4,7 +4,7 @@
 
 Gemini es el modelo de lenguaje de Google. SmartWallet usa la API REST de Gemini directamente desde el frontend (sin backend intermedio) para tareas de inferencia ligera sobre los datos del usuario.
 
-**Modelo en uso:** `gemini-2.0-flash` — optimizado para respuestas rápidas y bajo costo, ideal para features en tiempo real.
+**Modelo en uso:** `gemini-2.5-flash` — optimizado para respuestas rápidas, tier gratuito con rate limits generosos, ideal para features en tiempo real.
 
 ---
 

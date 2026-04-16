@@ -8,8 +8,11 @@ import { ProductCategoryPickerModal } from './ProductCategoryPickerModal'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { ProductNameInput } from './ProductNameInput'
+import { CategoryChips } from '@/components/shared/CategoryChips'
+import { CategorySuggestionBanner } from '@/features/expenses/components/CategorySuggestionBanner'
 import { NewPlaceModal } from '@/features/expenses/components/NewPlaceModal'
-import { useProductCategories } from '../hooks/useProductCategories'
+import { useProductCategories, useCreateProductCategory } from '../hooks/useProductCategories'
+import { useProductCategorySuggestion } from '../hooks/useProductCategorySuggestion'
 import { usePlaces } from '@/features/places/hooks/usePlaces'
 import { useBrands, useCreateBrand } from '../hooks/useBrands'
 import { ProductPricingType, WeightUnit, Currency } from '@/types/enums'
@@ -51,9 +54,7 @@ const WEIGHT_UNIT_OPTIONS = [
   { value: WeightUnit.Ml, label: 'ml' },
 ]
 
-// ─── Category chips (single-select, top 5 + "Ver todas") ──
-
-const TOP_CAT_COUNT = 5
+// ─── Category chips (single-select) ───────────────────────
 
 function CategoryChipField(): React.ReactElement {
   const { data: categories = [], isLoading } = useProductCategories()
@@ -63,14 +64,6 @@ function CategoryChipField(): React.ReactElement {
   const verTodasBtn = categories.length > 0
     ? <button type="button" className={styles.verTodasBtn} onClick={() => setShowPicker(true)}>Ver todas</button>
     : null
-
-  const picker = showPicker && (
-    <ProductCategoryPickerModal
-      selected={field.value as string}
-      onConfirm={(id) => { void helpers.setValue(id); setShowPicker(false) }}
-      onClose={() => setShowPicker(false)}
-    />
-  )
 
   if (isLoading) {
     return (
@@ -100,27 +93,25 @@ function CategoryChipField(): React.ReactElement {
     )
   }
 
+  const selected = field.value ? [field.value as string] : []
+
   return (
     <>
       <FormField name="productCategoryId" label="Categoría" labelRight={verTodasBtn}>
-        <div className={styles.chipsWrap} role="group" aria-label="Categoría">
-          {categories.slice(0, TOP_CAT_COUNT).map((cat) => {
-            const selected = field.value === cat.id
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                className={[styles.chip, selected ? styles.chipSelected : ''].join(' ')}
-                onClick={() => void helpers.setValue(cat.id)}
-              >
-                <span aria-hidden>{cat.icon}</span>
-                {cat.name}
-              </button>
-            )
-          })}
-        </div>
+        <CategoryChips
+          categories={categories}
+          selected={selected}
+          onChange={(ids) => void helpers.setValue(ids[ids.length - 1] ?? '')}
+          maxVisible={5}
+        />
       </FormField>
-      {picker}
+      {showPicker && (
+        <ProductCategoryPickerModal
+          selected={field.value as string}
+          onConfirm={(id) => { void helpers.setValue(id); setShowPicker(false) }}
+          onClose={() => setShowPicker(false)}
+        />
+      )}
     </>
   )
 }
@@ -337,6 +328,54 @@ function NewBrandModal({ onClose, onCreated }: NewBrandModalProps): React.ReactE
   )
 }
 
+// ─── Category suggestion banner ────────────────────────────
+
+function ProductCategorySuggestion(): React.ReactElement | null {
+  const { values, setFieldValue } = useFormikContext<ProductFormValues>()
+  const { data: categories = [] } = useProductCategories()
+  const { mutateAsync: createCategory } = useCreateProductCategory()
+  const [dismissed, setDismissed] = useState(false)
+  const [lastDismissedName, setLastDismissedName] = useState('')
+
+  const { suggestion } = useProductCategorySuggestion(values.name, categories)
+
+  const shouldShow =
+    !dismissed ||
+    (values.name !== lastDismissedName && values.name.length >= 3)
+
+  if (!suggestion || !shouldShow) return null
+
+  const handleDismiss = () => {
+    setDismissed(true)
+    setLastDismissedName(values.name)
+  }
+
+  const handleAcceptMatch = (categoryId: string) => {
+    void setFieldValue('productCategoryId', categoryId)
+    handleDismiss()
+  }
+
+  const handleAcceptNew = async (s: { name: string; icon: string; color: string; monthlyLimit?: number }) => {
+    try {
+      const created = await createCategory({ name: s.name, icon: s.icon, color: s.color })
+      void setFieldValue('productCategoryId', created.id)
+    } finally {
+      handleDismiss()
+    }
+  }
+
+  // CategorySuggestionBanner expects Category[], cast ProductCategory[] (structurally compatible)
+  return (
+    <CategorySuggestionBanner
+      suggestion={suggestion}
+      categories={categories as unknown as import('@/types/models').Category[]}
+      onAcceptMatch={handleAcceptMatch}
+      onAcceptNewSuggestion={(s) => void handleAcceptNew(s)}
+      onDismiss={handleDismiss}
+    />
+  )
+}
+
 // ─── Inner form (has access to Formik context) ─────────────
 
 function InnerForm({
@@ -379,6 +418,8 @@ function InnerForm({
           : <ProductNameInput onSelectGlobal={handleSelectGlobal} />
         }
       </FormField>
+
+      {!editMode && <ProductCategorySuggestion />}
 
       <CategoryChipField />
 

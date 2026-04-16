@@ -272,20 +272,35 @@
     flex-shrink: 0;
   }
 
-  .dtBadges {
+  .dtMeta {
     display: flex;
-    gap: 8px;
+    gap: 16px;
     flex-wrap: wrap;
   }
 
-  .dtBadge {
+  .dtMetaItem {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .dtMetaLabel {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--muted);
+  }
+
+  .dtMetaValue {
     font-size: 12px;
     font-weight: 600;
     background: var(--g50);
     border: 1px solid var(--g200);
     color: var(--g700);
-    border-radius: 20px;
-    padding: 3px 11px;
+    border-radius: 8px;
+    padding: 4px 10px;
+    white-space: nowrap;
   }
 
   .dtEditBtn {

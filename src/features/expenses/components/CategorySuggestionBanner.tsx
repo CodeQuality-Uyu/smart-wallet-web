@@ -20,32 +20,26 @@ export function CategorySuggestionBanner({
   onAcceptNewSuggestion,
   onDismiss,
 }: Props): React.ReactElement | null {
-  if (!suggestion.match && suggestion.suggestions.length === 0) return null
+  const matchedCats = (suggestion.matches ?? [])
+    .map((id) => categories.find((c) => c.id === id))
+    .filter(Boolean) as Category[]
 
-  if (suggestion.match) {
-    const cat = categories.find((c) => c.id === suggestion.match)
-    if (!cat) return null
-    return (
-      <div className={styles.banner}>
-        <span className={styles.label}>Sugerencia:</span>
-        <button
-          type="button"
-          className={styles.chip}
-          onClick={() => onAcceptMatch(cat.id)}
-        >
-          {cat.icon} {cat.name}
-        </button>
-        <button type="button" className={styles.dismiss} onClick={onDismiss} aria-label="Ignorar sugerencia">
-          ✕
-        </button>
-      </div>
-    )
-  }
+  if (matchedCats.length === 0 && suggestion.suggestions.length === 0) return null
 
   return (
-    <div className={styles.bannerNew}>
-      <span className={styles.label}>Categorías sugeridas:</span>
+    <div className={styles.banner}>
+      <span className={styles.label}>Sugerencia:</span>
       <div className={styles.newList}>
+        {matchedCats.map((cat) => (
+          <button
+            key={cat.id}
+            type="button"
+            className={styles.chip}
+            onClick={() => onAcceptMatch(cat.id)}
+          >
+            {cat.icon} {cat.name}
+          </button>
+        ))}
         {suggestion.suggestions.map((s, i) => (
           <button
             key={i}
