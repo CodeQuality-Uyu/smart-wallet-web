@@ -150,10 +150,6 @@ for (const user of usersSnap.docs) {
 
 ---
 
-- tips y metricas dinamicos
-
----
-
 ## Cobertura de tests insuficiente
 
 **Contexto**

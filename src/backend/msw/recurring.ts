@@ -57,4 +57,18 @@ export const mswRecurringBackend: IRecurringBackend = {
     )
     return data
   },
+
+  async uploadPaymentReceipt(
+    recurringId: string,
+    paymentId: string,
+    file: File,
+  ): Promise<{ receiptUrl: string }> {
+    const form = new FormData()
+    form.append('receipt', file)
+    const { data } = await httpClient.post<{ receiptUrl: string }>(
+      `/recurring/${recurringId}/payments/${paymentId}/receipt`,
+      form,
+    )
+    return data
+  },
 }

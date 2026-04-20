@@ -144,6 +144,50 @@ Archivos de partida relevantes:
 
 ---
 
+## 📋 Features pendientes — Locales
+
+### Categorización de locales
+- Agregar campo `type` (enum `PlaceType`: `Supermercado | Restaurante | Farmacia | Tienda | Otro`) al modelo `Place` y `GlobalPlace`
+- Permitir seleccionar categoría al crear/editar un local
+- Filtrar la grilla de locales por categoría en `PlacesPage` (pills ya preparadas en el diseño)
+
+### Precio promedio por categoría de producto en un local
+- En cada local (`Place`), trackear `totalProductsAmount` (suma de precios de todos los productos registrados) y `productCount`
+- Calcular `avgProductPrice = totalProductsAmount / productCount` para mostrarlo en la card del local y en el panel de detalle
+- Objetivo: en `PlacesPage` mostrar en cada card cuál es el precio promedio de los productos de ese local según su categoría de producto (ej. "Lácteos: $X promedio")
+- Modelo sugerido: `PlaceProductStats { categoryId, totalAmount, currency, count }[]` guardado en el documento del local o como subcolección
+
+### Tips y métricas dinámicos
+- Reemplazar los tips estáticos (hardcoded) del Dashboard y otras páginas por sugerencias generadas a partir de los datos reales del usuario
+- Ejemplos de tips dinámicos:
+  - "Este mes gastaste un 23% más en Restaurantes que el mes pasado"
+  - "Tu local más visitado es X — registrá sus productos para comparar precios"
+  - "Llevas N días sin registrar gastos"
+- Métricas dinámicas: calcular y mostrar en las páginas relevantes indicadores que hoy son placeholders (`–`), como productos únicos por local, total ahorrado, mejor precio por producto
+- Implementación sugerida: función `computeTips(metrics: MetricsSummary, places: Place[]): Tip[]` en `src/services/` que devuelva un array de `{ icon, text, type: 'info' | 'warning' | 'success' }` — sin llamada a IA, puramente lógica sobre los datos existentes
+
+---
+
+## 🤖 Features pendientes — Integración con IA (Gemini)
+
+### Sugerencia de categoría al crear un gasto
+- Al ingresar el nombre de un gasto en `NewExpensePage`, llamar a Gemini para que sugiera la categoría más adecuada de entre las categorías existentes del usuario
+- Si ninguna categoría existente aplica bien, Gemini debe sugerir nombres de nuevas categorías a crear, incluyendo icono, color y límite mensual sugerido
+- Flujo UX:
+  1. Usuario escribe el nombre del gasto (debounce ~500ms antes de llamar)
+  2. Aparece un chip/banner no intrusivo debajo del campo: "Sugerencia: Supermercado" con botón para aceptar
+  3. Si la sugerencia es una categoría nueva: mostrar tarjeta con nombre + icono + color propuesto y botón "Crear y seleccionar"
+  4. El usuario puede ignorar la sugerencia sin fricción
+- Prompt a Gemini: incluir nombre del gasto + lista de categorías existentes (`{ id, name, icon, color }[]`) para que devuelva `{ match: string | null, suggestions: { name, icon, color, monthlyLimit }[] }`
+- Implementación sugerida:
+  - `src/services/geminiService.ts` — cliente Gemini con función `suggestCategory(expenseName: string, categories: Category[]): Promise<CategorySuggestion>`
+  - `src/features/expenses/hooks/useCategorySuggestion.ts` — hook React Query con debounce, deshabilitado si el nombre tiene menos de 3 caracteres
+  - `src/features/expenses/components/CategorySuggestionBanner.tsx` — UI de la sugerencia
+- La API key de Gemini se configura vía variable de entorno `VITE_GEMINI_API_KEY`
+- En modo MSW (`VITE_BACKEND=msw`), mockear la llamada a Gemini con respuestas predefinidas para no depender de la API en desarrollo/tests
+
+---
+
 ## ⚠️ Notas importantes
 
 - **Datos reales en producción** (uso familiar). Toda migración de datos debe ser un script aislado, nunca inline en el código de la app.

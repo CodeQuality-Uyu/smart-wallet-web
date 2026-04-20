@@ -62,3 +62,12 @@ export function useConfirmRecurringPayment(id: string) {
     onSuccess: () => void qc.invalidateQueries({ queryKey: RECURRING_KEYS.all }),
   })
 }
+
+export function useUploadRecurringPaymentReceipt(recurringId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ paymentId, file }: { paymentId: string; file: File }) =>
+      recurringService.uploadPaymentReceipt(recurringId, paymentId, file),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: RECURRING_KEYS.detail(recurringId) }),
+  })
+}

@@ -1,5 +1,10 @@
 /* src/pages/ProductsPage.module.css */
 
+.root { display: contents; }
+
+.mobileView { display: block; }
+.desktopView { display: none; }
+
 .body { padding: 12px 0; }
 
 /* ─── Filter bar (in PageHeader rightAction) ─── */
@@ -115,4 +120,288 @@
   font-size: 13px;
   color: var(--muted);
   padding: 32px 16px;
+}
+
+/* ═══════════════════════════════════════════════
+   Desktop (≥768px)
+═══════════════════════════════════════════════ */
+
+@media (min-width: 768px) {
+  .mobileView { display: none; }
+  .desktopView { display: block; padding: 32px; }
+
+  /* ─── Header ─── */
+  .dtHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .dtTitle {
+    font-family: var(--font-head);
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 0 0 4px;
+  }
+
+  .dtSubtitle {
+    font-size: 13px;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  .dtAddBtn {
+    flex-shrink: 0;
+    background: linear-gradient(135deg, var(--gold) 0%, #e09422 100%);
+    color: var(--ink);
+    border: none;
+    border-radius: 16px;
+    padding: 11px 20px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(245,183,50,.35);
+    transition: opacity .15s;
+  }
+  .dtAddBtn:hover { opacity: .9; }
+
+  /* ─── Stat card ─── */
+  .dtStats {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .dtStatCard {
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    padding: 20px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .dtStatLabel {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--muted);
+  }
+
+  .dtStatValue {
+    font-family: var(--font-num);
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1;
+  }
+
+  /* ─── Filters row ─── */
+  .dtFilters {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .dtSearchWrap {
+    flex: 1;
+    position: relative;
+  }
+
+  .dtSearchIcon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+    pointer-events: none;
+  }
+
+  .dtSearch {
+    width: 100%;
+    padding: 10px 14px 10px 40px;
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--ink);
+    background: #fff;
+    outline: none;
+    transition: border-color .15s;
+    box-sizing: border-box;
+  }
+  .dtSearch::placeholder { color: var(--muted); }
+  .dtSearch:focus { border-color: var(--g500); }
+
+  /* ─── Category dropdown (estilo FormField) ─── */
+  .dtCatSelectWrap {
+    position: relative;
+  }
+  .dtCatSelectWrap::after {
+    content: '▾';
+    position: absolute;
+    right: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+    color: var(--muted);
+    pointer-events: none;
+  }
+
+  .dtCatSelect {
+    appearance: none;
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 36px 10px 13px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--ink);
+    outline: none;
+    cursor: pointer;
+    transition: border-color .2s, box-shadow .2s;
+    white-space: nowrap;
+  }
+  .dtCatSelect:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(245,166,35,.18);
+  }
+
+  /* ─── Table ─── */
+  .dtTable {
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .dtTableHead {
+    display: grid;
+    grid-template-columns: 2.5fr 1.5fr 1fr 1fr 1fr;
+    gap: 0;
+    padding: 12px 20px;
+    background: #faf8f5;
+    border-bottom: 1px solid var(--border);
+  }
+  .dtTableHead span {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--muted);
+  }
+
+  .dtTableRow {
+    display: grid;
+    grid-template-columns: 2.5fr 1.5fr 1fr 1fr 1fr;
+    align-items: center;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background .12s;
+  }
+  .dtTableRow:last-child { border-bottom: none; }
+  .dtTableRow:hover { background: #faf8f5; }
+
+  .dtProductCell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .dtProductIcon {
+    width: 36px;
+    height: 36px;
+    background: var(--g50);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .dtProductName {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    display: block;
+  }
+
+  .dtBrandBadge {
+    font-size: 11px;
+    color: var(--muted);
+    background: #f0ebe0;
+    border-radius: 6px;
+    padding: 2px 7px;
+    margin-top: 3px;
+    display: inline-block;
+  }
+
+  .dtCatBadge {
+    font-size: 12px;
+    font-weight: 600;
+    background: var(--g50);
+    color: var(--g700);
+    border: 1px solid var(--g200);
+    border-radius: 8px;
+    padding: 3px 10px;
+  }
+
+  .dtTypeBadge {
+    font-size: 12px;
+    font-weight: 600;
+    background: #eff6ff;
+    color: #3b82f6;
+    border-radius: 8px;
+    padding: 3px 10px;
+  }
+  .dtTypeBadgeWeight {
+    background: #fef3c7;
+    color: #d97706;
+  }
+
+  .dtMono {
+    font-family: var(--font-num);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .dtMuted {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .dtVariation {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: var(--font-num);
+    border-radius: 8px;
+    padding: 3px 9px;
+  }
+  .dtVariationUp {
+    background: #fef2f2;
+    color: #dc2626;
+  }
+  .dtVariationDown {
+    background: #f0fdf4;
+    color: #16a34a;
+  }
+
+  .dtEmpty {
+    text-align: center;
+    font-size: 14px;
+    color: var(--muted);
+    padding: 48px 24px;
+  }
 }

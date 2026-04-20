@@ -1,12 +1,11 @@
-// src/pages/PlacesPage.tsx
+// src/pages/PlacesPage/PlacesPage.tsx
 
-import React, { useState } from 'react'
-import { Formik, Form } from 'formik'
+import React, { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { usePlaces, useCreatePlace } from '@/features/places/hooks/usePlaces'
-import { placeSchema, type PlaceFormValues } from '@/features/places/schemas/placeSchema'
-import { PlaceNameInput } from '@/features/places/components/PlaceNameInput'
-import { FormField, TextInput } from '@/components/ui/FormField'
-import { Button } from '@/components/ui/Button'
+import { useExpenses } from '@/features/expenses/hooks/useExpenses'
+import { PlaceFormModal } from '@/features/places/components/PlaceFormModal'
+import type { PlaceFormValues } from '@/features/places/schemas/placeSchema'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { PeriodControl } from '@/components/ui/PeriodControl'
@@ -23,79 +22,129 @@ const PERIODS = [
 const DEFAULT_ICON = '🏪'
 
 export default function PlacesPage(): React.ReactElement {
+  const navigate = useNavigate()
   const [period, setPeriod] = useState(LocaleFilterPeriod.CurrentMonth)
   const [showForm, setShowForm] = useState(false)
-  const { data: places = [], isLoading } = usePlaces(period)
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const { data: places = [], isLoading: loadingPlaces } = usePlaces()
+  const { data: expensesResult, isLoading: loadingExpenses } = useExpenses({ period })
+  const expenses = expensesResult?.data ?? []
   const { mutateAsync: createPlace } = useCreatePlace()
 
-  if (isLoading) return <LoadingSpinner fullPage />
-
-  async function handleSubmit(
-    values: PlaceFormValues,
-    { setStatus }: { setStatus: (status: string) => void },
-  ): Promise<void> {
-    try {
-      await createPlace(values)
-      setShowForm(false)
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : (err as { message?: string })?.message ?? 'Error al guardar'
-      setStatus(msg)
+  // Compute visit counts from expenses for the selected period
+  const visitCountMap = useMemo(() => {
+    const map: Record<string, number> = {}
+    for (const expense of expenses) {
+      if (expense.placeId) {
+        map[expense.placeId] = (map[expense.placeId] ?? 0) + 1
+      }
     }
-  }
+    return map
+  }, [expenses])
 
-  const periodTabs = <PeriodControl options={PERIODS} value={period} onChange={setPeriod} /> // PlacesPage has different period options
+  const placesWithVisits = useMemo(
+    () => places.map((p) => ({ ...p, visitCount: visitCountMap[p.id] ?? 0 })),
+    [places, visitCountMap],
+  )
+
+  const filteredPlaces = useMemo(() => {
+    if (!searchQuery) return placesWithVisits
+    const q = searchQuery.toLowerCase()
+    return placesWithVisits.filter((p) => p.name.toLowerCase().includes(q))
+  }, [placesWithVisits, searchQuery])
+
+  const mostVisited = useMemo(
+    () => placesWithVisits.reduce<(typeof placesWithVisits)[0] | null>(
+      (max, p) => (!max || p.visitCount > max.visitCount ? p : max),
+      null,
+    ),
+    [placesWithVisits],
+  )
+
+  if (loadingPlaces || loadingExpenses) return <LoadingSpinner fullPage />
+
+  async function handleCreate(values: PlaceFormValues): Promise<void> {
+    await createPlace(values)
+    setShowForm(false)
+  }
 
   return (
     <div>
-      <PageHeader title="Locales" rightAction={periodTabs} />
+      <PageHeader
+        title="Locales"
+        subtitle="Gestiona los comercios donde comprás tus productos"
+        rightAction={
+          <button className={styles.addBtn} onClick={() => setShowForm(true)}>
+            ＋ Agregar local
+          </button>
+        }
+      />
 
-      <div className={styles.body}>
-        <button className={styles.addBtn} onClick={() => setShowForm((s) => !s)}>
-          ＋ Agregar local
-        </button>
+      {showForm && (
+        <PlaceFormModal mode="create" onSubmit={handleCreate} onClose={() => setShowForm(false)} />
+      )}
 
-        {showForm && (
-          <div className={styles.form}>
-            <Formik<PlaceFormValues>
-              initialValues={{ name: '', address: '', icon: '', globalPlaceId: '' }}
-              validationSchema={placeSchema}
-              onSubmit={handleSubmit}
-            >
-              {({ isSubmitting, status }) => (
-                <Form>
-                  <FormField name="name" label="Nombre">
-                    <PlaceNameInput />
-                  </FormField>
-                  <FormField name="address" label="Dirección (opcional)">
-                    <TextInput name="address" placeholder="ej. Av. Brasil, Pocitos" icon="📍" />
-                  </FormField>
-                  {status && (
-                    <p className={styles.formError}>{status}</p>
-                  )}
-                  <div className={styles.formActions}>
-                    <Button type="button" variant="ghost" size="sm" onClick={() => setShowForm(false)}>
-                      Cancelar
-                    </Button>
-                    <Button type="submit" variant="secondary" size="sm" loading={isSubmitting}>
-                      Crear local
-                    </Button>
+      <div className={styles.page}>
+        <div className={styles.statsRow}>
+          <div className={styles.statCard}>
+            <span className={styles.statIcon}>🏪</span>
+            <span className={styles.statLabel}>Total locales</span>
+            <span className={styles.statValue}>{places.length}</span>
+          </div>
+          <div className={styles.statCard}>
+            <span className={styles.statIcon}>🏆</span>
+            <span className={styles.statLabel}>Más visitado</span>
+            <span className={styles.statValue}>
+              {mostVisited && mostVisited.visitCount > 0 ? mostVisited.name : '–'}
+            </span>
+            {mostVisited && mostVisited.visitCount > 0 && (
+              <span className={styles.statSub}>{mostVisited.visitCount} visitas</span>
+            )}
+          </div>
+        </div>
+
+        <div className={styles.toolbar}>
+          <div className={styles.searchWrap}>
+            <span className={styles.searchIcon}>🔍</span>
+            <input
+              className={styles.searchInput}
+              type="text"
+              placeholder="Buscar local..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <PeriodControl options={PERIODS} value={period} onChange={setPeriod} />
+        </div>
+
+        {filteredPlaces.length === 0 ? (
+          <div className={styles.empty}>
+            <span className={styles.emptyIcon}>🏪</span>
+            <p>No hay locales{searchQuery ? ' que coincidan con la búsqueda' : ''}.</p>
+          </div>
+        ) : (
+          <div className={styles.grid}>
+            {filteredPlaces.map((place) => (
+              <div
+                key={place.id}
+                className={styles.placeCard}
+                onClick={() => navigate(`/settings/places/${place.id}`)}
+              >
+                <div className={styles.placeCardTop}>
+                  <div className={styles.placeIconWrap}>{place.icon ?? DEFAULT_ICON}</div>
+                  <div className={styles.placeCardInfo}>
+                    <p className={styles.placeName}>{place.name}</p>
+                    {place.address && <p className={styles.placeAddr}>📍 {place.address}</p>}
                   </div>
-                </Form>
-              )}
-            </Formik>
+                </div>
+                <div className={styles.placeCardFooter}>
+                  <span className={styles.placeStats}>0 productos · {place.visitCount} visitas</span>
+                </div>
+              </div>
+            ))}
           </div>
         )}
-
-        {places.map((place) => (
-          <div key={place.id} className={styles.item}>
-            <div className={styles.itemIcon}>{place.icon ?? DEFAULT_ICON}</div>
-            <div className={styles.itemInfo}>
-              <p className={styles.itemName}>{place.name}</p>
-              {place.address && <p className={styles.itemAddr}>{place.address}</p>}
-            </div>
-            <span className={styles.count}>{place.visitCount}×</span>
-          </div>
-        ))}
       </div>
     </div>
   )

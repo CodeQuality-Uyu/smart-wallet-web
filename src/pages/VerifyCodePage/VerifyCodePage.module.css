@@ -1,3 +1,5 @@
+/* src/pages/VerifyCodePage/VerifyCodePage.module.css */
+
 .page { display: flex; flex-direction: column; min-height: 100dvh; }
 
 .hero {
@@ -21,14 +23,16 @@
 
 .logo { display: flex; align-items: center; gap: 9px; position: relative; z-index: 1; }
 .logoMark {
-  width: 34px; height: 34px; background: var(--g300); border-radius: 11px;
+  width: 34px; height: 34px; background: var(--gold); border-radius: 11px;
   display: flex; align-items: center; justify-content: center; font-size: 19px;
+  font-family: var(--font-head); font-weight: 800; color: #fff;
 }
 .logoName { font-family: var(--font-head); font-size: 22px; font-weight: 800; color: #fff; }
 
+.heroEmoji { display: none; }
 .heroText { margin-top: auto; position: relative; z-index: 1; }
 .title { font-family: var(--font-head); font-size: 34px; font-weight: 800; color: #fff; line-height: 1.15; }
-.em { color: var(--g300); font-style: normal; }
+.em { color: var(--gold); font-style: normal; }
 .subtitle { font-size: 14px; color: var(--g200); margin-top: 7px; }
 
 .form {
@@ -48,7 +52,7 @@
   font-size: 22px; font-family: var(--font-num); letter-spacing: .25em;
   color: var(--ink); outline: none; text-align: center;
 }
-.input:focus { border-color: var(--g400); box-shadow: 0 0 0 3px rgba(76,217,106,.14); }
+.input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,166,35,.18); }
 .inputError { border-color: var(--rose) !important; }
 
 .error { font-size: 12px; color: var(--rose); margin-top: 4px; }
@@ -57,17 +61,17 @@
 
 .submitBtn {
   width: 100%; margin-top: 16px; padding: 14px;
-  background: linear-gradient(135deg, #4338ca, var(--ind), var(--ind-md));
-  color: #fff; border: none; border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--gold-dk), var(--gold));
+  color: var(--ink); border: none; border-radius: var(--radius-sm);
   font-family: var(--font-head); font-size: 14px; font-weight: 700;
-  box-shadow: 0 4px 18px rgba(79,70,229,.38);
+  box-shadow: 0 4px 18px rgba(196,125,16,.4);
   cursor: pointer;
 }
 .submitBtn:disabled { opacity: .6; cursor: not-allowed; }
 
 .hint { font-size: 12px; color: var(--muted); text-align: center; margin-top: 12px; }
 .link {
-  color: var(--g500); font-weight: 600; text-decoration: none;
+  color: var(--gold-dk); font-weight: 600; text-decoration: none;
   background: none; border: none; padding: 0; cursor: pointer; font-size: inherit;
   font-family: inherit;
 }
@@ -81,43 +85,50 @@
   }
 
   .hero {
-    width: 44%;
+    width: 45%;
     flex: none;
     min-height: 100%;
-    padding: 52px 48px;
+    padding: 48px 48px 40px;
     justify-content: flex-start;
+    background: #0c1f1a;
   }
 
-  .orb1 { width: 520px; height: 520px; top: -160px; right: -160px; }
-  .orb2 { width: 380px; height: 380px; bottom: -80px; left: -110px; }
+  .orb1 { width: 520px; height: 520px; top: -160px; right: -160px; opacity: .5; }
+  .orb2 { width: 380px; height: 380px; bottom: -80px; left: -110px; opacity: .5; }
 
-  .logoMark { width: 42px; height: 42px; font-size: 22px; border-radius: 14px; }
-  .logoName { font-size: 26px; }
+  .logoMark { width: 40px; height: 40px; font-size: 18px; border-radius: 12px; }
+  .logoName { font-size: 24px; }
 
-  .heroText { margin-top: 52px; }
+  .heroEmoji {
+    display: block;
+    font-size: 64px;
+    margin-bottom: 16px;
+  }
 
-  .title { font-size: 52px; }
-  .subtitle { font-size: 15px; margin-top: 10px; }
+  .heroText { margin-top: auto; }
+
+  .title { font-size: 44px; line-height: 1.1; }
+  .subtitle { font-size: 15px; margin-top: 10px; color: rgba(255,255,255,.5); }
 
   .form {
     flex: 1;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: 48px clamp(40px, 7%, 88px);
+    padding: 48px clamp(48px, 8%, 96px);
     border-radius: 0;
     margin-top: 0;
     overflow-y: auto;
-    box-shadow: -10px 0 48px rgba(0,0,0,.06);
+    background: #fff;
   }
 
-  .formTitle { font-size: 26px; margin-bottom: 10px; }
+  .formTitle { font-size: 28px; margin-bottom: 10px; }
 
   .emailHint { font-size: 14px; }
 
-  .input { font-size: 28px; padding: 14px; letter-spacing: .3em; }
+  .input { font-size: 28px; padding: 14px; letter-spacing: .3em; border-radius: 12px; }
 
-  .submitBtn { padding: 15px; font-size: 15px; margin-top: 20px; }
+  .submitBtn { padding: 15px; font-size: 15px; margin-top: 20px; border-radius: 14px; }
 
-  .hint { font-size: 13px; margin-top: 16px; }
+  .hint { font-size: 13px; margin-top: 20px; }
 }

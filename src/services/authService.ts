@@ -2,9 +2,9 @@
 // Thin delegator — all logic lives in the active backend implementation.
 
 import { getAuthBackend } from '@/backend'
-import type { AuthResponse, LoginResult, SessionUser } from '@/backend/types'
+import type { AuthResponse, LoginResult, SessionUser, SocialAuthResult } from '@/backend/types'
 
-export type { SessionUser, AuthResponse, LoginResult }
+export type { SessionUser, AuthResponse, LoginResult, SocialAuthResult }
 
 export const authService = {
   async login(email: string, password: string): Promise<LoginResult> {
@@ -21,5 +21,17 @@ export const authService = {
 
   async resetPassword(email: string): Promise<void> {
     return (await getAuthBackend()).resetPassword(email)
+  },
+
+  async loginWithGoogle(): Promise<SocialAuthResult> {
+    return (await getAuthBackend()).loginWithGoogle()
+  },
+
+  async sendMagicLink(email: string): Promise<void> {
+    return (await getAuthBackend()).sendMagicLink(email)
+  },
+
+  async confirmMagicLink(email: string): Promise<SocialAuthResult> {
+    return (await getAuthBackend()).confirmMagicLink(email)
   },
 }

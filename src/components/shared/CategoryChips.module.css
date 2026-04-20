@@ -1,0 +1,32 @@
+/* src/features/expenses/components/CategoryChips.module.css */
+
+.scroll {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding-bottom: 4px;
+}
+
+.chip {
+  padding: 7px 13px;
+  border-radius: 20px;
+  background: #fff;
+  border: 1.5px solid var(--border);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  transition: background .15s, border-color .15s;
+}
+
+.chipSelected {
+  background: var(--g800);
+  border-color: var(--g800);
+  color: #fff;
+}

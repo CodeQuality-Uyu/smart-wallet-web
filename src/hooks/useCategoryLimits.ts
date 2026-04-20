@@ -1,21 +1,29 @@
 // src/hooks/useCategoryLimits.ts
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { categoryLimitsService } from '@/services/categoryLimitsService'
-import type { CategoryLimits } from '@/types/models'
+// Derives category limits from the Category model (Category.limitUYU / limitUSD).
+// Returns only categories that have at least one limit configured.
 
-export const CATEGORY_LIMITS_KEY = ['categoryLimits'] as const
+import { useMemo } from 'react'
+import { useCategories } from '@/features/categories/hooks/useCategories'
+import { Currency } from '@/types/enums'
 
-export function useCategoryLimits() {
-  return useQuery({
-    queryKey: CATEGORY_LIMITS_KEY,
-    queryFn: () => categoryLimitsService.get(),
-  })
-}
+export type CategoryLimitEntry = Partial<Record<Currency, number>>
+export type CategoryLimitsMap = Record<string, CategoryLimitEntry>
 
-export function useSetCategoryLimits() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (limits: CategoryLimits) => categoryLimitsService.set(limits),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: CATEGORY_LIMITS_KEY }),
-  })
+export function useCategoryLimits(): { data: CategoryLimitsMap; isLoading: boolean } {
+  const { data: categories = [], isLoading } = useCategories()
+
+  const data = useMemo<CategoryLimitsMap>(() => {
+    const result: CategoryLimitsMap = {}
+    for (const cat of categories) {
+      if (cat.limitUYU || cat.limitUSD) {
+        result[cat.id] = {
+          ...(cat.limitUYU ? { [Currency.UYU]: cat.limitUYU } : {}),
+          ...(cat.limitUSD ? { [Currency.USD]: cat.limitUSD } : {}),
+        }
+      }
+    }
+    return result
+  }, [categories])
+
+  return { data, isLoading }
 }

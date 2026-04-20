@@ -2,7 +2,7 @@
 // Auth backend implemented via the MSW-intercepted HTTP adapter (httpClient → axios)
 
 import { httpClient } from '@/api/httpClient'
-import type { IAuthBackend, AuthResponse, LoginResult } from '../types'
+import type { IAuthBackend, AuthResponse, LoginResult, SocialAuthResult } from '../types'
 
 export const mswAuthBackend: IAuthBackend = {
   async login(email: string, password: string): Promise<LoginResult> {
@@ -21,5 +21,19 @@ export const mswAuthBackend: IAuthBackend = {
 
   async resetPassword(_email: string): Promise<void> {
     // No-op in MSW demo mode
+  },
+
+  async loginWithGoogle(): Promise<SocialAuthResult> {
+    const { data } = await httpClient.post<SocialAuthResult>('/auth/google', {})
+    return data
+  },
+
+  async sendMagicLink(email: string): Promise<void> {
+    await httpClient.post('/auth/magic-link/send', { email })
+  },
+
+  async confirmMagicLink(email: string): Promise<SocialAuthResult> {
+    const { data } = await httpClient.post<SocialAuthResult>('/auth/magic-link/confirm', { email })
+    return data
   },
 }

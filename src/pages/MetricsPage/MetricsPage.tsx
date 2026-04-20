@@ -592,8 +592,14 @@ export default function MetricsPage(): React.ReactElement {
         <div className={styles.desktopTrendCard}>
           <h3 className={styles.desktopCardTitle}>📈 Tendencia mensual</h3>
           <div className={styles.trendLegend}>
-            <span className={styles.trendLegendItem}><span className={styles.trendLegendDot} style={{ background: '#7c3aed' }} />Fijos</span>
-            <span className={styles.trendLegendItem}><span className={styles.trendLegendDot} style={{ background: 'var(--g500)' }} />Variables</span>
+            <span className={styles.trendLegendItem}>
+              <span className={styles.trendLegendDot} style={{ background: '#7c3aed' }} />
+              Fijos
+            </span>
+            <span className={styles.trendLegendItem}>
+              <span className={styles.trendLegendDot} style={{ background: 'var(--g500)' }} />
+              Variables
+            </span>
           </div>
           {metrics.monthlyHistory.length === 0 ? (
             <p className={styles.trendEmpty}>No hay datos históricos para mostrar.</p>
@@ -622,17 +628,47 @@ export default function MetricsPage(): React.ReactElement {
                       <div className={styles.trendBars}>
                         {showUsd && (
                           <div className={styles.trendBarWrap}>
-                            <div className={styles.trendBarStacked} style={{ width: `${(m.usd / maxUsd) * 100}%` }}>
-                              <div className={styles.trendBarSegment} style={{ flex: m.fixedUsd, background: isLast ? '#7c3aed' : '#c4b5fd' }} />
-                              <div className={styles.trendBarSegment} style={{ flex: m.variableUsd, background: isLast ? 'var(--g600)' : 'var(--g300)' }} />
+                            <div
+                              className={styles.trendBarStacked}
+                              style={{ width: `${(m.usd / maxUsd) * 100}%` }}
+                            >
+                              <div
+                                className={styles.trendBarSegment}
+                                style={{
+                                  flex: m.fixedUsd,
+                                  background: isLast ? '#7c3aed' : '#c4b5fd',
+                                }}
+                              />
+                              <div
+                                className={styles.trendBarSegment}
+                                style={{
+                                  flex: m.variableUsd,
+                                  background: isLast ? 'var(--g600)' : 'var(--g300)',
+                                }}
+                              />
                             </div>
                           </div>
                         )}
                         {showUyu && (
                           <div className={styles.trendBarWrap}>
-                            <div className={styles.trendBarStacked} style={{ width: `${(m.uyu / maxUyu) * 100}%` }}>
-                              <div className={styles.trendBarSegment} style={{ flex: m.fixedUyu, background: isLast ? '#7c3aed' : '#c4b5fd' }} />
-                              <div className={styles.trendBarSegment} style={{ flex: m.variableUyu, background: isLast ? 'var(--g600)' : 'var(--g300)' }} />
+                            <div
+                              className={styles.trendBarStacked}
+                              style={{ width: `${(m.uyu / maxUyu) * 100}%` }}
+                            >
+                              <div
+                                className={styles.trendBarSegment}
+                                style={{
+                                  flex: m.fixedUyu,
+                                  background: isLast ? '#7c3aed' : '#c4b5fd',
+                                }}
+                              />
+                              <div
+                                className={styles.trendBarSegment}
+                                style={{
+                                  flex: m.variableUyu,
+                                  background: isLast ? 'var(--g600)' : 'var(--g300)',
+                                }}
+                              />
                             </div>
                           </div>
                         )}
@@ -641,9 +677,7 @@ export default function MetricsPage(): React.ReactElement {
                         {showUsd && (
                           <span className={styles.trendAmt} style={{ color: '#7c3aed' }}>
                             {fmtShort(m.usd) || '—'}
-                            {currencyFilter === '' && (
-                              <span className={styles.trendCurrency}>USD</span>
-                            )}
+                            <span className={styles.trendCurrency}>USD</span>
                             {usdPct !== null && (
                               <span
                                 className={[
@@ -664,9 +698,7 @@ export default function MetricsPage(): React.ReactElement {
                         {showUyu && (
                           <span className={styles.trendAmt} style={{ color: 'var(--g600)' }}>
                             {fmtShort(m.uyu) || '—'}
-                            {currencyFilter === '' && (
-                              <span className={styles.trendCurrency}>UYU</span>
-                            )}
+                            <span className={styles.trendCurrency}>UYU</span>
                             {uyuPct !== null && (
                               <span
                                 className={[
@@ -703,7 +735,6 @@ export default function MetricsPage(): React.ReactElement {
           )}
         </div>
       </div>
-
     </div>
   )
 }

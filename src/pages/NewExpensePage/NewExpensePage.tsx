@@ -20,15 +20,18 @@ export default function NewExpensePage(): React.ReactElement {
   const locationState = (location.state ?? {}) as LocationState
   const { mutateAsync: createExpense } = useCreateExpense()
 
+  const defaultCardId = localStorage.getItem('sw_default_card_id') ?? undefined
+
   // Restore form values when returning from CategoryPickerPage
   const restoredValues = locationState.savedFormValues
     ? {
         ...locationState.savedFormValues,
         ...(locationState.pickedCategoryIds !== undefined && { categoryIds: locationState.pickedCategoryIds }),
       }
-    : locationState.pickedCategoryIds !== undefined
-      ? { categoryIds: locationState.pickedCategoryIds }
-      : undefined
+    : {
+        ...(locationState.pickedCategoryIds !== undefined && { categoryIds: locationState.pickedCategoryIds }),
+        ...(defaultCardId && { cardId: defaultCardId }),
+      }
 
   async function handleSubmit(values: ExpenseFormValues): Promise<void> {
     const payload: CreateExpensePayload = {

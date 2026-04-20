@@ -39,7 +39,6 @@ import type {
   UpdateProductPayload,
   ProductPriceRecord,
   CreateProductPriceRecordPayload,
-  CategoryLimits,
   Notification,
   NotificationPrefs,
 } from '@/types/models'
@@ -110,11 +109,20 @@ export type LoginResult =
   | { authenticated: true; token: string; user: SessionUser }
   | { authenticated: false }
 
+export interface SocialAuthResult {
+  token: string
+  user: SessionUser
+  isNewUser: boolean
+}
+
 export interface IAuthBackend {
   login(email: string, password: string): Promise<LoginResult>
   register(name: string, email: string, password: string): Promise<void>
   verifyCode(email: string, code: string): Promise<AuthResponse>
   resetPassword(email: string): Promise<void>
+  loginWithGoogle(): Promise<SocialAuthResult>
+  sendMagicLink(email: string): Promise<void>
+  confirmMagicLink(email: string): Promise<SocialAuthResult>
 }
 
 // ─── Cards / Payment methods ──────────────────────────────
@@ -158,6 +166,11 @@ export interface IRecurringBackend {
     id: string,
     payload: ConfirmRecurringPaymentPayload
   ): Promise<RecurringPaymentHistory>
+  uploadPaymentReceipt(
+    recurringId: string,
+    paymentId: string,
+    file: File
+  ): Promise<{ receiptUrl: string }>
 }
 
 // ─── Expenses ─────────────────────────────────────────────
@@ -195,11 +208,14 @@ export interface IBudgetBackend {
   set(settings: BudgetSettings): Promise<BudgetSettings>
 }
 
-// ─── Category limits ──────────────────────────────────────
+// ─── Product category limits ──────────────────────────────
+
+export type ProductCategoryLimitEntry = { UYU?: number; USD?: number }
+export type ProductCategoryLimits = { [categoryId: string]: ProductCategoryLimitEntry }
 
 export interface ICategoryLimitsBackend {
-  get(): Promise<CategoryLimits>
-  set(limits: CategoryLimits): Promise<CategoryLimits>
+  get(): Promise<ProductCategoryLimits>
+  set(limits: ProductCategoryLimits): Promise<ProductCategoryLimits>
 }
 
 // ─── Product category limits ──────────────────────────────
@@ -303,4 +319,22 @@ export interface INotificationsBackend {
   markAllRead(): Promise<void>
   getPrefs(): Promise<NotificationPrefs>
   setPrefs(prefs: NotificationPrefs): Promise<NotificationPrefs>
+}
+
+// ─── Report attachments ───────────────────────────────────
+
+export interface ReportAttachment {
+  id: string
+  yearMonth: string
+  name: string
+  url: string
+  mimeType: string
+  size: number
+  uploadedAt: string
+}
+
+export interface IReportAttachmentsBackend {
+  list(yearMonth: string): Promise<ReportAttachment[]>
+  upload(yearMonth: string, file: File): Promise<ReportAttachment>
+  remove(id: string): Promise<void>
 }

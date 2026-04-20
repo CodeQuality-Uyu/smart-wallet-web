@@ -180,9 +180,16 @@ export const firestoreProductsBackend: IProductsBackend = {
       if (!latestByPlace.has(r.placeId)) latestByPlace.set(r.placeId, r)
     }
 
-    // Fetch place names from global places pool
-    const placesSnap = await getDocs(collection(firestore, 'places'))
-    const placeNames = new Map(placesSnap.docs.map((d) => [d.id, d.data()['name'] as string]))
+    // Fetch place names — check global pool + user's personal places
+    const uid = firebaseAuth.currentUser!.uid
+    const [globalSnap, personalSnap] = await Promise.all([
+      getDocs(collection(firestore, 'places')),
+      getDocs(collection(firestore, 'users', uid, 'places')),
+    ])
+    const placeNames = new Map<string, string>([
+      ...globalSnap.docs.map((d) => [d.id, d.data()['name'] as string] as [string, string]),
+      ...personalSnap.docs.map((d) => [d.id, d.data()['name'] as string] as [string, string]),
+    ])
 
     const rows = Array.from(latestByPlace.values()).map((r) => ({
       placeId: r.placeId,

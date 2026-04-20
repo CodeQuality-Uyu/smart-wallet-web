@@ -6,31 +6,24 @@
   flex-direction: column;
 }
 
-/* ─── Header ─────────────────────────────────── */
+/* ═══════════════════════════════════════════════
+   Mobile header
+═══════════════════════════════════════════════ */
 
-.header {
+.mobileHeader {
   background: linear-gradient(160deg, var(--g800) 0%, var(--g600) 100%);
   padding: 16px 20px 28px;
   color: #fff;
   text-align: center;
 }
 
+.desktopHeader { display: none; }
+
 .headerTop {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   margin-bottom: 16px;
-}
-
-.back {
-  background: rgba(255,255,255,.18);
-  border: none;
-  border-radius: 10px;
-  color: #fff;
-  font-size: 18px;
-  width: 36px; height: 36px;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
 }
 
 .editBtn {
@@ -75,7 +68,9 @@
   color: #fff;
 }
 
-/* ─── Body ───────────────────────────────────── */
+/* ═══════════════════════════════════════════════
+   Body
+═══════════════════════════════════════════════ */
 
 .body {
   padding: 16px;
@@ -83,6 +78,7 @@
   flex-direction: column;
   gap: 16px;
   flex: 1;
+  background: #faf8f5;
 }
 
 .section {
@@ -130,15 +126,10 @@
   gap: 8px;
 }
 
-.addPriceRow {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.addPricePlaceWrap {
-  flex: 1;
-}
+.addPriceRow { display: flex; gap: 8px; align-items: flex-start; }
+.addPricePriceWrap { flex: 1; }
+.addPricePlaceWrap { flex: 1; }
+.addPricePlaceWrap :global(.field) { margin-bottom: 0; }
 
 .addPriceActions {
   display: flex;
@@ -173,14 +164,11 @@
   cursor: pointer;
   transition: background .12s, color .12s;
 }
-
-.currencyBtnActive {
-  background: var(--g800);
-  color: #fff;
-}
+.currencyBtnActive { background: var(--g800); color: #fff; }
 
 .priceInput {
   width: 100%;
+  box-sizing: border-box;
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm, 8px);
   padding: 9px 12px;
@@ -191,30 +179,14 @@
   outline: none;
   transition: border-color .15s;
 }
-
 .priceInput:focus { border-color: var(--g500); }
 .priceInputError { border-color: var(--rose); }
 
-.fieldError {
-  font-size: 11px;
-  color: var(--rose);
-  margin-top: 3px;
-}
+.fieldError { font-size: 11px; color: var(--rose); margin-top: 3px; }
 
-.deleteWrap {
-  margin-top: auto;
-  padding-top: 8px;
-  padding-bottom: 16px;
-}
+.deleteWrap { margin-top: auto; padding-top: 8px; padding-bottom: 16px; }
 
-/* ─── Chart ──────────────────────────────────── */
-
-.chartWrap {
-  margin-top: 4px;
-  overflow: hidden;
-}
-
-/* ─── Add price place hint ───────────────────── */
+.chartWrap { margin-top: 4px; overflow: hidden; }
 
 .addPricePlaceHint {
   font-size: 11px;
@@ -234,44 +206,284 @@
   font-family: inherit;
 }
 
-/* ─── Desktop ────────────────────────────────── */
+/* ═══════════════════════════════════════════════
+   Desktop (≥768px)
+═══════════════════════════════════════════════ */
 
 @media (min-width: 768px) {
-  .header {
-    background: none;
-    color: var(--ink);
-    border-bottom: 1px solid var(--border);
-    padding: 20px 24px 20px;
-    text-align: left;
+  .page { background: #fff; }
+
+  /* Hide mobile header */
+  .mobileHeader { display: none; }
+
+  /* ─── Desktop header ─── */
+  .desktopHeader {
+    display: block;
+    background: #fff;
+    border-bottom: 1.5px solid var(--border);
+    padding: 20px 32px 24px;
   }
 
-  .headerTop { margin-bottom: 12px; }
-
-  .back {
-    background: var(--g50);
-    color: var(--ink);
+  .dtTitleRow {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
   }
 
-  .editBtn {
-    background: var(--g50);
-    border-color: var(--border);
-    color: var(--ink);
+  .dtTitleLeft {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    flex: 1;
+    min-width: 0;
   }
 
-  .iconWrap { font-size: 36px; }
+  .dtIcon {
+    font-size: 40px;
+    line-height: 1;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
 
-  .name { color: var(--ink); font-size: 22px; }
+  .dtNamePriceRow {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
 
-  .badge {
-    background: var(--g50);
-    border-color: var(--border);
+  .dtName {
+    font-family: var(--font-head);
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 0;
+    line-height: 1.1;
+  }
+
+  .dtPrice {
+    font-family: var(--font-num);
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--g700);
+    line-height: 1.1;
+    flex-shrink: 0;
+  }
+
+  .dtMeta {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .dtMetaItem {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .dtMetaLabel {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .07em;
     color: var(--muted);
   }
 
+  .dtMetaValue {
+    font-size: 12px;
+    font-weight: 600;
+    background: var(--g50);
+    border: 1px solid var(--g200);
+    color: var(--g700);
+    border-radius: 8px;
+    padding: 4px 10px;
+    white-space: nowrap;
+  }
+
+  .dtEditBtn {
+    flex-shrink: 0;
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    color: var(--ink);
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    padding: 9px 18px;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    white-space: nowrap;
+  }
+  .dtEditBtn:hover { border-color: var(--g400); background: var(--g50); }
+
+  /* ─── Body ─── */
   .body {
-    max-width: 720px;
+    background: #fff;
+    max-width: 900px;
     margin: 0 auto;
-    padding: 24px;
+    padding: 32px;
     width: 100%;
+    gap: 24px;
+  }
+
+  .section {
+    border-radius: 20px;
+    padding: 24px;
+    border-color: var(--border);
+  }
+
+  .sectionTitle { font-size: 14px; font-weight: 700; }
+
+  .deleteWrap { padding-bottom: 0; }
+
+  /* ─── Chart card ─── */
+  .chartHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .chartControls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  /* Place dropdown — estilo FormField */
+  .chartPlaceWrap {
+    position: relative;
+  }
+  .chartPlaceWrap::after {
+    content: '▾';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 13px;
+    color: var(--muted);
+    pointer-events: none;
+  }
+  .chartPlaceSelect {
+    appearance: none;
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 7px 30px 7px 11px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--ink);
+    outline: none;
+    cursor: pointer;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .chartPlaceSelect:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(245,166,35,.18);
+  }
+
+  .chartEmpty {
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+    padding: 32px 0;
+  }
+
+  /* ─── Stats + legend below chart ─── */
+  .chartMeta {
+    margin-top: 2px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .chartStats {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .chartStat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .chartStatLabel {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--muted);
+  }
+
+  .chartStatValue {
+    font-family: var(--font-num);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .chartStatMin { color: #16a34a; }
+  .chartStatMax { color: #dc2626; }
+
+  .chartStatTrend {
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 8px;
+    padding: 3px 10px;
+    font-family: var(--font-num);
+    display: inline-block;
+  }
+  .chartStatTrendUp   { background: #fef2f2; color: #dc2626; }
+  .chartStatTrendDown { background: #f0fdf4; color: #16a34a; }
+  .chartStatTrendFlat { background: #f0ebe0; color: var(--muted); }
+
+  /* Place legend */
+  .chartLegend {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .chartLegendItem {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    background: #f0ebe0;
+    border: 1px solid transparent;
+    border-radius: 99px;
+    padding: 5px 12px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background .12s, color .12s, border-color .12s;
+  }
+  .chartLegendItem:hover { color: var(--ink); }
+  .chartLegendItemActive {
+    background: var(--g50);
+    color: var(--g700);
+    font-weight: 600;
+    border-color: var(--g500);
+  }
+
+  .chartLegendDot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
   }
 }

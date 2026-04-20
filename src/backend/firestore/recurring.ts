@@ -54,7 +54,21 @@ function resolveCurrentMonthStatus(rec: RecurringExpense): RecurringPaymentStatu
 }
 
 function toRecurring(id: string, data: Record<string, unknown>): RecurringExpense {
-  const rec = { id, ...data, paymentHistory: (data['paymentHistory'] ?? []) as RecurringExpense['paymentHistory'] } as RecurringExpense
+  // Backward compat: documents written before the categoryIds migration
+  // may still have the old singular `categoryId` field.
+  const categoryIds: string[] =
+    Array.isArray(data['categoryIds'])
+      ? (data['categoryIds'] as string[])
+      : typeof data['categoryId'] === 'string' && data['categoryId']
+        ? [data['categoryId'] as string]
+        : []
+
+  const rec = {
+    id,
+    ...data,
+    categoryIds,
+    paymentHistory: (data['paymentHistory'] ?? []) as RecurringExpense['paymentHistory'],
+  } as RecurringExpense
   rec.currentMonthStatus = resolveCurrentMonthStatus(rec)
   return rec
 }
@@ -144,5 +158,32 @@ export const firestoreRecurringBackend: IRecurringBackend = {
     })
 
     return entry
+  },
+
+  async uploadPaymentReceipt(
+    recurringId: string,
+    paymentId: string,
+    file: File,
+  ): Promise<{ receiptUrl: string }> {
+    const uid = requireUid()
+    const ext = file.name.split('.').pop() ?? 'jpg'
+    const storageRef = ref(
+      firebaseStorage,
+      `receipts/${uid}/recurring/${recurringId}/${paymentId}.${ext}`,
+    )
+    const snapshot = await uploadBytes(storageRef, file)
+    const receiptUrl = await getDownloadURL(snapshot.ref)
+
+    const docRef = doc(firestore, 'users', uid, 'recurring', recurringId)
+    const snap = await getDoc(docRef)
+    if (!snap.exists()) throw { message: 'No encontrado', statusCode: 404 }
+
+    const history = (snap.data()['paymentHistory'] ?? []) as RecurringPaymentHistory[]
+    const updated = history.map((h) =>
+      h.id === paymentId ? { ...h, receiptUrl } : h,
+    )
+    await updateDoc(docRef, { paymentHistory: updated, updatedAt: new Date().toISOString() })
+
+    return { receiptUrl }
   },
 }

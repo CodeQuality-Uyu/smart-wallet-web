@@ -28,10 +28,11 @@ export default function VerifyCodePage(): React.ReactElement {
         <div className={styles.orb1} />
         <div className={styles.orb2} />
         <div className={styles.logo}>
-          <div className={styles.logoMark}>🌿</div>
-          <span className={styles.logoName}>SmartWallet</span>
+          <div className={styles.logoMark}>$</div>
+          <span className={styles.logoName}>Verde</span>
         </div>
         <div className={styles.heroText}>
+          <div className={styles.heroEmoji}>📩</div>
           <h1 className={styles.title}>Verificá<br />tu <em className={styles.em}>email</em></h1>
           <p className={styles.subtitle}>
             {isFirestore ? 'Te enviamos un link de verificación' : 'Te enviamos un código de 6 dígitos'}
@@ -55,7 +56,7 @@ export default function VerifyCodePage(): React.ReactElement {
             <button
               className={styles.submitBtn}
               style={{ marginTop: 24 }}
-              onClick={() => void navigate('/login')}
+              onClick={() => void navigate('/login?verified=true')}
             >
               Ir al login →
             </button>
@@ -70,10 +71,12 @@ export default function VerifyCodePage(): React.ReactElement {
             <Formik
               initialValues={{ code: '' }}
               validationSchema={codeSchema}
+              validateOnMount={false}
+              validateOnChange={false}
               onSubmit={async (values, { setFieldError }) => {
                 try {
                   await verifyCode(email, values.code.trim())
-                  void navigate('/home', { replace: true })
+                  void navigate('/onboarding', { replace: true })
                 } catch (err) {
                   const message = err && typeof err === 'object' && 'message' in err
                     ? String((err as { message: string }).message)

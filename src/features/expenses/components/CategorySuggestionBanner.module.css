@@ -1,0 +1,84 @@
+/* src/features/expenses/components/CategorySuggestionBanner.module.css */
+
+.banner,
+.bannerNew {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--surface-2, #f0faf4);
+  border: 1px solid var(--g300, #a8d5b5);
+  border-radius: 10px;
+  margin-top: -14px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.label {
+  font-size: 11px;
+  color: var(--text-secondary, #6b7280);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: var(--g600, #2e7d52);
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.chip:hover { opacity: 0.85; }
+
+.newList {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.newChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: var(--chip-color, var(--g600, #2e7d52));
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.newChip:hover { opacity: 0.85; }
+
+.createHint {
+  font-size: 10px;
+  opacity: 0.8;
+  background: rgba(255,255,255,0.2);
+  border-radius: 10px;
+  padding: 1px 5px;
+  margin-left: 2px;
+}
+
+.dismiss {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--text-secondary, #9ca3af);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 4px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.dismiss:hover { color: var(--text-primary, #111); }

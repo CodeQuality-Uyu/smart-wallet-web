@@ -8,9 +8,53 @@ import { SettingsLayout } from '@/layouts/SettingsLayout'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { useAuth } from '@/app/providers/AuthContext'
 
+const ONBOARDING_KEY = 'onboarding_status'
+
+/** Returns true if onboarding is pending (explicitly set during registration) */
+function isOnboardingPending(): boolean {
+  return window.localStorage.getItem(ONBOARDING_KEY) === 'pending'
+}
+
+/** Call after registration to flag that onboarding is needed */
+export function markOnboardingPending(): void {
+  window.localStorage.setItem(ONBOARDING_KEY, 'pending')
+}
+
+const ONBOARDING_SOCIAL_KEY = 'onboarding_social'
+
+/** Call after social login (Google / Magic Link) so onboarding asks for name */
+export function markOnboardingSocial(): void {
+  window.localStorage.setItem(ONBOARDING_KEY, 'pending')
+  window.localStorage.setItem(ONBOARDING_SOCIAL_KEY, 'true')
+}
+
+/** Returns true if user came from a social login and hasn't provided a name yet */
+export function isOnboardingSocial(): boolean {
+  return window.localStorage.getItem(ONBOARDING_SOCIAL_KEY) === 'true'
+}
+
+/** Clear the social flag (called after name step is done) */
+export function clearOnboardingSocial(): void {
+  window.localStorage.removeItem(ONBOARDING_SOCIAL_KEY)
+}
+
+/** Call when onboarding is finished */
+export function markOnboardingComplete(): void {
+  window.localStorage.setItem(ONBOARDING_KEY, 'complete')
+}
+
 function PrivateRoute(): React.ReactElement {
   const { isAuthenticated } = useAuth()
-  return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />
+  if (!isAuthenticated) return <Navigate to="/login" replace />
+  if (isOnboardingPending()) return <Navigate to="/onboarding" replace />
+  return <Outlet />
+}
+
+function OnboardingRoute(): React.ReactElement {
+  const { isAuthenticated } = useAuth()
+  if (!isAuthenticated) return <Navigate to="/login" replace />
+  if (!isOnboardingPending()) return <Navigate to="/home" replace />
+  return <Outlet />
 }
 
 function PublicRoute(): React.ReactElement {
@@ -29,6 +73,7 @@ const RecurringPage = lazy(() => import('@/pages/RecurringPage/RecurringPage'))
 const RecurringDetailPage = lazy(() => import('@/pages/RecurringDetailPage/RecurringDetailPage'))
 const CategoriesPage = lazy(() => import('@/pages/CategoriesPage/CategoriesPage'))
 const PlacesPage = lazy(() => import('@/pages/PlacesPage/PlacesPage'))
+const PlaceDetailPage = lazy(() => import('@/pages/PlaceDetailPage/PlaceDetailPage'))
 const CardsPage = lazy(() => import('@/pages/CardsPage/CardsPage'))
 const SettingsPage = lazy(() => import('@/pages/SettingsPage/SettingsPage'))
 const BudgetSettingsPage = lazy(() => import('@/pages/BudgetSettingsPage/BudgetSettingsPage'))
@@ -44,6 +89,10 @@ const NewProductPage = lazy(() => import('@/pages/NewProductPage/NewProductPage'
 const ProductDetailPage = lazy(() => import('@/pages/ProductDetailPage/ProductDetailPage'))
 const ProfilePage = lazy(() => import('@/pages/ProfilePage/ProfilePage'))
 const NotificationsPage = lazy(() => import('@/pages/NotificationsPage/NotificationsPage'))
+const ExportDataPage = lazy(() => import('@/pages/ExportDataPage/ExportDataPage'))
+const SecurityPage = lazy(() => import('@/pages/SecurityPage/SecurityPage'))
+const SavingsGoalsPage = lazy(() => import('@/pages/SavingsGoalsPage/SavingsGoalsPage'))
+const OnboardingPage = lazy(() => import('@/pages/OnboardingPage/OnboardingPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage/NotFoundPage'))
 
 const SuspenseWrapper = ({ children }: { children: React.ReactNode }): React.ReactElement => (
@@ -65,6 +114,21 @@ const router = createBrowserRouter([
           {
             path: '/verify-code',
             element: <SuspenseWrapper><VerifyCodePage /></SuspenseWrapper>,
+          },
+        ],
+      },
+    ],
+  },
+  // Onboarding — requires auth but no app shell, redirects to /home if already completed
+  {
+    element: <OnboardingRoute />,
+    children: [
+      {
+        element: <AuthLayout />,
+        children: [
+          {
+            path: '/onboarding',
+            element: <SuspenseWrapper><OnboardingPage /></SuspenseWrapper>,
           },
         ],
       },
@@ -115,6 +179,7 @@ const router = createBrowserRouter([
           { path: 'recurring/:id', element: <SuspenseWrapper><RecurringDetailPage /></SuspenseWrapper> },
           { path: 'categories', element: <SuspenseWrapper><CategoriesPage /></SuspenseWrapper> },
           { path: 'places', element: <SuspenseWrapper><PlacesPage /></SuspenseWrapper> },
+          { path: 'places/:id', element: <SuspenseWrapper><PlaceDetailPage /></SuspenseWrapper> },
           { path: 'cards', element: <SuspenseWrapper><CardsPage /></SuspenseWrapper> },
           { path: 'budget', element: <SuspenseWrapper><BudgetSettingsPage /></SuspenseWrapper> },
           { path: 'reports', element: <SuspenseWrapper><ReportsPage /></SuspenseWrapper> },
@@ -125,6 +190,9 @@ const router = createBrowserRouter([
           { path: 'products/:id', element: <SuspenseWrapper><ProductDetailPage /></SuspenseWrapper> },
           { path: 'profile', element: <SuspenseWrapper><ProfilePage /></SuspenseWrapper> },
           { path: 'notifications', element: <SuspenseWrapper><NotificationsPage /></SuspenseWrapper> },
+          { path: 'export', element: <SuspenseWrapper><ExportDataPage /></SuspenseWrapper> },
+          { path: 'security', element: <SuspenseWrapper><SecurityPage /></SuspenseWrapper> },
+          { path: 'savings-goals', element: <SuspenseWrapper><SavingsGoalsPage /></SuspenseWrapper> },
         ],
       },
         ],

@@ -10,6 +10,7 @@ import {
   ProductPricingType,
   WeightUnit,
   NotificationType,
+  SavingsGoalStatus,
 } from '@/types/enums'
 
 // ─── Shared ───────────────────────────────────────────────
@@ -34,6 +35,8 @@ export interface Category extends Timestamps {
   icon: string
   color?: string
   active: boolean
+  limitUYU?: number
+  limitUSD?: number
 }
 
 export type CreateCategoryPayload = Omit<Category, 'id' | 'createdAt' | 'updatedAt'>
@@ -137,7 +140,7 @@ export interface RecurringExpense extends Timestamps {
   description?: string
   amount: number
   currency: Currency
-  categoryId: string
+  categoryIds: string[]
   cardId: string
   mode: RecurringMode
   frequency: RecurringFrequency
@@ -221,17 +224,6 @@ export interface MetricsSummary {
 export interface BudgetSettings {
   usd?: number
   uyu?: number
-}
-
-// ─── Category limits ──────────────────────────────────────
-
-export interface CategoryLimitEntry {
-  [Currency.UYU]?: number
-  [Currency.USD]?: number
-}
-
-export interface CategoryLimits {
-  [categoryId: string]: CategoryLimitEntry
 }
 
 // ─── Month closings ───────────────────────────────────────
@@ -358,6 +350,23 @@ export interface ProductPriceRecord {
 
 export type CreateProductPriceRecordPayload = Omit<ProductPriceRecord, 'id' | 'createdAt'>
 
+// ─── Savings Goals ───────────────────────────────────
+
+export interface SavingsGoal extends Timestamps {
+  id: string
+  name: string
+  icon: string
+  targetAmount: number
+  savedAmount: number
+  currency: Currency
+  targetDate: string
+  status: SavingsGoalStatus
+  active: boolean
+}
+
+export type CreateSavingsGoalPayload = Omit<SavingsGoal, 'id' | 'createdAt' | 'updatedAt' | 'savedAmount' | 'status'>
+export type UpdateSavingsGoalPayload = Partial<Omit<CreateSavingsGoalPayload, 'active'>>
+
 // ─── Auth / User ──────────────────────────────────────────
 
 export interface User {
@@ -409,4 +418,16 @@ export interface NotificationPrefs {
   alerts: NotificationAlertPrefs
   channels: NotificationChannelPrefs
   quietHours: NotificationQuietHours
+}
+
+// ─── Report attachments ───────────────────────────────────
+
+export interface ReportAttachment {
+  id: string
+  yearMonth: string   // "2026-04"
+  name: string        // original filename
+  url: string         // download URL
+  mimeType: string
+  size: number        // bytes
+  uploadedAt: string
 }

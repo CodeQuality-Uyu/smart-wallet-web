@@ -1,18 +1,22 @@
 // src/features/expenses/components/ExpenseForm.tsx
 
 import React, { useRef, useState } from 'react'
-import { Formik, Form } from 'formik'
+import { Formik, Form, useFormikContext } from 'formik'
 import { expenseSchema, type ExpenseFormValues } from '../schemas/expenseSchema'
 import { FormField, TextInput, SelectInput } from '@/components/ui/FormField'
 import { Button } from '@/components/ui/Button'
-import { CategoryChips } from './CategoryChips'
+import { CategoryChips } from '@/components/shared/CategoryChips'
 import { NewCardModal } from './NewCardModal'
 import { CategoryPickerModal } from './CategoryPickerModal'
 import { NewPlaceModal } from './NewPlaceModal'
-import { useCategories } from '@/features/categories/hooks/useCategories'
+import { CategorySuggestionBanner } from './CategorySuggestionBanner'
+import { useCategories, useCreateCategory } from '@/features/categories/hooks/useCategories'
 import { useCards } from '@/features/cards/hooks/useCards'
 import { usePlaces } from '@/features/places/hooks/usePlaces'
+import { useCategorySuggestion } from '../hooks/useCategorySuggestion'
 import { CardType, Currency } from '@/types/enums'
+import type { Category } from '@/types/models'
+import type { NewCategorySuggestion } from '@/services/geminiService'
 import styles from './ExpenseForm.module.css'
 
 interface ExpenseFormProps {
@@ -40,6 +44,64 @@ const DEFAULT_VALUES: ExpenseFormValues = {
 }
 
 type ActiveModal = 'card' | 'categories' | 'place' | null
+
+// Inner component to access Formik context for suggestion banner
+function CategorySuggestion({ categories }: { categories: Category[] }): React.ReactElement | null {
+  const { values, setFieldValue } = useFormikContext<ExpenseFormValues>()
+  const createCategory = useCreateCategory()
+  const [dismissed, setDismissed] = useState(false)
+  const [lastDismissedDesc, setLastDismissedDesc] = useState('')
+
+  const { suggestion } = useCategorySuggestion(values.description, categories)
+
+  // Reset dismiss when description changes significantly
+  const shouldShow =
+    !dismissed ||
+    (values.description !== lastDismissedDesc && values.description.length >= 3)
+
+  if (!suggestion || !shouldShow) return null
+
+  const handleDismiss = () => {
+    setDismissed(true)
+    setLastDismissedDesc(values.description)
+  }
+
+  const handleAcceptMatch = (categoryId: string) => {
+    const current = values.categoryIds
+    if (!current.includes(categoryId)) {
+      void setFieldValue('categoryIds', [...current, categoryId])
+    }
+    handleDismiss()
+  }
+
+  const handleAcceptNew = async (s: NewCategorySuggestion) => {
+    try {
+      const created = await createCategory.mutateAsync({
+        name: s.name,
+        icon: s.icon,
+        color: s.color,
+        active: true,
+        limitUYU: s.monthlyLimit,
+      })
+      const current = values.categoryIds
+      if (!current.includes(created.id)) {
+        void setFieldValue('categoryIds', [...current, created.id])
+      }
+    } finally {
+      handleDismiss()
+    }
+  }
+
+  return (
+    <CategorySuggestionBanner
+      suggestion={suggestion}
+      categories={categories}
+      onAcceptMatch={handleAcceptMatch}
+      onAcceptNewSuggestion={(s) => void handleAcceptNew(s)}
+      onDismiss={handleDismiss}
+    />
+  )
+}
 
 export function ExpenseForm({
   initialValues,
@@ -137,6 +199,7 @@ export function ExpenseForm({
           <div className={isDesktop ? styles.fieldsDesktop : styles.fields}>
             <FormField name="description" label="Descripción">
               <TextInput name="description" placeholder="¿Qué compraste?" />
+              <CategorySuggestion categories={categories} />
             </FormField>
 
             <FormField name="cardId" label="Tarjeta / pago">

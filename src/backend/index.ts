@@ -1,7 +1,7 @@
 // src/backend/index.ts
 // Factory: returns the correct backend implementation based on VITE_BACKEND
 
-import type { IAuthBackend, IBudgetBackend, ICardsBackend, ICategoriesBackend, IExpensesBackend, IMetricsBackend, IPlacesBackend, IRecurringBackend, ISalariesBackend, IMonthClosingsBackend, IProductCategoriesBackend, IBrandsBackend, IProductsBackend, ICategoryLimitsBackend, INotificationsBackend } from './types'
+import type { IAuthBackend, IBudgetBackend, ICardsBackend, ICategoriesBackend, IExpensesBackend, IMetricsBackend, IPlacesBackend, IRecurringBackend, ISalariesBackend, IMonthClosingsBackend, IProductCategoriesBackend, IBrandsBackend, IProductsBackend, ICategoryLimitsBackend, INotificationsBackend, IReportAttachmentsBackend } from './types'
 
 type BackendType = 'msw' | 'firestore' | 'aws'
 
@@ -21,9 +21,9 @@ let _monthClosingsBackend: IMonthClosingsBackend | null = null
 let _productCategoriesBackend: IProductCategoriesBackend | null = null
 let _brandsBackend: IBrandsBackend | null = null
 let _productsBackend: IProductsBackend | null = null
-let _categoryLimitsBackend: ICategoryLimitsBackend | null = null
 let _productCategoryLimitsBackend: ICategoryLimitsBackend | null = null
 let _notificationsBackend: INotificationsBackend | null = null
+let _reportAttachmentsBackend: IReportAttachmentsBackend | null = null
 
 export async function getAuthBackend(): Promise<IAuthBackend> {
   if (_authBackend) return _authBackend
@@ -182,18 +182,6 @@ export async function getProductsBackend(): Promise<IProductsBackend> {
   return _productsBackend
 }
 
-export async function getCategoryLimitsBackend(): Promise<ICategoryLimitsBackend> {
-  if (_categoryLimitsBackend) return _categoryLimitsBackend
-  if (backend === 'firestore') {
-    const { firestoreCategoryLimitsBackend } = await import('./firestore/categoryLimits')
-    _categoryLimitsBackend = firestoreCategoryLimitsBackend
-  } else {
-    const { mswCategoryLimitsBackend } = await import('./msw/categoryLimits')
-    _categoryLimitsBackend = mswCategoryLimitsBackend
-  }
-  return _categoryLimitsBackend
-}
-
 export async function getProductCategoryLimitsBackend(): Promise<ICategoryLimitsBackend> {
   if (_productCategoryLimitsBackend) return _productCategoryLimitsBackend
   if (backend === 'firestore') {
@@ -216,6 +204,18 @@ export async function getNotificationsBackend(): Promise<INotificationsBackend> 
     _notificationsBackend = mswNotificationsBackend
   }
   return _notificationsBackend
+}
+
+export async function getReportAttachmentsBackend(): Promise<IReportAttachmentsBackend> {
+  if (_reportAttachmentsBackend) return _reportAttachmentsBackend
+  if (backend === 'firestore') {
+    const { firestoreReportAttachmentsBackend } = await import('./firestore/reportAttachments')
+    _reportAttachmentsBackend = firestoreReportAttachmentsBackend
+  } else {
+    const { mswReportAttachmentsBackend } = await import('./msw/reportAttachments')
+    _reportAttachmentsBackend = mswReportAttachmentsBackend
+  }
+  return _reportAttachmentsBackend
 }
 
 export { backend as activeBackend }

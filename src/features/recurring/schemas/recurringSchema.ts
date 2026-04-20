@@ -13,7 +13,10 @@ export const recurringSchema = Yup.object({
   currency: Yup.mixed<Currency>()
     .oneOf(Object.values(Currency))
     .required('La moneda es requerida'),
-  categoryId: Yup.string().required('Seleccioná una categoría'),
+  categoryIds: Yup.array()
+    .of(Yup.string().required())
+    .min(1, 'Seleccioná al menos una categoría')
+    .required('Seleccioná al menos una categoría'),
   cardId: Yup.string().required('Seleccioná un medio de pago'),
   mode: Yup.mixed<RecurringMode>()
     .oneOf(Object.values(RecurringMode))
@@ -26,11 +29,7 @@ export const recurringSchema = Yup.object({
     .integer()
     .min(1, 'Mínimo día 1')
     .max(31, 'Máximo día 31')
-    .when('mode', {
-      is: RecurringMode.Manual,
-      then: (s) => s.required('El día de vencimiento es requerido'),
-      otherwise: (s) => s.optional(),
-    }),
+    .required('El día de vencimiento es requerido'),
 })
 
 export type RecurringFormValues = Yup.InferType<typeof recurringSchema>

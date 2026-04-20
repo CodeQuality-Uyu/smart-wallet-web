@@ -12,7 +12,6 @@ import { mockRecurring } from './data/recurring'
 import { mockMetrics } from './data/metrics'
 import { mockSalaries } from './data/salaries'
 import { mockBudget } from './data/budget'
-import { mockCategoryLimits } from './data/categoryLimits'
 import { mockProductCategoryLimits } from './data/productCategoryLimits'
 import { mockMonthClosings } from './data/monthClosings'
 import { mockProductCategories } from './data/productCategories'
@@ -20,12 +19,16 @@ import { mockBrands } from './data/brands'
 import { mockUserProducts, mockGlobalProductSuggestions } from './data/products'
 import { mockPriceHistory } from './data/priceHistory'
 import { mockNotifications, mockNotificationPrefs } from './data/notifications'
+import { mockReportAttachments } from './data/reportAttachments'
 
 const BASE = '/api'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const DEMO_CODE = '123456'
 const pendingRegistrations = new Map<string, { name: string; email: string }>()
+// Social auth state
+const knownUsers = new Set<string>(['user@demo.com'])
+const pendingMagicLinks = new Map<string, string>() // email → email (just tracking)
 
 export const handlers = [
   // ─── Auth ────────────────────────────────────────────────
@@ -70,6 +73,43 @@ export const handlers = [
     return HttpResponse.json({
       token: 'mock-token-smart-wallet-123',
       user: { id: 'user-1', email, name: pending.name },
+    })
+  }),
+
+  http.post(`${BASE}/auth/google`, async () => {
+    const email = 'google@demo.com'
+    const isNewUser = !knownUsers.has(email)
+    knownUsers.add(email)
+    return HttpResponse.json({
+      token: 'mock-token-smart-wallet-123',
+      user: { id: 'google-user-1', email, name: 'Usuario Google' },
+      isNewUser,
+    })
+  }),
+
+  http.post(`${BASE}/auth/magic-link/send`, async ({ request }) => {
+    const body = await request.json() as { email?: string }
+    const email = body.email?.trim() ?? ''
+    if (!email || !EMAIL_RE.test(email)) {
+      return HttpResponse.json({ message: 'Ingresá un email válido.' }, { status: 400 })
+    }
+    pendingMagicLinks.set(email, email)
+    return HttpResponse.json({ message: 'Link enviado. En modo demo usá el botón "Simular link".' })
+  }),
+
+  http.post(`${BASE}/auth/magic-link/confirm`, async ({ request }) => {
+    const body = await request.json() as { email?: string }
+    const email = body.email?.trim() ?? ''
+    if (!pendingMagicLinks.has(email)) {
+      return HttpResponse.json({ message: 'No hay un link pendiente para ese email.' }, { status: 400 })
+    }
+    const isNewUser = !knownUsers.has(email)
+    knownUsers.add(email)
+    pendingMagicLinks.delete(email)
+    return HttpResponse.json({
+      token: 'mock-token-smart-wallet-123',
+      user: { id: `magic-${email}`, email, name: email.split('@')[0] },
+      isNewUser,
     })
   }),
 
@@ -337,6 +377,18 @@ export const handlers = [
     return HttpResponse.json(history, { status: 201 })
   }),
 
+  http.post(`${BASE}/recurring/:id/payments/:paymentId/receipt`, async ({ params }) => {
+    const rec = mockRecurring.find((r) => r.id === params['id'])
+    const paymentId = params['paymentId'] as string
+    const receiptUrl = `https://storage.example.com/receipts/mock-${paymentId}.jpg`
+    if (rec) {
+      rec.paymentHistory = rec.paymentHistory.map((h) =>
+        h.id === paymentId ? { ...h, receiptUrl } : h,
+      )
+    }
+    return HttpResponse.json({ receiptUrl })
+  }),
+
   // ─── Budget ──────────────────────────────────────────────
   http.get(`${BASE}/budget`, () => HttpResponse.json(mockBudget)),
 
@@ -345,15 +397,6 @@ export const handlers = [
     if (typeof body['usd'] === 'number' || body['usd'] === null) mockBudget.usd = body['usd'] as number | undefined
     if (typeof body['uyu'] === 'number' || body['uyu'] === null) mockBudget.uyu = body['uyu'] as number | undefined
     return HttpResponse.json(mockBudget)
-  }),
-
-  // ─── Category limits ─────────────────────────────────────
-  http.get(`${BASE}/category-limits`, () => HttpResponse.json(mockCategoryLimits)),
-  http.put(`${BASE}/category-limits`, async ({ request }) => {
-    const body = await request.json() as Record<string, number>
-    for (const key of Object.keys(mockCategoryLimits)) delete mockCategoryLimits[key]
-    Object.assign(mockCategoryLimits, body)
-    return HttpResponse.json(mockCategoryLimits)
   }),
 
   // ─── Product category limits ─────────────────────────────
@@ -724,5 +767,67 @@ export const handlers = [
     const body = await request.json() as typeof mockNotificationPrefs
     Object.assign(mockNotificationPrefs, body)
     return HttpResponse.json(mockNotificationPrefs)
+  }),
+
+  // ─── Gemini AI (category suggestion mock) ────────────────
+  http.post('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', async ({ request }) => {
+    const body = await request.json() as { contents?: { parts?: { text?: string }[] }[] }
+    const promptText = body.contents?.[0]?.parts?.[0]?.text ?? ''
+
+    // Extract expense or product name from prompt
+    const expenseMatch = promptText.match(/Nombre del gasto: "([^"]+)"/)
+    const productMatch = promptText.match(/Nombre del producto: "([^"]+)"/)
+    const expenseName = (expenseMatch?.[1] ?? productMatch?.[1] ?? '').toLowerCase()
+
+    // Simple keyword-based mock responses
+    let result: { matches: string[]; suggestions: { name: string; icon: string; color: string; monthlyLimit?: number }[] }
+
+    if (expenseName.includes('super') || expenseName.includes('mercado') || expenseName.includes('almacén')) {
+      result = { matches: [], suggestions: [{ name: 'Supermercado', icon: '🛒', color: '#4caf50' }, { name: 'Alimentación', icon: '🥦', color: '#66bb6a' }] }
+    } else if (expenseName.includes('restau') || expenseName.includes('lunch') || expenseName.includes('pizza') || expenseName.includes('sushi')) {
+      result = { matches: [], suggestions: [{ name: 'Restaurantes', icon: '🍽️', color: '#ff7043' }, { name: 'Salidas', icon: '🎉', color: '#ffa726' }] }
+    } else if (expenseName.includes('farmacia') || expenseName.includes('medicamento') || expenseName.includes('farmac')) {
+      result = { matches: [], suggestions: [{ name: 'Salud', icon: '💊', color: '#42a5f5' }] }
+    } else if (expenseName.includes('uber') || expenseName.includes('taxi') || expenseName.includes('bus') || expenseName.includes('nafta')) {
+      result = { matches: [], suggestions: [{ name: 'Transporte', icon: '🚗', color: '#7e57c2' }] }
+    } else {
+      result = { matches: [], suggestions: [{ name: 'Varios', icon: '📦', color: '#90a4ae' }] }
+    }
+
+    const responseText = JSON.stringify(result)
+    return HttpResponse.json({
+      candidates: [{ content: { parts: [{ text: responseText }] } }],
+    })
+  }),
+
+  // ── Report attachments ───────────────────────────────────
+  http.get(`${BASE}/report-attachments`, ({ request }) => {
+    const url = new URL(request.url)
+    const yearMonth = url.searchParams.get('yearMonth') ?? ''
+    return HttpResponse.json(mockReportAttachments.filter((a) => a.yearMonth === yearMonth))
+  }),
+
+  http.post(`${BASE}/report-attachments`, async ({ request }) => {
+    const form = await request.formData()
+    const yearMonth = (form.get('yearMonth') as string) ?? ''
+    const file = form.get('file') as File | null
+    const now = new Date().toISOString()
+    const newAtt = {
+      id: `att-${Date.now()}`,
+      yearMonth,
+      name: file?.name ?? 'archivo',
+      url: `https://example.com/mock/${file?.name ?? 'archivo'}`,
+      mimeType: file?.type ?? 'application/octet-stream',
+      size: file?.size ?? 0,
+      uploadedAt: now,
+    }
+    mockReportAttachments.push(newAtt)
+    return HttpResponse.json(newAtt, { status: 201 })
+  }),
+
+  http.delete(`${BASE}/report-attachments/:id`, ({ params }) => {
+    const idx = mockReportAttachments.findIndex((a) => a.id === params.id)
+    if (idx !== -1) mockReportAttachments.splice(idx, 1)
+    return new HttpResponse(null, { status: 204 })
   }),
 ]

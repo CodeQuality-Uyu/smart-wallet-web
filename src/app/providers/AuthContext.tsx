@@ -15,6 +15,9 @@ interface AuthContextValue {
   resetPassword: (email: string) => Promise<void>
   logout: () => void
   updateProfile: (name: string) => Promise<void>
+  loginWithGoogle: () => Promise<{ isNewUser: boolean }>
+  sendMagicLink: (email: string) => Promise<void>
+  confirmMagicLink: (email: string) => Promise<{ isNewUser: boolean }>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -75,6 +78,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null)
   }, [])
 
+  const loginWithGoogle = useCallback(async (): Promise<{ isNewUser: boolean }> => {
+    const result = await authService.loginWithGoogle()
+    storeSession(result.token, result.user)
+    setUser(result.user)
+    return { isNewUser: result.isNewUser }
+  }, [])
+
+  const sendMagicLink = useCallback(async (email: string): Promise<void> => {
+    await authService.sendMagicLink(email)
+  }, [])
+
+  const confirmMagicLink = useCallback(async (email: string): Promise<{ isNewUser: boolean }> => {
+    const result = await authService.confirmMagicLink(email)
+    storeSession(result.token, result.user)
+    setUser(result.user)
+    return { isNewUser: result.isNewUser }
+  }, [])
+
   const updateProfile = useCallback(async (name: string): Promise<void> => {
     if (appConfig.backend === 'firestore') {
       const [{ updateProfile: fbUpdateProfile }, { firebaseAuth }] = await Promise.all([
@@ -116,8 +137,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [])
 
   const value = useMemo<AuthContextValue>(
-    () => ({ user, isAuthenticated: Boolean(user), login, register, verifyCode, resetPassword, logout, updateProfile }),
-    [user, login, register, verifyCode, resetPassword, logout, updateProfile],
+    () => ({ user, isAuthenticated: Boolean(user), login, register, verifyCode, resetPassword, logout, updateProfile, loginWithGoogle, sendMagicLink, confirmMagicLink }),
+    [user, login, register, verifyCode, resetPassword, logout, updateProfile, loginWithGoogle, sendMagicLink, confirmMagicLink],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

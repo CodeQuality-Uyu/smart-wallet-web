@@ -21,11 +21,18 @@ import {
   sendEmailVerification,
   sendPasswordResetEmail,
   signOut,
+  GoogleAuthProvider,
+  signInWithPopup,
+  sendSignInLinkToEmail,
+  signInWithEmailLink,
+  isSignInWithEmailLink,
 } from 'firebase/auth'
 import { doc, setDoc, getDoc } from 'firebase/firestore'
 import { firebaseAuth, firestore } from './config'
 import { setTokenProvider } from '@/api/tokenProvider'
-import type { IAuthBackend, AuthResponse, LoginResult } from '../types'
+import type { IAuthBackend, AuthResponse, LoginResult, SocialAuthResult } from '../types'
+
+const MAGIC_LINK_EMAIL_KEY = 'magic_link_email'
 
 // Register Firestore token provider — Firebase auto-refreshes the ID token
 // when it's close to expiry (every ~55 minutes), so callers always get a valid token.
@@ -86,5 +93,62 @@ export const firestoreAuthBackend: IAuthBackend = {
       url: `${window.location.origin}/reset-password`,
       handleCodeInApp: true,
     })
+  },
+
+  async loginWithGoogle(): Promise<SocialAuthResult> {
+    const provider = new GoogleAuthProvider()
+    const result = await signInWithPopup(firebaseAuth, provider)
+    const fbUser = result.user
+    const token = await fbUser.getIdToken()
+
+    const profileRef = doc(firestore, 'users', fbUser.uid)
+    const profileSnap = await getDoc(profileRef)
+    const isNewUser = !profileSnap.exists()
+
+    if (isNewUser) {
+      const name = fbUser.displayName ?? fbUser.email?.split('@')[0] ?? 'Usuario'
+      await setDoc(profileRef, { name, email: fbUser.email, createdAt: new Date().toISOString() }, { merge: true })
+    }
+
+    const name = isNewUser
+      ? (fbUser.displayName ?? fbUser.email?.split('@')[0] ?? 'Usuario')
+      : ((profileSnap.data()?.name as string) ?? fbUser.displayName ?? 'Usuario')
+
+    return { token, user: { id: fbUser.uid, email: fbUser.email ?? '', name }, isNewUser }
+  },
+
+  async sendMagicLink(email: string): Promise<void> {
+    await sendSignInLinkToEmail(firebaseAuth, email, {
+      url: `${window.location.origin}/login`,
+      handleCodeInApp: true,
+    })
+    window.localStorage.setItem(MAGIC_LINK_EMAIL_KEY, email)
+  },
+
+  async confirmMagicLink(email: string): Promise<SocialAuthResult> {
+    const href = window.location.href
+    if (!isSignInWithEmailLink(firebaseAuth, href)) {
+      throw { message: 'El link de acceso no es válido o ya expiró.', statusCode: 400 }
+    }
+
+    const result = await signInWithEmailLink(firebaseAuth, email, href)
+    const fbUser = result.user
+    const token = await fbUser.getIdToken()
+    window.localStorage.removeItem(MAGIC_LINK_EMAIL_KEY)
+
+    const profileRef = doc(firestore, 'users', fbUser.uid)
+    const profileSnap = await getDoc(profileRef)
+    const isNewUser = !profileSnap.exists()
+
+    if (isNewUser) {
+      const name = email.split('@')[0]
+      await setDoc(profileRef, { name, email, createdAt: new Date().toISOString() }, { merge: true })
+    }
+
+    const name = isNewUser
+      ? email.split('@')[0]
+      : ((profileSnap.data()?.name as string) ?? email.split('@')[0])
+
+    return { token, user: { id: fbUser.uid, email, name }, isNewUser }
   },
 }

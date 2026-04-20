@@ -1,0 +1,306 @@
+/* src/pages/OnboardingPage/OnboardingPage.module.css */
+
+/* ── Mobile ─────────────────────────────────────── */
+.page { display: flex; flex-direction: column; min-height: 100dvh; }
+
+.hero {
+  background: linear-gradient(155deg, var(--g900), var(--g700) 50%, var(--g500));
+  padding: 40px 24px 48px;
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center;
+}
+
+.orb1 {
+  position: absolute; width: 300px; height: 300px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(76,217,106,.13) 0%, transparent 70%);
+  top: -90px; right: -80px;
+}
+
+.orb2 {
+  position: absolute; width: 220px; height: 220px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(76,217,106,.1) 0%, transparent 70%);
+  bottom: 30px; left: -70px;
+}
+
+.heroContent { position: relative; z-index: 1; }
+.heroEmoji { font-size: 48px; margin-bottom: 12px; }
+.heroTitle {
+  font-family: var(--font-head); font-size: 26px; font-weight: 800;
+  color: #fff; line-height: 1.15;
+}
+.heroSubtitle { font-size: 13px; color: rgba(255,255,255,.55); margin-top: 8px; }
+
+.dots { display: flex; gap: 8px; margin-top: 20px; position: relative; z-index: 1; }
+.dot {
+  width: 28px; height: 6px; border-radius: 99px;
+  background: rgba(255,255,255,.2); transition: background .2s;
+}
+.dotActive { background: var(--gold); }
+
+/* form panel */
+.form {
+  background: var(--cream); padding: 24px 20px 28px;
+  border-radius: 26px 26px 0 0; margin-top: -20px;
+  position: relative; z-index: 2; flex: 1;
+  display: flex; flex-direction: column;
+}
+
+.progressRow { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+.progressLabel {
+  font-size: 11px; font-weight: 600; color: var(--muted);
+  white-space: nowrap;
+}
+.progressBar {
+  flex: 1; height: 4px; background: var(--border);
+  border-radius: 99px; overflow: hidden;
+}
+.progressFill {
+  height: 100%; border-radius: 99px;
+  background: linear-gradient(90deg, var(--gold-dk), var(--gold));
+  transition: width .3s ease;
+}
+
+.stepContent { flex: 1; }
+
+.formTitle {
+  font-family: var(--font-head); font-size: 18px; font-weight: 800;
+  color: var(--ink); margin-bottom: 4px;
+}
+.formSubtitle { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+
+/* Step 1 — Income fields */
+.field { margin-bottom: 16px; }
+
+.label { display: block; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .09em; margin-bottom: 5px; }
+
+.input {
+  width: 100%; background: #fff; border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); padding: 11px 13px;
+  font-size: 14px; color: var(--ink); outline: none; box-sizing: border-box;
+}
+.input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,166,35,.18); }
+
+.nameRow { display: flex; flex-direction: column; gap: 0; }
+
+.fieldError { font-size: 12px; color: var(--rose); margin-top: 4px; }
+.label {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px;
+}
+.currencyTag {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 18px; border-radius: 4px;
+  background: var(--border); font-size: 10px; font-weight: 700;
+  color: var(--ink); letter-spacing: .03em;
+}
+.inputLarge {
+  display: flex; align-items: center;
+  background: #fff; border: 1.5px solid var(--border);
+  border-radius: 12px; padding: 0 14px; height: 52px;
+  transition: border-color .15s;
+}
+.inputLarge:focus-within { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,166,35,.18); }
+.inputPrefix {
+  font-family: var(--font-num); font-size: 20px; font-weight: 700;
+  color: var(--ink); margin-right: 8px;
+}
+.inputNum {
+  flex: 1; border: none; outline: none; background: transparent;
+  font-family: var(--font-num); font-size: 20px; font-weight: 700;
+  color: var(--ink);
+}
+.inputNum::placeholder { color: var(--border); }
+.inputHint { font-size: 11px; color: var(--muted); margin-top: 4px; display: block; }
+
+/* Step 2 — Categories grid */
+.categoryGrid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+  margin-bottom: 14px;
+}
+.categoryCard {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 14px 8px; background: #fff; border: 1.5px solid var(--border);
+  border-radius: 14px; cursor: pointer; transition: all .15s;
+  font-family: inherit;
+}
+.categoryCard:hover { border-color: var(--muted); }
+.categorySelected {
+  border-color: var(--gold) !important;
+  background: rgba(245,183,50,.08);
+}
+.categoryIcon { font-size: 24px; }
+.categoryName { font-size: 12px; font-weight: 600; color: var(--ink); }
+.categoryAdd { border-style: dashed; }
+.categoryAdd .categoryIcon {
+  font-size: 20px; color: var(--muted); font-family: var(--font-head); font-weight: 700;
+}
+.selectedCount { font-size: 12px; color: var(--gold-dk); font-weight: 600; text-align: center; }
+
+/* Step 3 — Savings */
+.savingsPills { display: flex; gap: 8px; margin-bottom: 20px; justify-content: center; }
+.savingsPill {
+  padding: 8px 18px; border-radius: 99px; border: 1.5px solid var(--border);
+  background: #fff; font-size: 13px; font-weight: 600; color: var(--ink);
+  cursor: pointer; font-family: var(--font-head); transition: all .15s;
+}
+.savingsPill:hover { border-color: var(--muted); }
+.savingsPillActive {
+  background: var(--g50); border-color: var(--g500); color: var(--g700);
+}
+
+.customInput {
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+  margin-bottom: 16px;
+}
+.customField {
+  width: 64px; text-align: center; border: 1.5px solid var(--border);
+  border-radius: 10px; padding: 8px; font-family: var(--font-num);
+  font-size: 18px; font-weight: 700; color: var(--ink); outline: none;
+}
+.customField:focus { border-color: var(--gold); }
+.customSuffix { font-size: 18px; font-weight: 700; color: var(--muted); }
+
+.ringContainer {
+  position: relative; width: 140px; height: 140px; margin: 0 auto 20px;
+}
+.ring { width: 100%; height: 100%; }
+.ringLabel {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.ringPercent {
+  font-family: var(--font-num); font-size: 28px; font-weight: 800; color: var(--ink);
+}
+.ringText { font-size: 11px; color: var(--muted); }
+
+.savingsCards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.savingsCard {
+  background: #fff; border: 1.5px solid var(--border); border-radius: 14px;
+  padding: 14px; display: flex; flex-direction: column; gap: 4px;
+}
+.savingsCardLabel { font-size: 11px; font-weight: 600; color: var(--muted); }
+.savingsCardAmount {
+  font-family: var(--font-num); font-size: 18px; font-weight: 700; color: var(--ink);
+}
+
+.tipCard {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(245,183,50,.08); border: 1px solid rgba(245,183,50,.25);
+  border-radius: 14px; padding: 12px 14px; margin-bottom: 14px;
+}
+.tipIcon { font-size: 16px; flex-shrink: 0; }
+.tipText { font-size: 12px; color: var(--ink); font-weight: 500; }
+
+/* Navigation row */
+.navRow {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: auto; padding-top: 16px;
+}
+.backBtn {
+  padding: 12px 20px; border: 1.5px solid var(--border); border-radius: 12px;
+  background: transparent; font-size: 13px; font-weight: 600; color: var(--muted);
+  cursor: pointer; font-family: var(--font-head);
+}
+.backBtn:hover { border-color: var(--muted); color: var(--ink); }
+.continueBtn, .finishBtn {
+  padding: 12px 24px; border: none; border-radius: 12px;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  font-family: var(--font-head);
+}
+.continueBtn {
+  background: linear-gradient(135deg, var(--gold-dk), var(--gold));
+  color: var(--ink); box-shadow: 0 4px 18px rgba(196,125,16,.35);
+}
+.continueBtn:disabled { opacity: .5; cursor: not-allowed; }
+.finishBtn {
+  background: linear-gradient(135deg, var(--g600), var(--g400));
+  color: #fff; box-shadow: 0 4px 18px rgba(29,114,50,.3);
+}
+
+/* ── Desktop ─────────────────────────────────────── */
+@media (min-width: 768px) {
+  .page {
+    flex-direction: row;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .hero {
+    width: 40%;
+    flex: none;
+    min-height: 100%;
+    padding: 48px 40px;
+    background: #0c1f1a;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border-radius: 0;
+  }
+
+  .orb1 { width: 520px; height: 520px; top: -160px; right: -160px; opacity: .5; }
+  .orb2 { width: 380px; height: 380px; bottom: -80px; left: -110px; opacity: .5; }
+
+  .heroEmoji { font-size: 64px; margin-bottom: 20px; }
+  .heroTitle { font-size: 36px; }
+  .heroSubtitle { font-size: 14px; margin-top: 10px; color: rgba(255,255,255,.45); }
+
+  .dots { margin-top: 32px; }
+  .dot { width: 36px; height: 7px; }
+
+  .form {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 48px clamp(40px, 6vw, 80px);
+    border-radius: 0;
+    margin-top: 0;
+    background: #fff;
+    overflow-y: auto;
+  }
+
+  .progressRow { margin-bottom: 32px; }
+  .progressLabel { font-size: 12px; }
+  .progressBar { height: 5px; }
+
+  .formTitle { font-size: 28px; margin-bottom: 6px; }
+  .formSubtitle { font-size: 14px; margin-bottom: 28px; }
+
+  /* Step 1 */
+  .field { margin-bottom: 20px; }
+  .label { font-size: 13px; }
+  .input { padding: 13px 15px; font-size: 15px; border-radius: 12px; }
+  .nameRow { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .inputLarge { height: 56px; border-radius: 14px; padding: 0 18px; }
+  .inputPrefix { font-size: 22px; }
+  .inputNum { font-size: 22px; }
+  .inputHint { font-size: 12px; }
+
+  /* Step 2 */
+  .categoryGrid { grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .categoryCard { padding: 18px 12px; border-radius: 16px; gap: 8px; }
+  .categoryIcon { font-size: 28px; }
+  .categoryName { font-size: 13px; }
+  .selectedCount { font-size: 13px; margin-top: 4px; }
+
+  /* Step 3 */
+  .savingsPills { gap: 10px; margin-bottom: 24px; }
+  .savingsPill { padding: 10px 22px; font-size: 14px; }
+
+  .ringContainer { width: 160px; height: 160px; margin-bottom: 24px; }
+  .ringPercent { font-size: 32px; }
+  .ringText { font-size: 12px; }
+
+  .savingsCards { gap: 14px; margin-bottom: 18px; }
+  .savingsCard { padding: 18px; border-radius: 16px; }
+  .savingsCardAmount { font-size: 22px; }
+
+  .tipCard { padding: 14px 18px; border-radius: 16px; }
+  .tipText { font-size: 13px; }
+
+  /* Nav row */
+  .backBtn { padding: 14px 24px; border-radius: 14px; font-size: 14px; }
+  .continueBtn, .finishBtn { padding: 14px 32px; border-radius: 14px; font-size: 14px; }
+}
