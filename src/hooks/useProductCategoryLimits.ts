@@ -1,21 +1,21 @@
-// src/hooks/useProductProductCategoryLimits.ts
+// src/hooks/useProductCategoryLimits.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { productProductCategoryLimitsService } from '@/services/productProductCategoryLimitsService'
-import type { ProductProductCategoryLimits } from '@/backend/types'
+import { productCategoryLimitsService } from '@/services/productCategoryLimitsService'
+import type { ProductCategoryLimits } from '@/backend/types'
 
-export const PRODUCT_CATEGORY_LIMITS_KEY = ['productProductCategoryLimits'] as const
+export const PRODUCT_CATEGORY_LIMITS_KEY = ['productCategoryLimits'] as const
 
-export function useProductProductCategoryLimits() {
+export function useProductCategoryLimits() {
   return useQuery({
     queryKey: PRODUCT_CATEGORY_LIMITS_KEY,
-    queryFn: () => productProductCategoryLimitsService.get(),
+    queryFn: () => productCategoryLimitsService.get(),
   })
 }
 
-export function useSetProductProductCategoryLimits() {
+export function useSetProductCategoryLimits() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (limits: ProductCategoryLimits) => productProductCategoryLimitsService.set(limits),
+    mutationFn: (limits: ProductCategoryLimits) => productCategoryLimitsService.set(limits),
     onSuccess: () => void qc.invalidateQueries({ queryKey: PRODUCT_CATEGORY_LIMITS_KEY }),
   })
 }
