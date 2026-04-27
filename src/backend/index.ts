@@ -191,7 +191,7 @@ export async function getProductCategoryLimitsBackend(): Promise<ICategoryLimits
     const { mswProductCategoryLimitsBackend } = await import('./msw/productCategoryLimits')
     _productCategoryLimitsBackend = mswProductCategoryLimitsBackend
   }
-  return _productCategoryLimitsBackend
+  return _productCategoryLimitsBackend!
 }
 
 export async function getNotificationsBackend(): Promise<INotificationsBackend> {

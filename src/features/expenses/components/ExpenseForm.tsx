@@ -199,8 +199,8 @@ export function ExpenseForm({
           <div className={isDesktop ? styles.fieldsDesktop : styles.fields}>
             <FormField name="description" label="Descripción">
               <TextInput name="description" placeholder="¿Qué compraste?" />
-              <CategorySuggestion categories={categories} />
             </FormField>
+            <CategorySuggestion categories={categories} />
 
             <FormField name="cardId" label="Tarjeta / pago">
               <SelectInput
