@@ -18,11 +18,19 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/settings', icon: '⚙️', label: 'Configurar' },
 ]
 
+const MOBILE_BREAKPOINT = 768
+
 export function AppLayout(): React.ReactElement {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const isSettings = pathname.startsWith('/settings')
+
+  React.useEffect(() => {
+    if (window.innerWidth < MOBILE_BREAKPOINT && pathname !== '/expenses/new') {
+      void navigate('/expenses/new', { replace: true })
+    }
+  }, [pathname, navigate])
 
   function handleLogout(): void {
     logout()
