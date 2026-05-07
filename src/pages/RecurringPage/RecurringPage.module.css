@@ -121,6 +121,7 @@
 
 .empty { text-align: center; font-size: 13px; color: var(--muted); padding: 32px 0; }
 
+
 /* ── Totals card (mobile) ── */
 .totalsCard {
   background: #fff;
@@ -180,6 +181,41 @@
     transition: opacity .15s;
   }
   .desktopNewBtn:hover { opacity: .9; }
+
+  /* ── Pagos vencidos ── */
+  .overdueCard {
+    background: rgba(245, 183, 50, 0.07);
+    border: 1.5px solid rgba(245, 183, 50, 0.45);
+    border-radius: 24px; padding: 20px 24px;
+    margin-bottom: 20px;
+  }
+  .overdueCardTitle {
+    font-size: 13px; font-weight: 700; color: #92400e;
+    margin-bottom: 16px; letter-spacing: .02em;
+  }
+  .overduePills { display: flex; gap: 12px; flex-wrap: wrap; }
+  .overduePill {
+    display: flex; flex-direction: column; gap: 6px;
+    background: rgba(255,255,255,.85);
+    border: 1px solid rgba(245,183,50,.35);
+    border-radius: 16px; padding: 14px 16px;
+    flex: 1; min-width: 160px; cursor: pointer;
+    transition: background .15s, box-shadow .15s;
+  }
+  .overduePill:hover { background: #fff; box-shadow: 0 4px 14px rgba(245,183,50,.2); }
+  .overduePillTop { display: flex; align-items: center; gap: 8px; }
+  .overduePillIcon { font-size: 18px; flex-shrink: 0; }
+  .overduePillName {
+    font-size: 13px; font-weight: 600; color: var(--ink);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .overduePillAmt {
+    font-family: var(--font-num);
+    font-size: 15px; font-weight: 700; color: #b45309;
+  }
+  .overduePillMonths {
+    font-size: 11px; font-weight: 600; color: #92400e;
+  }
 
   /* ── Stat cards ── */
   .desktopStats {

@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { formatCurrency } from '@/utils/formatCurrency'
-import { RecurringMode, RecurringFrequency, RecurringStatus, Currency, CardType } from '@/types/enums'
+import { RecurringMode, RecurringFrequency, RecurringStatus, RecurringPaymentStatus, Currency, CardType } from '@/types/enums'
 import type { RecurringExpense } from '@/types/models'
 import styles from './RecurringPage.module.css'
 
@@ -35,6 +35,47 @@ function getNextDueDate(dueDayOfMonth: number): string {
   const month = now.getDate() >= day ? now.getMonth() + 1 : now.getMonth()
   const m = month > 11 ? 0 : month
   return `${String(day).padStart(2, '0')} ${MONTH_NAMES[m]}`
+}
+
+interface OverdueEntry {
+  item: RecurringExpense
+  missedMonths: Array<{ month: number; year: number }>
+}
+
+function getOverdueItems(recurring: RecurringExpense[]): OverdueEntry[] {
+  const now = new Date()
+  const currentMonth = now.getMonth() + 1
+  const currentYear = now.getFullYear()
+
+  return recurring
+    .filter(
+      (r) =>
+        r.status === RecurringStatus.Active &&
+        r.mode === RecurringMode.Manual &&
+        r.frequency === RecurringFrequency.Monthly,
+    )
+    .map((r) => {
+      const missedMonths: Array<{ month: number; year: number }> = []
+      for (let i = 1; i <= 3; i++) {
+        let checkMonth = currentMonth - i
+        let checkYear = currentYear
+        if (checkMonth <= 0) {
+          checkMonth += 12
+          checkYear -= 1
+        }
+        // Don't check before this recurring was created
+        const createdDate = new Date(r.createdAt)
+        const checkEnd = new Date(checkYear, checkMonth, 0) // last day of checkMonth
+        if (checkEnd < createdDate) break
+
+        const wasPaid = r.paymentHistory.some(
+          (h) => h.month === checkMonth && h.year === checkYear && h.status === RecurringPaymentStatus.Paid,
+        )
+        if (!wasPaid) missedMonths.push({ month: checkMonth, year: checkYear })
+      }
+      return { item: r, missedMonths }
+    })
+    .filter((entry) => entry.missedMonths.length > 0)
 }
 
 interface DesktopRowProps {
@@ -154,6 +195,9 @@ export default function RecurringPage(): React.ReactElement {
   const equivMonthlyUsd = monthlyUsd + annualUsd / 12
   const equivMonthlyUyu = monthlyUyu + annualUyu / 12
 
+
+  const overdueItems = getOverdueItems(recurring)
+  const currentYear = new Date().getFullYear()
 
   // Próximos vencimientos: active items with dueDayOfMonth, sorted by day
   const upcoming = [...active]
@@ -548,6 +592,42 @@ export default function RecurringPage(): React.ReactElement {
         </div>
 
         {desktopForm}
+
+        {/* Pagos vencidos de meses anteriores */}
+        {overdueItems.length > 0 && (
+          <div className={styles.overdueCard}>
+            <p className={styles.overdueCardTitle}>⚠️ Pagos pendientes de meses anteriores</p>
+            <div className={styles.overduePills}>
+              {overdueItems.map(({ item, missedMonths }) => {
+                const monthsLabel = missedMonths
+                  .map(({ month, year }) =>
+                    year === currentYear ? MONTH_NAMES[month - 1] : `${MONTH_NAMES[month - 1]} ${year}`,
+                  )
+                  .join(', ')
+                const symbol = item.currency === Currency.USD ? 'U$S' : '$'
+                return (
+                  <div
+                    key={item.id}
+                    className={styles.overduePill}
+                    onClick={() => navigate(`/settings/recurring/${item.id}`)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && navigate(`/settings/recurring/${item.id}`)}
+                  >
+                    <div className={styles.overduePillTop}>
+                      <span className={styles.overduePillIcon}>{item.icon || '💳'}</span>
+                      <span className={styles.overduePillName}>{item.name}</span>
+                    </div>
+                    <span className={styles.overduePillAmt}>
+                      {symbol} {formatCurrency(item.amount, item.currency).replace(/^[^0-9]+/, '')}
+                    </span>
+                    <span className={styles.overduePillMonths}>Sin pagar: {monthsLabel}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Stat cards */}
         <div className={styles.desktopStats}>
