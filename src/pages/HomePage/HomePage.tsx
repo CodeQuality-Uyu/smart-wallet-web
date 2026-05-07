@@ -12,9 +12,57 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { groupExpensesByDate } from '@/utils/groupByDate'
 import { formatCurrency, formatAmountNoSymbol } from '@/utils/formatCurrency'
-import { PeriodFilter, Currency, RecurringMode, RecurringPaymentStatus } from '@/types/enums'
+import {
+  PeriodFilter,
+  Currency,
+  RecurringMode,
+  RecurringPaymentStatus,
+  RecurringStatus,
+  RecurringFrequency,
+} from '@/types/enums'
 import { useAuth } from '@/app/providers/AuthContext'
 import styles from './HomePage.module.css'
+
+interface OverdueEntry {
+  item: { id: string; name: string; icon: string; amount: number; currency: Currency }
+  missedMonths: Array<{ month: number; year: number }>
+}
+
+function getOverdueItems(
+  recurring: import('@/types/models').RecurringExpense[]
+): OverdueEntry[] {
+  const now = new Date()
+  const currentMonth = now.getMonth() + 1
+  const currentYear = now.getFullYear()
+
+  return recurring
+    .filter(
+      (r) =>
+        r.status === RecurringStatus.Active &&
+        r.mode === RecurringMode.Manual &&
+        r.frequency === RecurringFrequency.Monthly
+    )
+    .map((r) => {
+      const missedMonths: Array<{ month: number; year: number }> = []
+      for (let i = 1; i <= 3; i++) {
+        let checkMonth = currentMonth - i
+        let checkYear = currentYear
+        if (checkMonth <= 0) {
+          checkMonth += 12
+          checkYear -= 1
+        }
+        const createdDate = new Date(r.createdAt)
+        const checkEnd = new Date(checkYear, checkMonth, 0)
+        if (checkEnd < createdDate) break
+        const wasPaid = r.paymentHistory.some(
+          (h) => h.month === checkMonth && h.year === checkYear && h.status === RecurringPaymentStatus.Paid
+        )
+        if (!wasPaid) missedMonths.push({ month: checkMonth, year: checkYear })
+      }
+      return { item: r, missedMonths }
+    })
+    .filter((entry) => entry.missedMonths.length > 0)
+}
 
 const MONTH_NAMES = [
   'Enero',
@@ -106,6 +154,8 @@ export default function HomePage(): React.ReactElement {
     (r) =>
       r.mode === RecurringMode.Manual && r.currentMonthStatus === RecurringPaymentStatus.Pending
   )
+  const overdueItems = getOverdueItems(recurring)
+  const currentYear = now.getFullYear()
   // ── Savings tips ──────────────────────────────────────────
   const tips: { icon: string; text: string; type: 'success' | 'warn' | 'info' }[] = []
 
@@ -343,7 +393,37 @@ export default function HomePage(): React.ReactElement {
 
         {/* Sidebar: pending payments + tips + categories */}
         <div className={styles.desktopSidebar}>
-          <h2 className={styles.desktopSectionTitle}>Pagos pendientes</h2>
+          {overdueItems.length > 0 && (
+            <>
+              <h2 className={styles.desktopSectionTitle}>⚠️ Sin pagar — meses anteriores</h2>
+              <div className={[styles.desktopCard, styles.overdueCard].join(' ')}>
+                {overdueItems.map(({ item, missedMonths }) => {
+                  const monthsLabel = missedMonths
+                    .map(({ month, year }) =>
+                      year === currentYear ? MONTH_NAMES[month - 1] : `${MONTH_NAMES[month - 1]} ${year}`
+                    )
+                    .join(', ')
+                  return (
+                    <button
+                      key={item.id}
+                      className={styles.desktopRecurringRow}
+                      onClick={() => void navigate(`/settings/recurring/${item.id}`)}
+                    >
+                      <span className={styles.desktopRecurringIcon}>{item.icon || '💳'}</span>
+                      <div className={styles.desktopRecurringInfo}>
+                        <span className={styles.desktopRecurringName}>{item.name}</span>
+                        <span className={styles.desktopRecurringDue}>Sin pagar: {monthsLabel}</span>
+                      </div>
+                      <span className={styles.desktopRecurringAmt}>
+                        {formatCurrency(item.amount, item.currency)}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </>
+          )}
+          <h2 className={[styles.desktopSectionTitle, overdueItems.length > 0 ? styles.desktopSidebarSection : ''].join(' ').trim()}>Pagos pendientes</h2>
           <div className={styles.desktopCard}>
             {pendingRecurring.length === 0 ? (
               <div className={styles.desktopAllPaid}>✅ Todos los pagos al día</div>

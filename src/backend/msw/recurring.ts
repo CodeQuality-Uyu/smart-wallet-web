@@ -8,6 +8,7 @@ import type {
   CreateRecurringPayload,
   UpdateRecurringPayload,
   ConfirmRecurringPaymentPayload,
+  UpdateRecurringPaymentPayload,
   RecurringPaymentHistory,
   RecurringStatus,
 } from '../types'
@@ -48,12 +49,26 @@ export const mswRecurringBackend: IRecurringBackend = {
   ): Promise<RecurringPaymentHistory> {
     const form = new FormData()
     form.append('amount', String(payload.amount))
+    if (payload.month !== undefined) form.append('month', String(payload.month))
+    if (payload.year !== undefined) form.append('year', String(payload.year))
     if (payload.receiptFile) {
       form.append('receipt', payload.receiptFile)
     }
     const { data } = await httpClient.post<RecurringPaymentHistory>(
       `/recurring/${id}/confirm-payment`,
       form,
+    )
+    return data
+  },
+
+  async updatePayment(
+    recurringId: string,
+    paymentId: string,
+    payload: UpdateRecurringPaymentPayload,
+  ): Promise<RecurringPaymentHistory> {
+    const { data } = await httpClient.patch<RecurringPaymentHistory>(
+      `/recurring/${recurringId}/payments/${paymentId}`,
+      payload,
     )
     return data
   },

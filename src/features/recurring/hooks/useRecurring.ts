@@ -6,6 +6,7 @@ import type {
   CreateRecurringPayload,
   UpdateRecurringPayload,
   ConfirmRecurringPaymentPayload,
+  UpdateRecurringPaymentPayload,
 } from '@/types/models'
 import { RecurringStatus } from '@/types/enums'
 
@@ -59,6 +60,15 @@ export function useConfirmRecurringPayment(id: string) {
   return useMutation({
     mutationFn: (payload: ConfirmRecurringPaymentPayload) =>
       recurringService.confirmPayment(id, payload),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: RECURRING_KEYS.all }),
+  })
+}
+
+export function useUpdateRecurringPayment(recurringId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ paymentId, payload }: { paymentId: string; payload: UpdateRecurringPaymentPayload }) =>
+      recurringService.updatePayment(recurringId, paymentId, payload),
     onSuccess: () => void qc.invalidateQueries({ queryKey: RECURRING_KEYS.all }),
   })
 }

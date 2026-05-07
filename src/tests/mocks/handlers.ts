@@ -353,18 +353,24 @@ export const handlers = [
     const rec = mockRecurring.find((r) => r.id === params['id'])
     const contentType = request.headers.get('content-type') ?? ''
     let amount: number = rec?.amount ?? 0
+    const now = new Date()
+    let month = now.getMonth() + 1
+    let year = now.getFullYear()
     if (contentType.includes('multipart/form-data')) {
       const form = await request.formData()
       amount = parseFloat(form.get('amount') as string) || amount
+      if (form.get('month')) month = parseInt(form.get('month') as string)
+      if (form.get('year')) year = parseInt(form.get('year') as string)
     } else {
       const body = await request.json() as Record<string, unknown>
       amount = (body['amount'] as number) ?? amount
+      if (body['month']) month = body['month'] as number
+      if (body['year']) year = body['year'] as number
     }
-    const now = new Date()
     const history = {
       id: crypto.randomUUID(),
-      month: now.getMonth() + 1,
-      year: now.getFullYear(),
+      month,
+      year,
       amount,
       currency: rec?.currency ?? Currency.UYU,
       paidAt: now.toISOString(),
@@ -375,6 +381,24 @@ export const handlers = [
       rec.currentMonthStatus = RecurringPaymentStatus.Paid
     }
     return HttpResponse.json(history, { status: 201 })
+  }),
+
+  http.patch(`${BASE}/recurring/:id/payments/:paymentId`, async ({ params, request }) => {
+    const rec = mockRecurring.find((r) => r.id === params['id'])
+    const paymentId = params['paymentId'] as string
+    const body = await request.json() as { amount?: number; paidAt?: string }
+    let entry: (typeof mockRecurring)[number]['paymentHistory'][number] | undefined
+    if (rec) {
+      rec.paymentHistory = rec.paymentHistory.map((h) => {
+        if (h.id === paymentId) {
+          entry = { ...h, ...(body.amount !== undefined ? { amount: body.amount } : {}), ...(body.paidAt ? { paidAt: body.paidAt } : {}) }
+          return entry
+        }
+        return h
+      })
+    }
+    if (!entry) return new HttpResponse(null, { status: 404 })
+    return HttpResponse.json(entry)
   }),
 
   http.post(`${BASE}/recurring/:id/payments/:paymentId/receipt`, async ({ params }) => {

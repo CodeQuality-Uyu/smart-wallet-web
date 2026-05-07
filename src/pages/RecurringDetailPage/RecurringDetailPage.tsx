@@ -9,6 +9,7 @@ import {
   useUpdateRecurring,
   useToggleRecurringStatus,
   useConfirmRecurringPayment,
+  useUpdateRecurringPayment,
   useUploadRecurringPaymentReceipt,
 } from '@/features/recurring/hooks/useRecurring'
 import { useCategories } from '@/features/categories/hooks/useCategories'
@@ -39,12 +40,16 @@ export default function RecurringDetailPage(): React.ReactElement {
   const { mutateAsync: toggleStatus } = useToggleRecurringStatus(id ?? '')
   const { mutateAsync: confirmPayment } = useConfirmRecurringPayment(id ?? '')
   const { mutateAsync: uploadReceipt, isPending: isUploadingReceipt } = useUploadRecurringPaymentReceipt(id ?? '')
+  const { mutateAsync: updatePayment } = useUpdateRecurringPayment(id ?? '')
   const [uploadingPaymentId, setUploadingPaymentId] = useState<string | null>(null)
+  const [editingPaymentId, setEditingPaymentId] = useState<string | null>(null)
   const { data: categories = [] } = useCategories()
   const { data: cards = [] } = useCards()
   const [isEditing, setIsEditing] = useState(false)
   const [showPaymentForm, setShowPaymentForm] = useState(false)
+  const [overdueFormKey, setOverdueFormKey] = useState<string | null>(null)
   const receiptFileInputRef = useRef<HTMLInputElement>(null)
+  const overdueReceiptRef = useRef<HTMLInputElement>(null)
 
   if (isLoading) return <LoadingSpinner fullPage />
   if (error || !rec) return <ErrorMessage message="No se pudo cargar el recurrente." />
@@ -59,6 +64,37 @@ export default function RecurringDetailPage(): React.ReactElement {
     .join(', ')
   const card = cards.find((c) => c.id === rec.cardId)
   const freqLabel = rec.frequency === RecurringFrequency.Annual ? 'año' : 'mes'
+
+  // ── Overdue months (last 3, not yet paid) ─────────────────
+  const MONTH_NAMES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+  const overdueMonths: Array<{ month: number; year: number; label: string }> = (() => {
+    if (!isManual || rec.frequency !== RecurringFrequency.Monthly) return []
+    const now = new Date()
+    const currentMonth = now.getMonth() + 1
+    const currentYear = now.getFullYear()
+    const result: Array<{ month: number; year: number; label: string }> = []
+    for (let i = 1; i <= 3; i++) {
+      let m = currentMonth - i
+      let y = currentYear
+      if (m <= 0) { m += 12; y -= 1 }
+      const createdDate = new Date(rec.createdAt)
+      const checkEnd = new Date(y, m, 0)
+      if (checkEnd < createdDate) break
+      const wasPaid = rec.paymentHistory.some(
+        (h) => h.month === m && h.year === y && h.status === RecurringPaymentStatus.Paid
+      )
+      if (!wasPaid) {
+        const label = y === currentYear ? (MONTH_NAMES[m - 1] ?? '') : `${MONTH_NAMES[m - 1] ?? ''} ${y}`
+        result.push({ month: m, year: y, label })
+      }
+    }
+    return result
+  })()
+
+  async function handleConfirmOverduePayment(values: ConfirmPaymentFormValues, month: number, year: number): Promise<void> {
+    await confirmPayment({ amount: values.amount, receiptFile: values.receiptFile ?? undefined, month, year })
+    setOverdueFormKey(null)
+  }
 
   const cardOptions = cards.map((c) => ({
     value: c.id,
@@ -368,6 +404,11 @@ export default function RecurringDetailPage(): React.ReactElement {
     return '—'
   }
 
+  async function handleUpdatePayment(paymentId: string, amount: number, paidAt?: string): Promise<void> {
+    await updatePayment({ paymentId, payload: { amount, paidAt } })
+    setEditingPaymentId(null)
+  }
+
   async function handleReceiptUpload(paymentId: string, file: File): Promise<void> {
     setUploadingPaymentId(paymentId)
     try {
@@ -375,6 +416,62 @@ export default function RecurringDetailPage(): React.ReactElement {
     } finally {
       setUploadingPaymentId(null)
     }
+  }
+
+  // ─── Overdue month form builder ────────────────────────────
+  function overduePaymentForm(month: number, year: number): React.ReactElement {
+    return (
+      <div className={styles.inlineForm}>
+        <Formik<ConfirmPaymentFormValues>
+          initialValues={{ amount: rec!.amount, receiptFile: undefined }}
+          validationSchema={confirmPaymentSchema}
+          onSubmit={(v) => handleConfirmOverduePayment(v, month, year)}
+        >
+          {({ isSubmitting, setFieldValue, values, errors, touched }) => (
+            <Form>
+              <FormField name="amount" label="Monto de esta factura">
+                <TextInput name="amount" type="number" inputMode="decimal" icon="$" />
+              </FormField>
+              <input
+                ref={overdueReceiptRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,application/pdf"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const file = e.target.files?.[0] ?? null
+                  void setFieldValue('receiptFile', file)
+                }}
+              />
+              <div
+                className={styles.uploadArea}
+                onClick={() => overdueReceiptRef.current?.click()}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === 'Enter' && overdueReceiptRef.current?.click()}
+                style={{ cursor: 'pointer' }}
+              >
+                {values.receiptFile ? (
+                  <p>📄 {values.receiptFile.name}</p>
+                ) : (
+                  <p>📄 Subir factura <span style={{ color: 'var(--muted)' }}>(opcional)</span></p>
+                )}
+              </div>
+              {touched.receiptFile && errors.receiptFile && (
+                <p className={styles.fieldError}>{errors.receiptFile as string}</p>
+              )}
+              <div className={styles.inlineFormActions}>
+                <Button type="button" variant="ghost" size="sm" onClick={() => setOverdueFormKey(null)}>
+                  Cancelar
+                </Button>
+                <Button type="submit" variant="secondary" size="sm" loading={isSubmitting}>
+                  Confirmar pago
+                </Button>
+              </div>
+            </Form>
+          )}
+        </Formik>
+      </div>
+    )
   }
 
   // ─── History rows ──────────────────────────────────────────
@@ -387,45 +484,79 @@ export default function RecurringDetailPage(): React.ReactElement {
   const historyContent = (
     <>
       {sortedHistory.map((h) => (
-        <div key={h.id} className={styles.histRow}>
-          <span className={styles.histCheck}>✓</span>
-          <div className={styles.histInfo}>
-            <span className={styles.histDate}>{formatPaidAt(h.paidAt, h.month, h.year)}</span>
-            <span className={styles.histAmt}>{formatCurrency(h.amount, h.currency)}</span>
-          </div>
-          <div className={styles.histReceipt}>
-            {h.receiptUrl ? (
-              <a
-                href={h.receiptUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={styles.histReceiptLink}
+        <div key={h.id} className={styles.histEntry}>
+          {editingPaymentId === h.id ? (
+            <Formik
+              initialValues={{ amount: h.amount }}
+              onSubmit={async (v, { setSubmitting }) => {
+                await handleUpdatePayment(h.id, v.amount)
+                setSubmitting(false)
+              }}
+            >
+              {({ isSubmitting }) => (
+                <Form className={styles.histEditForm}>
+                  <span className={styles.histEditLabel}>{formatPaidAt(h.paidAt, h.month, h.year)}</span>
+                  <TextInput name="amount" type="number" inputMode="decimal" />
+                  <div className={styles.histEditActions}>
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setEditingPaymentId(null)}>
+                      Cancelar
+                    </Button>
+                    <Button type="submit" variant="secondary" size="sm" loading={isSubmitting}>
+                      Guardar
+                    </Button>
+                  </div>
+                </Form>
+              )}
+            </Formik>
+          ) : (
+            <div className={styles.histRow}>
+              <span className={styles.histCheck}>✓</span>
+              <div className={styles.histInfo}>
+                <span className={styles.histDate}>{formatPaidAt(h.paidAt, h.month, h.year)}</span>
+                <span className={styles.histAmt}>{formatCurrency(h.amount, h.currency)}</span>
+              </div>
+              <div className={styles.histReceipt}>
+                {h.receiptUrl ? (
+                  <a
+                    href={h.receiptUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.histReceiptLink}
+                  >
+                    📄 Comprobante
+                  </a>
+                ) : (
+                  <>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,application/pdf"
+                      style={{ display: 'none' }}
+                      id={`receipt-upload-${h.id}`}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) void handleReceiptUpload(h.id, file)
+                        e.target.value = ''
+                      }}
+                    />
+                    <label
+                      htmlFor={`receipt-upload-${h.id}`}
+                      className={styles.histUploadBtn}
+                      aria-disabled={uploadingPaymentId === h.id || isUploadingReceipt}
+                    >
+                      {uploadingPaymentId === h.id ? '⏳' : '+ Comprobante'}
+                    </label>
+                  </>
+                )}
+              </div>
+              <button
+                className={styles.histEditBtn}
+                onClick={() => setEditingPaymentId(h.id)}
+                title="Editar pago"
               >
-                📄 Comprobante
-              </a>
-            ) : (
-              <>
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,application/pdf"
-                  style={{ display: 'none' }}
-                  id={`receipt-upload-${h.id}`}
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (file) void handleReceiptUpload(h.id, file)
-                    e.target.value = ''
-                  }}
-                />
-                <label
-                  htmlFor={`receipt-upload-${h.id}`}
-                  className={styles.histUploadBtn}
-                  aria-disabled={uploadingPaymentId === h.id || isUploadingReceipt}
-                >
-                  {uploadingPaymentId === h.id ? '⏳' : '+ Comprobante'}
-                </label>
-              </>
-            )}
-          </div>
+                ✏️
+              </button>
+            </div>
+          )}
         </div>
       ))}
       {rec.paymentHistory.length === 0 && (
@@ -541,6 +672,29 @@ export default function RecurringDetailPage(): React.ReactElement {
             )}
           </div>
           {isManual && showPaymentForm && paymentFormContent}
+          {overdueMonths.length > 0 && (
+            <div className={styles.overdueSection}>
+              <p className={styles.overdueSectionTitle}>⚠️ Sin registrar — meses anteriores</p>
+              {overdueMonths.map(({ month, year, label }) => {
+                const key = `${year}-${month}`
+                return (
+                  <div key={key} className={styles.overdueMonthRow}>
+                    <span className={styles.overdueMonthLabel}>{label}</span>
+                    {overdueFormKey === key ? (
+                      overduePaymentForm(month, year)
+                    ) : (
+                      <button
+                        className={styles.overdueRegisterBtn}
+                        onClick={() => setOverdueFormKey(key)}
+                      >
+                        Registrar pago
+                      </button>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
           {historyContent}
         </div>
 
@@ -632,50 +786,109 @@ export default function RecurringDetailPage(): React.ReactElement {
 
             {isManual && showPaymentForm && paymentFormContent}
 
+            {overdueMonths.length > 0 && (
+              <div className={styles.overdueSection}>
+                <p className={styles.overdueSectionTitle}>⚠️ Sin registrar — meses anteriores</p>
+                {overdueMonths.map(({ month, year, label }) => {
+                  const key = `${year}-${month}`
+                  return (
+                    <div key={key} className={styles.overdueMonthEntry}>
+                      <div className={styles.overdueMonthRow}>
+                        <span className={styles.overdueMonthLabel}>{label}</span>
+                        {overdueFormKey !== key && (
+                          <button
+                            className={styles.overdueRegisterBtn}
+                            onClick={() => setOverdueFormKey(key)}
+                          >
+                            Registrar pago
+                          </button>
+                        )}
+                      </div>
+                      {overdueFormKey === key && overduePaymentForm(month, year)}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
             <div className={styles.dkHistList}>
               {sortedHistory.length === 0 ? (
                 <p className={styles.dkHistEmpty}>Sin historial de pagos aún.</p>
               ) : (
                 sortedHistory.map((h) => (
-                  <div key={h.id} className={styles.dkHistRow}>
-                    <span className={styles.dkHistCheck}>✓</span>
-                    <div className={styles.dkHistInfo}>
-                      <span className={styles.dkHistDate}>{formatPaidAt(h.paidAt, h.month, h.year)}</span>
-                      <span className={styles.dkHistAmt}>{formatCurrency(h.amount, h.currency)}</span>
-                    </div>
-                    <div className={styles.dkHistReceiptCol}>
-                      {h.receiptUrl ? (
-                        <a
-                          href={h.receiptUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={styles.dkHistReceiptLink}
+                  <div key={h.id} className={styles.histEntry}>
+                    {editingPaymentId === h.id ? (
+                      <Formik
+                        initialValues={{ amount: h.amount }}
+                        onSubmit={async (v, { setSubmitting }) => {
+                          await handleUpdatePayment(h.id, v.amount)
+                          setSubmitting(false)
+                        }}
+                      >
+                        {({ isSubmitting }) => (
+                          <Form className={styles.histEditForm}>
+                            <span className={styles.histEditLabel}>{formatPaidAt(h.paidAt, h.month, h.year)}</span>
+                            <TextInput name="amount" type="number" inputMode="decimal" />
+                            <div className={styles.histEditActions}>
+                              <Button type="button" variant="ghost" size="sm" onClick={() => setEditingPaymentId(null)}>
+                                Cancelar
+                              </Button>
+                              <Button type="submit" variant="secondary" size="sm" loading={isSubmitting}>
+                                Guardar
+                              </Button>
+                            </div>
+                          </Form>
+                        )}
+                      </Formik>
+                    ) : (
+                      <div className={styles.dkHistRow}>
+                        <span className={styles.dkHistCheck}>✓</span>
+                        <div className={styles.dkHistInfo}>
+                          <span className={styles.dkHistDate}>{formatPaidAt(h.paidAt, h.month, h.year)}</span>
+                          <span className={styles.dkHistAmt}>{formatCurrency(h.amount, h.currency)}</span>
+                        </div>
+                        <div className={styles.dkHistReceiptCol}>
+                          {h.receiptUrl ? (
+                            <a
+                              href={h.receiptUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={styles.dkHistReceiptLink}
+                            >
+                              📄 Comprobante
+                            </a>
+                          ) : (
+                            <>
+                              <input
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp,application/pdf"
+                                style={{ display: 'none' }}
+                                id={`dk-receipt-${h.id}`}
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0]
+                                  if (file) void handleReceiptUpload(h.id, file)
+                                  e.target.value = ''
+                                }}
+                              />
+                              <label
+                                htmlFor={`dk-receipt-${h.id}`}
+                                className={styles.dkHistUploadBtn}
+                                aria-disabled={uploadingPaymentId === h.id || isUploadingReceipt}
+                              >
+                                {uploadingPaymentId === h.id ? '⏳' : '+ Comprobante'}
+                              </label>
+                            </>
+                          )}
+                        </div>
+                        <button
+                          className={styles.histEditBtn}
+                          onClick={() => setEditingPaymentId(h.id)}
+                          title="Editar pago"
                         >
-                          📄 Comprobante
-                        </a>
-                      ) : (
-                        <>
-                          <input
-                            type="file"
-                            accept="image/jpeg,image/png,image/webp,application/pdf"
-                            style={{ display: 'none' }}
-                            id={`dk-receipt-${h.id}`}
-                            onChange={(e) => {
-                              const file = e.target.files?.[0]
-                              if (file) void handleReceiptUpload(h.id, file)
-                              e.target.value = ''
-                            }}
-                          />
-                          <label
-                            htmlFor={`dk-receipt-${h.id}`}
-                            className={styles.dkHistUploadBtn}
-                            aria-disabled={uploadingPaymentId === h.id || isUploadingReceipt}
-                          >
-                            {uploadingPaymentId === h.id ? '⏳' : '+ Comprobante'}
-                          </label>
-                        </>
-                      )}
-                    </div>
+                          ✏️
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))
               )}

@@ -15,6 +15,7 @@ import type {
   CreateRecurringPayload,
   UpdateRecurringPayload,
   ConfirmRecurringPaymentPayload,
+  UpdateRecurringPaymentPayload,
   RecurringPaymentHistory,
   Expense,
   CreateExpensePayload,
@@ -58,6 +59,7 @@ export type {
   CreateRecurringPayload,
   UpdateRecurringPayload,
   ConfirmRecurringPaymentPayload,
+  UpdateRecurringPaymentPayload,
   RecurringPaymentHistory,
   RecurringStatus,
   Expense,
@@ -165,6 +167,11 @@ export interface IRecurringBackend {
   confirmPayment(
     id: string,
     payload: ConfirmRecurringPaymentPayload
+  ): Promise<RecurringPaymentHistory>
+  updatePayment(
+    recurringId: string,
+    paymentId: string,
+    payload: UpdateRecurringPaymentPayload
   ): Promise<RecurringPaymentHistory>
   uploadPaymentReceipt(
     recurringId: string,

@@ -159,6 +159,13 @@ export type UpdateRecurringPayload = Partial<CreateRecurringPayload>
 export interface ConfirmRecurringPaymentPayload {
   amount: number
   receiptFile?: File
+  month?: number
+  year?: number
+}
+
+export interface UpdateRecurringPaymentPayload {
+  amount: number
+  paidAt?: string
 }
 
 // ─── Metrics ──────────────────────────────────────────────

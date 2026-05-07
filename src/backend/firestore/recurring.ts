@@ -27,6 +27,7 @@ import type {
   CreateRecurringPayload,
   UpdateRecurringPayload,
   ConfirmRecurringPaymentPayload,
+  UpdateRecurringPaymentPayload,
   RecurringPaymentHistory,
   RecurringStatus,
 } from '../types'
@@ -131,6 +132,14 @@ export const firestoreRecurringBackend: IRecurringBackend = {
 
     const now = new Date()
     const entryId = crypto.randomUUID()
+    const entryMonth = payload.month ?? now.getMonth() + 1
+    const entryYear = payload.year ?? now.getFullYear()
+    const isPastMonth = entryYear < now.getFullYear() ||
+      (entryYear === now.getFullYear() && entryMonth < now.getMonth() + 1)
+    // For past months, paidAt is the last day of that month so the date shown is meaningful
+    const paidAt = isPastMonth
+      ? new Date(entryYear, entryMonth, 0).toISOString()
+      : now.toISOString()
 
     let receiptUrl: string | undefined
     if (payload.receiptFile) {
@@ -142,11 +151,11 @@ export const firestoreRecurringBackend: IRecurringBackend = {
 
     const entry = stripUndefined({
       id: entryId,
-      month: now.getMonth() + 1,
-      year: now.getFullYear(),
+      month: entryMonth,
+      year: entryYear,
       amount: payload.amount,
       currency: snap.data()['currency'] as RecurringPaymentHistory['currency'],
-      paidAt: now.toISOString(),
+      paidAt,
       receiptUrl,
       status: RecurringPaymentStatus.Paid,
     }) as unknown as RecurringPaymentHistory
@@ -157,6 +166,27 @@ export const firestoreRecurringBackend: IRecurringBackend = {
       updatedAt: now.toISOString(),
     })
 
+    return entry
+  },
+
+  async updatePayment(
+    recurringId: string,
+    paymentId: string,
+    payload: UpdateRecurringPaymentPayload,
+  ): Promise<RecurringPaymentHistory> {
+    const uid = requireUid()
+    const docRef = doc(firestore, 'users', uid, 'recurring', recurringId)
+    const snap = await getDoc(docRef)
+    if (!snap.exists()) throw { message: 'No encontrado', statusCode: 404 }
+    const existing = (snap.data()['paymentHistory'] ?? []) as RecurringPaymentHistory[]
+    const updated = existing.map((h) =>
+      h.id === paymentId
+        ? { ...h, amount: payload.amount, ...(payload.paidAt ? { paidAt: payload.paidAt } : {}) }
+        : h
+    )
+    const entry = updated.find((h) => h.id === paymentId)
+    if (!entry) throw { message: 'Pago no encontrado', statusCode: 404 }
+    await updateDoc(docRef, { paymentHistory: updated, updatedAt: new Date().toISOString() })
     return entry
   },
 
