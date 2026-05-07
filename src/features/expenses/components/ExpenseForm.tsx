@@ -14,7 +14,8 @@ import { useCategories, useCreateCategory } from '@/features/categories/hooks/us
 import { useCards } from '@/features/cards/hooks/useCards'
 import { usePlaces } from '@/features/places/hooks/usePlaces'
 import { useCategorySuggestion } from '../hooks/useCategorySuggestion'
-import { CardType, Currency } from '@/types/enums'
+import { Currency } from '@/types/enums'
+import { cardOptions } from '@/features/cards/cardUtils'
 import type { Category } from '@/types/models'
 import type { NewCategorySuggestion } from '@/services/geminiService'
 import styles from './ExpenseForm.module.css'
@@ -27,10 +28,6 @@ interface ExpenseFormProps {
   onCancel?: () => void
 }
 
-const CARD_TYPE_LABEL: Record<CardType, string> = {
-  [CardType.Credit]: 'Crédito',
-  [CardType.Debit]: 'Débito',
-}
 
 const DEFAULT_VALUES: ExpenseFormValues = {
   description: '',
@@ -118,12 +115,7 @@ export function ExpenseForm({
   const { data: cards = [] } = useCards()
   const { data: places = [] } = usePlaces()
 
-  const cardOptions = cards.map((c) => ({
-    value: c.id,
-    label: c.lastFour
-      ? `${c.bank} · ${CARD_TYPE_LABEL[c.type] ?? c.type} ···· ${c.lastFour}`
-      : `${c.bank} · ${CARD_TYPE_LABEL[c.type] ?? c.type}`,
-  }))
+  const cardOpts = cardOptions(cards)
 
   const placeOptions = places.map((p) => ({ value: p.id, label: p.name }))
 
@@ -205,7 +197,7 @@ export function ExpenseForm({
             <FormField name="cardId" label="Tarjeta / pago">
               <SelectInput
                 name="cardId"
-                options={cardOptions}
+                options={cardOpts}
                 placeholder="Seleccioná una tarjeta"
                 icon="💳"
               />

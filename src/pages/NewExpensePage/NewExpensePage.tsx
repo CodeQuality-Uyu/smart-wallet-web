@@ -5,6 +5,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { ExpenseForm } from '@/features/expenses/components/ExpenseForm'
 import { useCreateExpense } from '@/features/expenses/hooks/useExpenses'
 import { expensesService } from '@/services/expensesService'
+import { useUserPrefs } from '@/hooks/useUserPrefs'
 import type { ExpenseFormValues } from '@/features/expenses/schemas/expenseSchema'
 import type { CreateExpensePayload } from '@/types/models'
 import styles from './NewExpensePage.module.css'
@@ -19,8 +20,8 @@ export default function NewExpensePage(): React.ReactElement {
   const location = useLocation()
   const locationState = (location.state ?? {}) as LocationState
   const { mutateAsync: createExpense } = useCreateExpense()
-
-  const defaultCardId = localStorage.getItem('sw_default_card_id') ?? undefined
+  const { data: userPrefs } = useUserPrefs()
+  const defaultCardId = userPrefs?.defaultCardId
 
   // Restore form values when returning from CategoryPickerPage
   const restoredValues = locationState.savedFormValues

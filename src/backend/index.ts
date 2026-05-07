@@ -1,7 +1,7 @@
 // src/backend/index.ts
 // Factory: returns the correct backend implementation based on VITE_BACKEND
 
-import type { IAuthBackend, IBudgetBackend, ICardsBackend, ICategoriesBackend, IExpensesBackend, IMetricsBackend, IPlacesBackend, IRecurringBackend, ISalariesBackend, IMonthClosingsBackend, IProductCategoriesBackend, IBrandsBackend, IProductsBackend, ICategoryLimitsBackend, INotificationsBackend, IReportAttachmentsBackend } from './types'
+import type { IAuthBackend, IBudgetBackend, ICardsBackend, ICategoriesBackend, IExpensesBackend, IMetricsBackend, IPlacesBackend, IRecurringBackend, ISalariesBackend, IMonthClosingsBackend, IProductCategoriesBackend, IBrandsBackend, IProductsBackend, ICategoryLimitsBackend, INotificationsBackend, IReportAttachmentsBackend, IUserPrefsBackend } from './types'
 
 type BackendType = 'msw' | 'firestore' | 'aws'
 
@@ -24,6 +24,7 @@ let _productsBackend: IProductsBackend | null = null
 let _productCategoryLimitsBackend: ICategoryLimitsBackend | null = null
 let _notificationsBackend: INotificationsBackend | null = null
 let _reportAttachmentsBackend: IReportAttachmentsBackend | null = null
+let _userPrefsBackend: IUserPrefsBackend | null = null
 
 export async function getAuthBackend(): Promise<IAuthBackend> {
   if (_authBackend) return _authBackend
@@ -216,6 +217,18 @@ export async function getReportAttachmentsBackend(): Promise<IReportAttachmentsB
     _reportAttachmentsBackend = mswReportAttachmentsBackend
   }
   return _reportAttachmentsBackend
+}
+
+export async function getUserPrefsBackend(): Promise<IUserPrefsBackend> {
+  if (_userPrefsBackend) return _userPrefsBackend
+  if (backend === 'firestore') {
+    const { firestoreUserPrefsBackend } = await import('./firestore/userPrefs')
+    _userPrefsBackend = firestoreUserPrefsBackend
+  } else {
+    const { mswUserPrefsBackend } = await import('./msw/userPrefs')
+    _userPrefsBackend = mswUserPrefsBackend
+  }
+  return _userPrefsBackend
 }
 
 export { backend as activeBackend }

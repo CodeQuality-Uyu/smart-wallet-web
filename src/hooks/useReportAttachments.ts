@@ -18,7 +18,17 @@ export function useReportAttachments(yearMonth: string) {
 export function useUploadReportAttachment(yearMonth: string) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (file: File) => reportAttachmentsService.upload(yearMonth, file),
+    mutationFn: ({ file, options }: { file: File; options?: { cardId?: string } }) =>
+      reportAttachmentsService.upload(yearMonth, file, options),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: KEYS.list(yearMonth) }),
+  })
+}
+
+export function useMarkAttachmentProcessed(yearMonth: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, importedExpenseCount }: { id: string; importedExpenseCount: number }) =>
+      reportAttachmentsService.markProcessed(id, { importedExpenseCount }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: KEYS.list(yearMonth) }),
   })
 }

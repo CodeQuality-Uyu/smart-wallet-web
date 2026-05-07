@@ -20,6 +20,7 @@ import { mockUserProducts, mockGlobalProductSuggestions } from './data/products'
 import { mockPriceHistory } from './data/priceHistory'
 import { mockNotifications, mockNotificationPrefs } from './data/notifications'
 import { mockReportAttachments } from './data/reportAttachments'
+import { mockUserPrefs } from './data/userPrefs'
 
 const BASE = '/api'
 
@@ -191,6 +192,19 @@ export const handlers = [
     const receiptUrl = `https://mock-storage.example.com/receipts/${params['id']}.jpg`
     Object.assign(expense, { receiptUrl })
     return HttpResponse.json({ receiptUrl }, { status: 200 })
+  }),
+
+  http.post(`${BASE}/expenses/batch`, async ({ request }) => {
+    const payloads = await request.json() as Record<string, unknown>[]
+    const created = payloads.map((body) => ({
+      ...body,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      ticketLines: [],
+    }))
+    created.forEach((e) => mockExpenses.unshift(e as unknown as typeof mockExpenses[0]))
+    return HttpResponse.json(created, { status: 201 })
   }),
 
   http.post(`${BASE}/expenses/:id/duplicate`, ({ params }) => {
@@ -793,10 +807,36 @@ export const handlers = [
     return HttpResponse.json(mockNotificationPrefs)
   }),
 
-  // ─── Gemini AI (category suggestion mock) ────────────────
+  // ─── User preferences ────────────────────────────────────
+  http.get(`${BASE}/user-prefs`, () => HttpResponse.json(mockUserPrefs)),
+
+  http.patch(`${BASE}/user-prefs`, async ({ request }) => {
+    const body = await request.json() as Record<string, unknown>
+    Object.assign(mockUserPrefs, body)
+    return HttpResponse.json(mockUserPrefs)
+  }),
+
+  // ─── Gemini AI (category suggestion + statement parsing mock) ─
   http.post('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', async ({ request }) => {
-    const body = await request.json() as { contents?: { parts?: { text?: string }[] }[] }
-    const promptText = body.contents?.[0]?.parts?.[0]?.text ?? ''
+    const body = await request.json() as { contents?: { parts?: ({ text?: string } | { inlineData?: { mimeType?: string } })[] }[] }
+    const parts = body.contents?.[0]?.parts ?? []
+    const hasPdf = parts.some((p) => 'inlineData' in p && (p as { inlineData?: { mimeType?: string } }).inlineData?.mimeType === 'application/pdf')
+
+    if (hasPdf) {
+      // Statement parsing mock — return sample transaction lines
+      const lines = [
+        { date: new Date().toISOString().split('T')[0], description: 'MERCADOPAGO*UBER', amount: 350, currency: 'UYU', suggestedCategoryName: 'Transporte' },
+        { date: new Date().toISOString().split('T')[0], description: 'SUPERMERCADO DISCO', amount: 2400, currency: 'UYU', suggestedCategoryName: 'Supermercado' },
+        { date: new Date().toISOString().split('T')[0], description: 'NETFLIX.COM', amount: 6.99, currency: 'USD', suggestedCategoryName: 'Entretenimiento' },
+        { date: new Date().toISOString().split('T')[0], description: 'FARMASHOP S.A.', amount: 780, currency: 'UYU', suggestedCategoryName: 'Salud' },
+        { date: new Date().toISOString().split('T')[0], description: 'ANTEL MOVIL', amount: 1200, currency: 'UYU', suggestedCategoryName: 'Servicios' },
+      ]
+      return HttpResponse.json({
+        candidates: [{ content: { parts: [{ text: JSON.stringify({ lines }) }] } }],
+      })
+    }
+
+    const promptText = parts.find((p): p is { text: string } => 'text' in p)?.text ?? ''
 
     // Extract expense or product name from prompt
     const expenseMatch = promptText.match(/Nombre del gasto: "([^"]+)"/)
@@ -835,6 +875,7 @@ export const handlers = [
     const form = await request.formData()
     const yearMonth = (form.get('yearMonth') as string) ?? ''
     const file = form.get('file') as File | null
+    const cardId = (form.get('cardId') as string | null) ?? undefined
     const now = new Date().toISOString()
     const newAtt = {
       id: `att-${Date.now()}`,
@@ -844,9 +885,20 @@ export const handlers = [
       mimeType: file?.type ?? 'application/octet-stream',
       size: file?.size ?? 0,
       uploadedAt: now,
+      processed: false,
+      ...(cardId ? { cardId } : {}),
     }
     mockReportAttachments.push(newAtt)
     return HttpResponse.json(newAtt, { status: 201 })
+  }),
+
+  http.patch(`${BASE}/report-attachments/:id/mark-processed`, async ({ params, request }) => {
+    const att = mockReportAttachments.find((a) => a.id === params.id)
+    if (!att) return new HttpResponse(null, { status: 404 })
+    const body = await request.json() as { importedExpenseCount: number }
+    const now = new Date().toISOString()
+    Object.assign(att, { processed: true, processedAt: now, importedExpenseCount: body.importedExpenseCount })
+    return HttpResponse.json(att)
   }),
 
   http.delete(`${BASE}/report-attachments/:id`, ({ params }) => {

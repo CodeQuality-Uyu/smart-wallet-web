@@ -98,3 +98,8 @@ export enum SavingsGoalStatus {
   Completed = 'completed',
   AtRisk = 'at_risk',
 }
+
+export enum StatementImportAction {
+  Import = 'import',
+  Skip = 'skip',
+}

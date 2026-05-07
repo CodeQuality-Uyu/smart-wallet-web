@@ -6,10 +6,13 @@ import { useCategories } from '@/features/categories/hooks/useCategories'
 import { useProductCategories } from '@/features/products/hooks/useProductCategories'
 import { useExpenses } from '@/features/expenses/hooks/useExpenses'
 import { usePlaces } from '@/features/places/hooks/usePlaces'
-import { useReportAttachments, useUploadReportAttachment, useRemoveReportAttachment } from '@/hooks/useReportAttachments'
+import { useCards } from '@/features/cards/hooks/useCards'
+import { useReportAttachments, useRemoveReportAttachment } from '@/hooks/useReportAttachments'
+import { StatementImportModal } from '@/features/statements/components/StatementImportModal'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { formatAmount } from '@/utils/formatCurrency'
 import { Currency, PeriodFilter } from '@/types/enums'
+import type { ReportAttachment } from '@/types/models'
 import styles from './ReportsPage.module.css'
 
 const MONTH_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
@@ -27,8 +30,11 @@ export default function ReportsPage(): React.ReactElement {
   const { data: expensesData } = useExpenses()
   const { data: places } = usePlaces()
   const { data: attachments = [] } = useReportAttachments(selectedYearMonth)
-  const uploadAttachment = useUploadReportAttachment(selectedYearMonth)
   const removeAttachment = useRemoveReportAttachment(selectedYearMonth)
+  const { data: cards = [] } = useCards()
+
+  const [modalOpen, setModalOpen] = useState(false)
+  const [processingAttachment, setProcessingAttachment] = useState<ReportAttachment | undefined>()
 
   const sortedCategories = useMemo(() => {
     if (!metrics?.byCategory) return []
@@ -274,28 +280,16 @@ export default function ReportsPage(): React.ReactElement {
       <div className={styles.attachmentsCard}>
         <div className={styles.attachmentsHeader}>
           <p className={styles.chartTitle} style={{ marginBottom: 0 }}>Documentos del mes</p>
-          <label className={styles.uploadBtn}>
-            {uploadAttachment.isPending ? 'Subiendo…' : '＋ Subir archivo'}
-            <input
-              type="file"
-              accept="image/*,application/pdf,.pdf,.jpg,.jpeg,.png,.webp"
-              multiple
-              style={{ display: 'none' }}
-              disabled={uploadAttachment.isPending}
-              onChange={(e) => {
-                const files = Array.from(e.target.files ?? [])
-                files.forEach((f) => uploadAttachment.mutate(f))
-                e.target.value = ''
-              }}
-            />
-          </label>
+          <button className={styles.uploadBtn} onClick={() => { setProcessingAttachment(undefined); setModalOpen(true) }}>
+            ＋ Subir documento
+          </button>
         </div>
 
         {attachments.length === 0 ? (
           <div className={styles.attachmentsEmpty}>
             <span className={styles.attachmentsEmptyIcon}>📂</span>
             <p>No hay documentos subidos para este mes.</p>
-            <p className={styles.attachmentsEmptyHint}>Podés subir estados de cuenta, comprobantes o cualquier archivo relevante.</p>
+            <p className={styles.attachmentsEmptyHint}>Subí estados de cuenta para importar gastos automáticamente.</p>
           </div>
         ) : (
           <div className={styles.attachmentsList}>
@@ -311,9 +305,25 @@ export default function ReportsPage(): React.ReactElement {
                   >
                     {att.name}
                   </a>
-                  <span className={styles.attachmentMeta}>
-                    {formatSize(att.size)} · {new Date(att.uploadedAt).toLocaleDateString('es-UY', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <span className={styles.attachmentMeta}>
+                      {formatSize(att.size)} · {new Date(att.uploadedAt).toLocaleDateString('es-UY', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </span>
+                    {att.processed ? (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 700, background: 'var(--g50)', color: 'var(--g600)', borderRadius: 99, padding: '2px 8px' }}>
+                        ✓ Procesado{att.importedExpenseCount !== undefined ? ` (${att.importedExpenseCount} gastos)` : ''}
+                      </span>
+                    ) : att.mimeType === 'application/pdf' ? (
+                      <button
+                        style={{ fontSize: 11, fontWeight: 600, color: 'var(--g600)', background: 'none', border: '1px solid var(--g300)', borderRadius: 8, padding: '2px 8px', cursor: 'pointer' }}
+                        onClick={() => { setProcessingAttachment(att); setModalOpen(true) }}
+                      >
+                        Procesar →
+                      </button>
+                    ) : (
+                      <span style={{ fontSize: 10, color: 'var(--muted-desktop)', fontStyle: 'italic' }}>Sin procesar</span>
+                    )}
+                  </div>
                 </div>
                 <button
                   className={styles.attachmentRemove}
@@ -327,6 +337,18 @@ export default function ReportsPage(): React.ReactElement {
           </div>
         )}
       </div>
+
+      {/* ── Statement import modal ── */}
+      <StatementImportModal
+        isOpen={modalOpen}
+        onClose={() => { setModalOpen(false); setProcessingAttachment(undefined) }}
+        yearMonth={selectedYearMonth}
+        cards={cards}
+        categories={categories ?? []}
+        places={places ?? []}
+        existingExpenses={expensesData?.data ?? []}
+        existingAttachment={processingAttachment}
+      />
     </div>
   )
 }

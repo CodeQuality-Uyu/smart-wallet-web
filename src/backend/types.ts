@@ -2,6 +2,7 @@
 // Shared interfaces for all backend implementations (msw, firestore, aws)
 
 import type {
+  UserPrefs,
   Card,
   CreateCardPayload,
   Category,
@@ -46,6 +47,7 @@ import type {
 import type { Currency, PeriodFilter, RecurringStatus } from '@/types/enums'
 
 export type {
+  UserPrefs,
   Card,
   CreateCardPayload,
   Category,
@@ -186,6 +188,7 @@ export interface IExpensesBackend {
   list(filters?: ExpenseFilters): Promise<PaginatedResponse<Expense>>
   getById(id: string): Promise<Expense>
   create(payload: CreateExpensePayload): Promise<Expense>
+  createBatch(payloads: CreateExpensePayload[]): Promise<Expense[]>
   update(id: string, payload: UpdateExpensePayload): Promise<Expense>
   remove(id: string): Promise<void>
   duplicate(id: string): Promise<Expense>
@@ -328,6 +331,13 @@ export interface INotificationsBackend {
   setPrefs(prefs: NotificationPrefs): Promise<NotificationPrefs>
 }
 
+// ─── User preferences ─────────────────────────────────────
+
+export interface IUserPrefsBackend {
+  get(): Promise<UserPrefs>
+  set(prefs: Partial<UserPrefs>): Promise<UserPrefs>
+}
+
 // ─── Report attachments ───────────────────────────────────
 
 export interface ReportAttachment {
@@ -338,10 +348,15 @@ export interface ReportAttachment {
   mimeType: string
   size: number
   uploadedAt: string
+  processed: boolean
+  processedAt?: string
+  importedExpenseCount?: number
+  cardId?: string
 }
 
 export interface IReportAttachmentsBackend {
   list(yearMonth: string): Promise<ReportAttachment[]>
-  upload(yearMonth: string, file: File): Promise<ReportAttachment>
+  upload(yearMonth: string, file: File, options?: { cardId?: string }): Promise<ReportAttachment>
+  markProcessed(id: string, data: { importedExpenseCount: number }): Promise<ReportAttachment>
   remove(id: string): Promise<void>
 }

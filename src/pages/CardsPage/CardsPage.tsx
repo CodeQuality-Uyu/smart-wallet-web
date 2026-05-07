@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { CardType } from '@/types/enums'
+import { useUserPrefs, useSetDefaultCard } from '@/hooks/useUserPrefs'
 import styles from './CardsPage.module.css'
 
 const CARD_TYPE_OPTIONS = [
@@ -54,19 +55,16 @@ function cardStatusClass(type: CardType, styles: Record<string, string>): string
   return styles.cardStatusBadge ?? ''
 }
 
-const DEFAULT_CARD_KEY = 'sw_default_card_id'
-
 export default function CardsPage(): React.ReactElement {
   const { data: cards = [], isLoading } = useCards()
   const { mutateAsync: createCard } = useCreateCard()
   const { mutateAsync: updateCard } = useUpdateCard()
   const { mutateAsync: deleteCard } = useDeleteCard()
+  const { data: userPrefs } = useUserPrefs()
+  const setDefaultCard = useSetDefaultCard()
   const [showForm, setShowForm] = useState(false)
   const [editingCard, setEditingCard] = useState<Card | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [defaultCardId, setDefaultCardId] = useState<string | null>(
-    () => localStorage.getItem(DEFAULT_CARD_KEY)
-  )
   const [showDefaultPicker, setShowDefaultPicker] = useState(false)
 
   if (isLoading) return <LoadingSpinner fullPage />
@@ -86,11 +84,10 @@ export default function CardsPage(): React.ReactElement {
     setEditingCard(null)
   }
 
-  const defaultCard = cards.find((c) => c.id === defaultCardId) ?? cards[0] ?? null
+  const defaultCard = cards.find((c) => c.id === userPrefs?.defaultCardId) ?? cards[0] ?? null
 
   function handleSetDefault(id: string): void {
-    localStorage.setItem(DEFAULT_CARD_KEY, id)
-    setDefaultCardId(id)
+    void setDefaultCard.mutate(id)
     setShowDefaultPicker(false)
   }
 

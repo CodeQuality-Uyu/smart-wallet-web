@@ -13,6 +13,11 @@ import type {
 } from '../types'
 
 export const mswExpensesBackend: IExpensesBackend = {
+  async createBatch(payloads: CreateExpensePayload[]): Promise<Expense[]> {
+    const { data } = await httpClient.post<Expense[]>('/expenses/batch', payloads)
+    return data
+  },
+
   async list(filters?: ExpenseFilters): Promise<PaginatedResponse<Expense>> {
     const { data } = await httpClient.get<PaginatedResponse<Expense>>('/expenses', {
       params: filters,

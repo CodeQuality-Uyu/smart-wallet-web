@@ -64,6 +64,10 @@ function requireUid(): string {
 }
 
 export const firestoreExpensesBackend: IExpensesBackend = {
+  async createBatch(payloads: CreateExpensePayload[]): Promise<Expense[]> {
+    return Promise.all(payloads.map((p) => firestoreExpensesBackend.create(p)))
+  },
+
   async list(filters?: ExpenseFilters): Promise<PaginatedResponse<Expense>> {
     const uid = requireUid()
     const q = query(

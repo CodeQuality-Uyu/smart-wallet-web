@@ -11,6 +11,7 @@ import {
   WeightUnit,
   NotificationType,
   SavingsGoalStatus,
+  StatementImportAction,
 } from '@/types/enums'
 
 // ─── Shared ───────────────────────────────────────────────
@@ -105,6 +106,8 @@ export interface Expense extends Timestamps {
   date: string
   receiptUrl?: string
   ticketLines: TicketLine[]
+  importedFrom?: 'statement'
+  statementAttachmentId?: string
 }
 
 export type CreateExpensePayload = Omit<Expense, 'id' | 'createdAt' | 'updatedAt' | 'ticketLines'>
@@ -374,6 +377,12 @@ export interface SavingsGoal extends Timestamps {
 export type CreateSavingsGoalPayload = Omit<SavingsGoal, 'id' | 'createdAt' | 'updatedAt' | 'savedAmount' | 'status'>
 export type UpdateSavingsGoalPayload = Partial<Omit<CreateSavingsGoalPayload, 'active'>>
 
+// ─── User preferences ─────────────────────────────────────
+
+export interface UserPrefs {
+  defaultCardId?: string
+}
+
 // ─── Auth / User ──────────────────────────────────────────
 
 export interface User {
@@ -437,4 +446,29 @@ export interface ReportAttachment {
   mimeType: string
   size: number        // bytes
   uploadedAt: string
+  processed: boolean
+  processedAt?: string
+  importedExpenseCount?: number
+  cardId?: string
+}
+
+// ─── Statement import ─────────────────────────────────────
+
+export interface StatementLine {
+  date: string           // "2026-04-15"
+  description: string    // raw bank text
+  amount: number
+  currency: Currency
+  suggestedCategoryName?: string
+}
+
+export interface StatementImportRow extends StatementLine {
+  rowId: string
+  action: StatementImportAction
+  categoryId?: string
+  placeId?: string
+  cardId?: string
+  notes?: string
+  matchedExpenseId?: string
+  matchScore?: number
 }

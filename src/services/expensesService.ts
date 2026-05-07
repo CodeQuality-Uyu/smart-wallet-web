@@ -23,6 +23,10 @@ export const expensesService = {
     return (await getExpensesBackend()).create(payload)
   },
 
+  async createBatch(payloads: CreateExpensePayload[]): Promise<Expense[]> {
+    return (await getExpensesBackend()).createBatch(payloads)
+  },
+
   async update(id: string, payload: UpdateExpensePayload): Promise<Expense> {
     return (await getExpensesBackend()).update(id, payload)
   },

@@ -4,7 +4,9 @@ import {
   collection,
   getDocs,
   addDoc,
+  updateDoc,
   deleteDoc,
+  getDoc,
   doc,
   query,
   where,
@@ -29,7 +31,7 @@ export const firestoreReportAttachmentsBackend: IReportAttachmentsBackend = {
     return snap.docs.map((d) => ({ id: d.id, ...d.data() } as ReportAttachment))
   },
 
-  async upload(yearMonth: string, file: File): Promise<ReportAttachment> {
+  async upload(yearMonth: string, file: File, options?: { cardId?: string }): Promise<ReportAttachment> {
     const uid = requireUid()
     const ext = file.name.split('.').pop() ?? 'bin'
     const uuid = crypto.randomUUID()
@@ -37,19 +39,30 @@ export const firestoreReportAttachmentsBackend: IReportAttachmentsBackend = {
     const snapshot = await uploadBytes(storageRef, file)
     const url = await getDownloadURL(snapshot.ref)
     const now = new Date().toISOString()
-    const payload = {
+    const payload: Omit<ReportAttachment, 'id'> = {
       yearMonth,
       name: file.name,
       url,
       mimeType: file.type,
       size: file.size,
       uploadedAt: now,
+      processed: false,
+      ...(options?.cardId ? { cardId: options.cardId } : {}),
     }
     const docRef = await addDoc(
       collection(firestore, 'users', uid, 'reportAttachments'),
       payload,
     )
     return { id: docRef.id, ...payload }
+  },
+
+  async markProcessed(id: string, data: { importedExpenseCount: number }): Promise<ReportAttachment> {
+    const uid = requireUid()
+    const docRef = doc(firestore, 'users', uid, 'reportAttachments', id)
+    const now = new Date().toISOString()
+    await updateDoc(docRef, { processed: true, processedAt: now, importedExpenseCount: data.importedExpenseCount })
+    const snap = await getDoc(docRef)
+    return { id: snap.id, ...snap.data() } as ReportAttachment
   },
 
   async remove(id: string): Promise<void> {

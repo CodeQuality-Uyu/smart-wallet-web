@@ -11,6 +11,10 @@ export const mockReportAttachments: ReportAttachment[] = [
     mimeType: 'application/pdf',
     size: 245000,
     uploadedAt: '2026-04-05T10:00:00Z',
+    processed: true,
+    processedAt: '2026-04-05T10:01:30Z',
+    importedExpenseCount: 12,
+    cardId: 'card-1',
   },
   {
     id: 'att-2',
@@ -20,5 +24,6 @@ export const mockReportAttachments: ReportAttachment[] = [
     mimeType: 'image/jpeg',
     size: 128000,
     uploadedAt: '2026-04-06T14:30:00Z',
+    processed: false,
   },
 ]
