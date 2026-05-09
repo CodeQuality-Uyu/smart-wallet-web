@@ -1,7 +1,7 @@
 // src/backend/index.ts
 // Factory: returns the correct backend implementation based on VITE_BACKEND
 
-import type { IAuthBackend, IBudgetBackend, ICardsBackend, ICategoriesBackend, IExpensesBackend, IMetricsBackend, IPlacesBackend, IRecurringBackend, ISalariesBackend, IMonthClosingsBackend, IProductCategoriesBackend, IBrandsBackend, IProductsBackend, ICategoryLimitsBackend, INotificationsBackend, IReportAttachmentsBackend, IUserPrefsBackend } from './types'
+import type { IAuthBackend, IBudgetBackend, ICardsBackend, ICategoriesBackend, IExpensesBackend, IMetricsBackend, IPlacesBackend, IRecurringBackend, ISalariesBackend, IMonthClosingsBackend, IProductCategoriesBackend, IBrandsBackend, IProductsBackend, ICategoryLimitsBackend, INotificationsBackend, IReportAttachmentsBackend, IUserPrefsBackend, IMonthAnalysisBackend } from './types'
 
 type BackendType = 'msw' | 'firestore' | 'aws'
 
@@ -25,6 +25,7 @@ let _productCategoryLimitsBackend: ICategoryLimitsBackend | null = null
 let _notificationsBackend: INotificationsBackend | null = null
 let _reportAttachmentsBackend: IReportAttachmentsBackend | null = null
 let _userPrefsBackend: IUserPrefsBackend | null = null
+let _monthAnalysisBackend: IMonthAnalysisBackend | null = null
 
 export async function getAuthBackend(): Promise<IAuthBackend> {
   if (_authBackend) return _authBackend
@@ -229,6 +230,18 @@ export async function getUserPrefsBackend(): Promise<IUserPrefsBackend> {
     _userPrefsBackend = mswUserPrefsBackend
   }
   return _userPrefsBackend
+}
+
+export async function getMonthAnalysisBackend(): Promise<IMonthAnalysisBackend> {
+  if (_monthAnalysisBackend) return _monthAnalysisBackend
+  if (backend === 'firestore') {
+    const { firestoreMonthAnalysisBackend } = await import('./firestore/monthAnalysis')
+    _monthAnalysisBackend = firestoreMonthAnalysisBackend
+  } else {
+    const { mswMonthAnalysisBackend } = await import('./msw/monthAnalysis')
+    _monthAnalysisBackend = mswMonthAnalysisBackend
+  }
+  return _monthAnalysisBackend
 }
 
 export { backend as activeBackend }

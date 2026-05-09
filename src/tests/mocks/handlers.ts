@@ -2,7 +2,7 @@
 
 import { http, HttpResponse } from 'msw'
 import { Currency, RecurringPaymentStatus } from '@/types/enums'
-import type { CategorySpend, ProductCategorySpend } from '@/types/models'
+import type { CategorySpend, ProductCategorySpend, MonthAnalysis } from '@/types/models'
 
 import { mockExpenses } from './data/expenses'
 import { mockCategories } from './data/categories'
@@ -21,6 +21,7 @@ import { mockPriceHistory } from './data/priceHistory'
 import { mockNotifications, mockNotificationPrefs } from './data/notifications'
 import { mockReportAttachments } from './data/reportAttachments'
 import { mockUserPrefs } from './data/userPrefs'
+import { mockMonthAnalyses } from './data/monthAnalysis'
 
 const BASE = '/api'
 
@@ -807,6 +808,24 @@ export const handlers = [
     return HttpResponse.json(mockNotificationPrefs)
   }),
 
+  // ─── Month analysis ──────────────────────────────────────
+  http.get(`${BASE}/month-analysis/:yearMonth`, ({ params }) => {
+    const analysis = mockMonthAnalyses.find((a) => a.yearMonth === params['yearMonth'])
+    if (!analysis) return new HttpResponse(null, { status: 404 })
+    return HttpResponse.json(analysis)
+  }),
+
+  http.put(`${BASE}/month-analysis/:yearMonth`, async ({ params, request }) => {
+    const body = await request.json() as MonthAnalysis
+    const idx = mockMonthAnalyses.findIndex((a) => a.yearMonth === params['yearMonth'])
+    if (idx !== -1) {
+      mockMonthAnalyses[idx] = body
+    } else {
+      mockMonthAnalyses.push(body)
+    }
+    return HttpResponse.json(body)
+  }),
+
   // ─── User preferences ────────────────────────────────────
   http.get(`${BASE}/user-prefs`, () => HttpResponse.json(mockUserPrefs)),
 
@@ -837,6 +856,25 @@ export const handlers = [
     }
 
     const promptText = parts.find((p): p is { text: string } => 'text' in p)?.text ?? ''
+
+    // Monthly analysis prompt
+    if (promptText.includes('análisis mensual')) {
+      const mockAnalysis = {
+        summary: 'Este mes te fuiste bastante en Supermercado y Restaurantes, que juntos se llevaron más de la mitad del gasto total. Los servicios fijos se mantuvieron estables.',
+        unnecessary: {
+          insights: [{ category: 'Restaurantes', insight: 'Varias salidas en días de semana que se podrían reemplazar con algo cocinado en casa.' }],
+          note: '',
+        },
+        reducible: {
+          insights: [{ category: 'Suscripciones', insight: 'Revisá si todas las suscripciones activas las estás usando de verdad.' }],
+          note: '',
+        },
+        preventable: 'No hubo gastos excepcionales fuera de lo normal. El patrón es bastante consistente, así que es buen momento para ajustar algún hábito.',
+      }
+      return HttpResponse.json({
+        candidates: [{ content: { parts: [{ text: JSON.stringify(mockAnalysis) }] } }],
+      })
+    }
 
     // Extract expense or product name from prompt
     const expenseMatch = promptText.match(/Nombre del gasto: "([^"]+)"/)

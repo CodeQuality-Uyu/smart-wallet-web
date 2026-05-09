@@ -3,6 +3,7 @@
 
 import type {
   UserPrefs,
+  MonthAnalysis,
   Card,
   CreateCardPayload,
   Category,
@@ -48,6 +49,7 @@ import type { Currency, PeriodFilter, RecurringStatus } from '@/types/enums'
 
 export type {
   UserPrefs,
+  MonthAnalysis,
   Card,
   CreateCardPayload,
   Category,
@@ -329,6 +331,13 @@ export interface INotificationsBackend {
   markAllRead(): Promise<void>
   getPrefs(): Promise<NotificationPrefs>
   setPrefs(prefs: NotificationPrefs): Promise<NotificationPrefs>
+}
+
+// ─── Month analysis ───────────────────────────────────────
+
+export interface IMonthAnalysisBackend {
+  get(yearMonth: string): Promise<MonthAnalysis | null>
+  save(analysis: MonthAnalysis): Promise<MonthAnalysis>
 }
 
 // ─── User preferences ─────────────────────────────────────

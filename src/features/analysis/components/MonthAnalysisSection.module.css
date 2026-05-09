@@ -1,0 +1,214 @@
+/* src/features/analysis/components/MonthAnalysisSection.module.css */
+
+.card {
+  background: #fff;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-card);
+  padding: 22px 24px;
+  margin-bottom: 16px;
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon { font-size: 18px; }
+
+.title {
+  font-family: var(--font-head);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-desktop);
+}
+
+.generatedAt {
+  font-size: 11px;
+  color: var(--muted-desktop);
+}
+
+.regenerateBtn {
+  background: none;
+  border: 1px solid var(--border-card);
+  border-radius: 8px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted-desktop);
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: border-color 0.15s, color 0.15s;
+}
+.regenerateBtn:hover:not(:disabled) { border-color: var(--g500); color: var(--g600); }
+.regenerateBtn:disabled { opacity: 0.5; cursor: default; }
+
+/* ── Idle state (no analysis yet) ── */
+.idle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 32px 0;
+  text-align: center;
+}
+
+.idleIcon { font-size: 36px; }
+
+.idleTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-desktop);
+}
+
+.idleHint {
+  font-size: 13px;
+  color: var(--muted-desktop);
+  max-width: 360px;
+  line-height: 1.5;
+}
+
+.generateBtn {
+  background: linear-gradient(135deg, var(--g500), var(--g600));
+  border: none;
+  border-radius: 10px;
+  padding: 10px 24px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: opacity 0.15s;
+}
+.generateBtn:hover:not(:disabled) { opacity: 0.88; }
+.generateBtn:disabled { opacity: 0.5; cursor: default; }
+
+/* ── Loading state ── */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 0;
+  text-align: center;
+}
+
+.spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--border-card);
+  border-top-color: var(--g500);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loadingText {
+  font-size: 13px;
+  color: var(--muted-desktop);
+}
+
+/* ── Error ── */
+.errorBox {
+  background: #fff5f5;
+  border: 1px solid #feb2b2;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #c53030;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+/* ── Analysis content ── */
+.summary {
+  font-size: 14px;
+  color: var(--ink-desktop);
+  line-height: 1.6;
+  margin: 16px 0 20px;
+  padding: 14px 16px;
+  background: var(--g50);
+  border-radius: 10px;
+  border-left: 3px solid var(--g400);
+}
+
+.axes {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.axis {
+  border: 1px solid var(--border-card);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.axisHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--border-subtle);
+  border-bottom: 1px solid var(--border-card);
+}
+
+.axisIcon { font-size: 16px; }
+
+.axisTitle {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-desktop);
+}
+
+.axisBody { padding: 12px 14px; }
+
+.insightList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.insightItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.insightCategory {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--g600);
+}
+
+.insightText {
+  font-size: 13px;
+  color: var(--ink-desktop);
+  line-height: 1.5;
+}
+
+.emptyNote {
+  font-size: 13px;
+  color: var(--muted-desktop);
+  font-style: italic;
+  line-height: 1.5;
+}
+
+.preventableText {
+  font-size: 13px;
+  color: var(--ink-desktop);
+  line-height: 1.6;
+}

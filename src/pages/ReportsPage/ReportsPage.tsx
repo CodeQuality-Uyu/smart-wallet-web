@@ -8,7 +8,9 @@ import { useExpenses } from '@/features/expenses/hooks/useExpenses'
 import { usePlaces } from '@/features/places/hooks/usePlaces'
 import { useCards } from '@/features/cards/hooks/useCards'
 import { useReportAttachments, useRemoveReportAttachment } from '@/hooks/useReportAttachments'
+import { useMonthClosings } from '@/hooks/useMonthClosings'
 import { StatementImportModal } from '@/features/statements/components/StatementImportModal'
+import { MonthAnalysisSection } from '@/features/analysis/components/MonthAnalysisSection'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { formatAmount } from '@/utils/formatCurrency'
 import { Currency, PeriodFilter } from '@/types/enums'
@@ -30,6 +32,8 @@ export default function ReportsPage(): React.ReactElement {
   const { data: expensesData } = useExpenses()
   const { data: places } = usePlaces()
   const { data: attachments = [] } = useReportAttachments(selectedYearMonth)
+  const { data: closings = [] } = useMonthClosings()
+  const isClosed = closings.some((c) => c.id === selectedYearMonth)
   const removeAttachment = useRemoveReportAttachment(selectedYearMonth)
   const { data: cards = [] } = useCards()
 
@@ -337,6 +341,11 @@ export default function ReportsPage(): React.ReactElement {
           </div>
         )}
       </div>
+
+      {/* ── Análisis del mes (solo meses cerrados) ── */}
+      {isClosed && (
+        <MonthAnalysisSection yearMonth={selectedYearMonth} metrics={metrics} />
+      )}
 
       {/* ── Statement import modal ── */}
       <StatementImportModal

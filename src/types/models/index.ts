@@ -377,6 +377,27 @@ export interface SavingsGoal extends Timestamps {
 export type CreateSavingsGoalPayload = Omit<SavingsGoal, 'id' | 'createdAt' | 'updatedAt' | 'savedAmount' | 'status'>
 export type UpdateSavingsGoalPayload = Partial<Omit<CreateSavingsGoalPayload, 'active'>>
 
+// ─── Month analysis ───────────────────────────────────────
+
+export interface MonthAnalysisInsight {
+  category: string
+  insight: string
+}
+
+export interface MonthAnalysisAxis {
+  insights: MonthAnalysisInsight[]
+  note: string  // shown when insights is empty
+}
+
+export interface MonthAnalysis {
+  yearMonth: string   // "2026-04"
+  generatedAt: string
+  summary: string
+  unnecessary: MonthAnalysisAxis
+  reducible: MonthAnalysisAxis
+  preventable: string
+}
+
 // ─── User preferences ─────────────────────────────────────
 
 export interface UserPrefs {
