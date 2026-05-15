@@ -837,19 +837,22 @@ export const handlers = [
   }),
 
   // ─── Gemini AI (category suggestion + statement parsing mock) ─
-  http.post('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', async ({ request }) => {
+  // Intercepts all Gemini model variants (2.0-flash, 2.5-flash, etc.)
+  http.post(/https:\/\/generativelanguage\.googleapis\.com\/v1beta\/models\/gemini-.+:generateContent/, async ({ request }) => {
     const body = await request.json() as { contents?: { parts?: ({ text?: string } | { inlineData?: { mimeType?: string } })[] }[] }
     const parts = body.contents?.[0]?.parts ?? []
     const hasImage = parts.some((p) => 'inlineData' in p && (p as { inlineData?: { mimeType?: string } }).inlineData?.mimeType?.startsWith('image/'))
     const hasPdf = parts.some((p) => 'inlineData' in p && (p as { inlineData?: { mimeType?: string } }).inlineData?.mimeType === 'application/pdf')
 
     if (hasImage) {
-      // Receipt analysis mock
+      // Receipt analysis mock — returns place and category names for resolution
       const receiptResult = {
         description: 'Supermercado Devoto',
         amount: 1250,
         currency: 'UYU',
         date: new Date().toISOString().split('T')[0],
+        placeName: 'Devoto',
+        categoryNames: ['Supermercado', 'Alimentación'],
         confidence: 'high',
       }
       return HttpResponse.json({

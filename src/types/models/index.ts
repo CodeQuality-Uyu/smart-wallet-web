@@ -482,6 +482,9 @@ export interface PendingReceiptExtractedData {
   currency?: Currency
   date?: string
   placeId?: string
+  categoryIds?: string[]
+  suggestedPlaceName?: string    // name returned by Gemini if no placeId match
+  suggestedCategoryNames?: string[] // names returned by Gemini if no categoryIds match
   confidence?: 'high' | 'low' | 'failed'
 }
 

@@ -56,6 +56,27 @@
   color: #6b7280;
 }
 
+/* ── Suggestions row ── */
+.suggestionsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 24px 0;
+}
+
+.suggestionChip {
+  font-size: 12px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-radius: 99px;
+  padding: 4px 12px;
+  border: 1px solid #bfdbfe;
+}
+
+.suggestionChip strong {
+  font-weight: 600;
+}
+
 /* ── Receipt preview row ── */
 .previewRow {
   display: flex;

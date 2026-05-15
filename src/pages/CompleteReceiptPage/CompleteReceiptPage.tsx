@@ -6,6 +6,8 @@ import { ExpenseForm } from '@/features/expenses/components/ExpenseForm'
 import { useCreateExpense } from '@/features/expenses/hooks/useExpenses'
 import { expensesService } from '@/services/expensesService'
 import { usePendingReceipts, useUpdatePendingReceipt, useDeletePendingReceipt } from '@/features/pendingReceipts/hooks/usePendingReceipts'
+import { useCategories } from '@/features/categories/hooks/useCategories'
+import { usePlaces } from '@/features/places/hooks/usePlaces'
 import { ProcessingScreen } from '@/features/pendingReceipts/components/ProcessingScreen'
 import type { ProcessingStep } from '@/features/pendingReceipts/components/ProcessingScreen'
 import { analyzeReceiptImage } from '@/services/receiptAnalysisService'
@@ -19,10 +21,14 @@ type Phase = 'loading' | 'processing' | 'form' | 'error'
 export default function CompleteReceiptPage(): React.ReactElement {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { data: receipts = [], isLoading } = usePendingReceipts()
+  const { data: receipts = [], isLoading: loadingReceipts } = usePendingReceipts()
+  const { data: categories = [], isLoading: loadingCategories } = useCategories()
+  const { data: places = [], isLoading: loadingPlaces } = usePlaces()
   const { mutateAsync: updateReceipt } = useUpdatePendingReceipt()
   const { mutateAsync: deleteReceipt } = useDeletePendingReceipt()
   const { mutateAsync: createExpense } = useCreateExpense()
+
+  const isLoading = loadingReceipts || loadingCategories || loadingPlaces
 
   const [phase, setPhase] = useState<Phase>('loading')
   const [steps, setSteps] = useState<ProcessingStep[]>([
@@ -68,7 +74,7 @@ export default function CompleteReceiptPage(): React.ReactElement {
     setStep(1, 'active')
     let data: PendingReceiptExtractedData
     try {
-      data = await analyzeReceiptImage(receipt.imageUrl)
+      data = await analyzeReceiptImage(receipt.imageUrl, { categories, places })
     } catch {
       setStep(1, 'done')
       setStep(2, 'active')
@@ -177,6 +183,21 @@ export default function CompleteReceiptPage(): React.ReactElement {
           </div>
         )}
 
+        {(extractedData?.suggestedPlaceName || (extractedData?.suggestedCategoryNames?.length ?? 0) > 0) && (
+          <div className={styles.suggestionsRow}>
+            {extractedData?.suggestedPlaceName && (
+              <span className={styles.suggestionChip}>
+                📍 Local: <strong>{extractedData.suggestedPlaceName}</strong> (nuevo)
+              </span>
+            )}
+            {extractedData?.suggestedCategoryNames?.map((name) => (
+              <span key={name} className={styles.suggestionChip}>
+                🏷 Categoría sugerida: <strong>{name}</strong>
+              </span>
+            ))}
+          </div>
+        )}
+
         <div className={styles.previewRow}>
           <img src={receipt.imageUrl} alt="Comprobante" className={styles.thumbImg} />
           <button className={styles.discardBtn} onClick={() => void handleDiscard()}>
@@ -190,6 +211,8 @@ export default function CompleteReceiptPage(): React.ReactElement {
             amount: extractedData?.amount ?? 0,
             currency: extractedData?.currency,
             date: extractedData?.date ?? new Date().toISOString().split('T')[0],
+            ...(extractedData?.categoryIds?.length ? { categoryIds: extractedData.categoryIds } : {}),
+            ...(extractedData?.placeId ? { placeId: extractedData.placeId } : {}),
           }}
           onSubmit={handleSubmit}
           submitLabel="Guardar gasto"
