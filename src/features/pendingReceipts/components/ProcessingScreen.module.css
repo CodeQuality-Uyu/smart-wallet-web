@@ -1,0 +1,156 @@
+/* src/features/pendingReceipts/components/ProcessingScreen.module.css */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 480px;
+  padding: 40px 32px;
+  background: #fff;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  width: 100%;
+  max-width: 360px;
+}
+
+/* ── Image preview with shimmer ── */
+.preview {
+  width: 140px;
+  aspect-ratio: 3 / 4;
+  border-radius: 14px;
+  background: #f3f4f6;
+  position: relative;
+  overflow: hidden;
+  border: 1.5px solid var(--border, #e5e7eb);
+}
+
+.img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.15), transparent);
+  transform: translateX(-100%);
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* ── Text ── */
+.text {
+  text-align: center;
+}
+
+.eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #10b981;
+  margin-bottom: 8px;
+}
+
+.title {
+  font-family: var(--font-head);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 6px;
+  line-height: 1.25;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 0;
+}
+
+/* ── Steps ── */
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 240px;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.stepDot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.checkmark {
+  font-size: 9px;
+  color: #fff;
+  font-weight: 700;
+}
+
+/* done */
+.done .stepDot {
+  background: #10b981;
+}
+
+.done .stepLabel {
+  color: var(--ink);
+}
+
+/* active */
+.active .stepDot {
+  border: 1.5px solid #10b981;
+  background: transparent;
+}
+
+.active .stepDot::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  animation: pulseDot 1.2s ease-in-out infinite;
+}
+
+@keyframes pulseDot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%       { transform: scale(0.6); opacity: 0.45; }
+}
+
+.active .stepLabel {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+/* pending */
+.pending .stepDot {
+  border: 1.5px solid #d1d5db;
+  background: transparent;
+}
+
+.pending .stepLabel {
+  color: #9ca3af;
+}

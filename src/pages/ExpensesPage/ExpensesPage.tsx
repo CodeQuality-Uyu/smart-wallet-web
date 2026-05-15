@@ -17,6 +17,7 @@ import {
 import { formatCurrency, formatAmountNoSymbol } from '@/utils/formatCurrency'
 import { Currency, PeriodFilter, GroupBy } from '@/types/enums'
 import { CURRENCY_OPTIONS } from '@/constants/currencyOptions'
+import { usePendingReceipts } from '@/features/pendingReceipts/hooks/usePendingReceipts'
 import styles from './ExpensesPage.module.css'
 
 const MONTH_NAMES = [
@@ -55,6 +56,7 @@ export default function ExpensesPage(): React.ReactElement {
   const { data: categories = [] } = useCategories()
   const { data: cards = [] } = useCards()
   const { data: places = [] } = usePlaces()
+  const { data: pendingReceipts = [] } = usePendingReceipts()
 
   const now = new Date()
   const monthLabel = `${MONTH_NAMES[now.getMonth()] ?? ''} ${now.getFullYear()}`
@@ -199,6 +201,46 @@ export default function ExpensesPage(): React.ReactElement {
             </button>
           ))}
         </div>
+
+        {/* Pending receipts */}
+        {pendingReceipts.length > 0 && (
+          <div className={styles.pendingSection}>
+            <div className={styles.pendingSectionHeader}>
+              <span className={styles.pendingSectionTitle}>
+                📷 Comprobantes pendientes ({pendingReceipts.length})
+              </span>
+              <span className={styles.pendingSectionHint}>Completá los datos para registrarlos como gastos</span>
+            </div>
+            <div className={styles.pendingList}>
+              {pendingReceipts.map((r) => {
+                const date = new Date(r.createdAt).toLocaleDateString('es-UY', {
+                  day: 'numeric',
+                  month: 'short',
+                })
+                return (
+                  <button
+                    key={r.id}
+                    className={styles.pendingItem}
+                    onClick={() => void navigate(`/receipts/${r.id}/complete`)}
+                  >
+                    <img
+                      src={r.imageUrl}
+                      alt="Comprobante"
+                      className={styles.pendingThumb}
+                    />
+                    <div className={styles.pendingInfo}>
+                      <span className={styles.pendingItemTitle}>
+                        {r.extractedData?.description ?? 'Comprobante sin procesar'}
+                      </span>
+                      <span className={styles.pendingItemDate}>{date}</span>
+                    </div>
+                    <span className={styles.pendingComplete}>Completar →</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Table */}
         <div className={styles.desktopTableWrap}>

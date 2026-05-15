@@ -93,6 +93,7 @@ const ExportDataPage = lazy(() => import('@/pages/ExportDataPage/ExportDataPage'
 const SecurityPage = lazy(() => import('@/pages/SecurityPage/SecurityPage'))
 const SavingsGoalsPage = lazy(() => import('@/pages/SavingsGoalsPage/SavingsGoalsPage'))
 const OnboardingPage = lazy(() => import('@/pages/OnboardingPage/OnboardingPage'))
+const CompleteReceiptPage = lazy(() => import('@/pages/CompleteReceiptPage/CompleteReceiptPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage/NotFoundPage'))
 
 const SuspenseWrapper = ({ children }: { children: React.ReactNode }): React.ReactElement => (
@@ -165,6 +166,10 @@ const router = createBrowserRouter([
       {
         path: '/expenses/:id/edit',
         element: <SuspenseWrapper><EditExpensePage /></SuspenseWrapper>,
+      },
+      {
+        path: '/receipts/:id/complete',
+        element: <SuspenseWrapper><CompleteReceiptPage /></SuspenseWrapper>,
       },
       {
         path: '/metrics',

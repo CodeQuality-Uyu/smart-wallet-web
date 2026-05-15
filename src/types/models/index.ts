@@ -12,6 +12,7 @@ import {
   NotificationType,
   SavingsGoalStatus,
   StatementImportAction,
+  ReceiptStatus,
 } from '@/types/enums'
 
 // ─── Shared ───────────────────────────────────────────────
@@ -472,6 +473,28 @@ export interface ReportAttachment {
   importedExpenseCount?: number
   cardId?: string
 }
+
+// ─── Pending receipts ─────────────────────────────────────
+
+export interface PendingReceiptExtractedData {
+  description?: string
+  amount?: number
+  currency?: Currency
+  date?: string
+  placeId?: string
+  confidence?: 'high' | 'low' | 'failed'
+}
+
+export interface PendingReceipt extends Timestamps {
+  id: string
+  imageUrl: string
+  status: ReceiptStatus
+  extractedData?: PendingReceiptExtractedData
+  createdExpenseId?: string
+}
+
+export type CreatePendingReceiptPayload = Pick<PendingReceipt, 'imageUrl'>
+export type UpdatePendingReceiptPayload = Partial<Pick<PendingReceipt, 'status' | 'extractedData' | 'createdExpenseId'>>
 
 // ─── Statement import ─────────────────────────────────────
 

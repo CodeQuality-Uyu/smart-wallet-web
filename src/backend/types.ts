@@ -4,6 +4,10 @@
 import type {
   UserPrefs,
   MonthAnalysis,
+  PendingReceipt,
+  CreatePendingReceiptPayload,
+  UpdatePendingReceiptPayload,
+  PendingReceiptExtractedData,
   Card,
   CreateCardPayload,
   Category,
@@ -50,6 +54,10 @@ import type { Currency, PeriodFilter, RecurringStatus } from '@/types/enums'
 export type {
   UserPrefs,
   MonthAnalysis,
+  PendingReceipt,
+  CreatePendingReceiptPayload,
+  UpdatePendingReceiptPayload,
+  PendingReceiptExtractedData,
   Card,
   CreateCardPayload,
   Category,
@@ -345,6 +353,15 @@ export interface IMonthAnalysisBackend {
 export interface IUserPrefsBackend {
   get(): Promise<UserPrefs>
   set(prefs: Partial<UserPrefs>): Promise<UserPrefs>
+}
+
+// ─── Pending receipts ─────────────────────────────────────
+
+export interface IPendingReceiptsBackend {
+  list(): Promise<PendingReceipt[]>
+  create(file: File): Promise<PendingReceipt>
+  update(id: string, payload: UpdatePendingReceiptPayload): Promise<PendingReceipt>
+  remove(id: string): Promise<void>
 }
 
 // ─── Report attachments ───────────────────────────────────

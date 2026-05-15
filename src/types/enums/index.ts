@@ -103,3 +103,9 @@ export enum StatementImportAction {
   Import = 'import',
   Skip = 'skip',
 }
+
+export enum ReceiptStatus {
+  Pending = 'pending',
+  Done = 'done',
+  Failed = 'failed',
+}

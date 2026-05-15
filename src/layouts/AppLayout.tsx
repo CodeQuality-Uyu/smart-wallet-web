@@ -3,6 +3,7 @@
 import React from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/app/providers/AuthContext'
+import { BottomNav } from '@/components/shared/BottomNav'
 import styles from './AppLayout.module.css'
 
 interface NavItem {
@@ -27,7 +28,7 @@ export function AppLayout(): React.ReactElement {
   const isSettings = pathname.startsWith('/settings')
 
   React.useEffect(() => {
-    if (window.innerWidth < MOBILE_BREAKPOINT && pathname !== '/expenses/new') {
+    if (window.innerWidth < MOBILE_BREAKPOINT && pathname === '/') {
       void navigate('/expenses/new', { replace: true })
     }
   }, [pathname, navigate])
@@ -84,6 +85,8 @@ export function AppLayout(): React.ReactElement {
           <Outlet />
         </div>
       </main>
+
+      <BottomNav />
     </div>
   )
 }

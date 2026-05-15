@@ -1,7 +1,7 @@
 // src/backend/index.ts
 // Factory: returns the correct backend implementation based on VITE_BACKEND
 
-import type { IAuthBackend, IBudgetBackend, ICardsBackend, ICategoriesBackend, IExpensesBackend, IMetricsBackend, IPlacesBackend, IRecurringBackend, ISalariesBackend, IMonthClosingsBackend, IProductCategoriesBackend, IBrandsBackend, IProductsBackend, ICategoryLimitsBackend, INotificationsBackend, IReportAttachmentsBackend, IUserPrefsBackend, IMonthAnalysisBackend } from './types'
+import type { IAuthBackend, IBudgetBackend, ICardsBackend, ICategoriesBackend, IExpensesBackend, IMetricsBackend, IPlacesBackend, IRecurringBackend, ISalariesBackend, IMonthClosingsBackend, IProductCategoriesBackend, IBrandsBackend, IProductsBackend, ICategoryLimitsBackend, INotificationsBackend, IReportAttachmentsBackend, IUserPrefsBackend, IMonthAnalysisBackend, IPendingReceiptsBackend } from './types'
 
 type BackendType = 'msw' | 'firestore' | 'aws'
 
@@ -26,6 +26,7 @@ let _notificationsBackend: INotificationsBackend | null = null
 let _reportAttachmentsBackend: IReportAttachmentsBackend | null = null
 let _userPrefsBackend: IUserPrefsBackend | null = null
 let _monthAnalysisBackend: IMonthAnalysisBackend | null = null
+let _pendingReceiptsBackend: IPendingReceiptsBackend | null = null
 
 export async function getAuthBackend(): Promise<IAuthBackend> {
   if (_authBackend) return _authBackend
@@ -242,6 +243,18 @@ export async function getMonthAnalysisBackend(): Promise<IMonthAnalysisBackend> 
     _monthAnalysisBackend = mswMonthAnalysisBackend
   }
   return _monthAnalysisBackend
+}
+
+export async function getPendingReceiptsBackend(): Promise<IPendingReceiptsBackend> {
+  if (_pendingReceiptsBackend) return _pendingReceiptsBackend
+  if (backend === 'firestore') {
+    const { firestorePendingReceiptsBackend } = await import('./firestore/pendingReceipts')
+    _pendingReceiptsBackend = firestorePendingReceiptsBackend
+  } else {
+    const { mswPendingReceiptsBackend } = await import('./msw/pendingReceipts')
+    _pendingReceiptsBackend = mswPendingReceiptsBackend
+  }
+  return _pendingReceiptsBackend
 }
 
 export { backend as activeBackend }

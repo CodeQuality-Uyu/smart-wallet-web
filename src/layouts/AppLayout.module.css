@@ -112,6 +112,17 @@
   font-size: 13px; font-weight: 800; color: var(--ink-desktop);
 }
 
+@media (max-width: 767px) {
+  .nav {
+    display: none;
+  }
+
+  .content {
+    padding: 16px;
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 /* Main content */
 .main {
   flex: 1;

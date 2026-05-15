@@ -1,7 +1,7 @@
 // src/tests/mocks/handlers.ts
 
 import { http, HttpResponse } from 'msw'
-import { Currency, RecurringPaymentStatus } from '@/types/enums'
+import { Currency, RecurringPaymentStatus, ReceiptStatus } from '@/types/enums'
 import type { CategorySpend, ProductCategorySpend, MonthAnalysis } from '@/types/models'
 
 import { mockExpenses } from './data/expenses'
@@ -22,6 +22,7 @@ import { mockNotifications, mockNotificationPrefs } from './data/notifications'
 import { mockReportAttachments } from './data/reportAttachments'
 import { mockUserPrefs } from './data/userPrefs'
 import { mockMonthAnalyses } from './data/monthAnalysis'
+import { mockPendingReceipts } from './data/pendingReceipts'
 
 const BASE = '/api'
 
@@ -839,7 +840,22 @@ export const handlers = [
   http.post('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', async ({ request }) => {
     const body = await request.json() as { contents?: { parts?: ({ text?: string } | { inlineData?: { mimeType?: string } })[] }[] }
     const parts = body.contents?.[0]?.parts ?? []
+    const hasImage = parts.some((p) => 'inlineData' in p && (p as { inlineData?: { mimeType?: string } }).inlineData?.mimeType?.startsWith('image/'))
     const hasPdf = parts.some((p) => 'inlineData' in p && (p as { inlineData?: { mimeType?: string } }).inlineData?.mimeType === 'application/pdf')
+
+    if (hasImage) {
+      // Receipt analysis mock
+      const receiptResult = {
+        description: 'Supermercado Devoto',
+        amount: 1250,
+        currency: 'UYU',
+        date: new Date().toISOString().split('T')[0],
+        confidence: 'high',
+      }
+      return HttpResponse.json({
+        candidates: [{ content: { parts: [{ text: JSON.stringify(receiptResult) }] } }],
+      })
+    }
 
     if (hasPdf) {
       // Statement parsing mock — return sample transaction lines
@@ -942,6 +958,38 @@ export const handlers = [
   http.delete(`${BASE}/report-attachments/:id`, ({ params }) => {
     const idx = mockReportAttachments.findIndex((a) => a.id === params.id)
     if (idx !== -1) mockReportAttachments.splice(idx, 1)
+    return new HttpResponse(null, { status: 204 })
+  }),
+
+  // ── Pending receipts ─────────────────────────────────────
+  http.get(`${BASE}/pending-receipts`, () => HttpResponse.json(mockPendingReceipts)),
+
+  http.post(`${BASE}/pending-receipts`, async ({ request }) => {
+    const form = await request.formData()
+    const file = form.get('file') as File | null
+    const now = new Date().toISOString()
+    const newReceipt = {
+      id: `receipt-${Date.now()}`,
+      imageUrl: `https://via.placeholder.com/400x600?text=${encodeURIComponent(file?.name ?? 'comprobante')}`,
+      status: ReceiptStatus.Pending,
+      createdAt: now,
+      updatedAt: now,
+    }
+    mockPendingReceipts.unshift(newReceipt)
+    return HttpResponse.json(newReceipt, { status: 201 })
+  }),
+
+  http.patch(`${BASE}/pending-receipts/:id`, async ({ params, request }) => {
+    const receipt = mockPendingReceipts.find((r) => r.id === params.id)
+    if (!receipt) return new HttpResponse(null, { status: 404 })
+    const body = await request.json() as Record<string, unknown>
+    Object.assign(receipt, { ...body, updatedAt: new Date().toISOString() })
+    return HttpResponse.json(receipt)
+  }),
+
+  http.delete(`${BASE}/pending-receipts/:id`, ({ params }) => {
+    const idx = mockPendingReceipts.findIndex((r) => r.id === params.id)
+    if (idx !== -1) mockPendingReceipts.splice(idx, 1)
     return new HttpResponse(null, { status: 204 })
   }),
 ]

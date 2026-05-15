@@ -465,3 +465,97 @@
 .desktopEmpty {
   text-align: center; padding: 40px; font-size: 13px; color: var(--muted);
 }
+
+/* ── Pending receipts section ── */
+.pendingSection {
+  border: 1.5px solid #fde68a;
+  border-radius: var(--radius);
+  background: #fffbeb;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.pendingSectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #fde68a;
+}
+
+.pendingSectionTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #92400e;
+}
+
+.pendingSectionHint {
+  font-size: 12px;
+  color: #b45309;
+  margin-left: auto;
+}
+
+.pendingList {
+  display: flex;
+  flex-direction: column;
+}
+
+.pendingItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid #fde68a;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+  width: 100%;
+}
+
+.pendingItem:last-child {
+  border-bottom: none;
+}
+
+.pendingItem:hover {
+  background: #fef3c7;
+}
+
+.pendingThumb {
+  width: 44px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #fde68a;
+  flex-shrink: 0;
+}
+
+.pendingInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.pendingItemTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pendingItemDate {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.pendingComplete {
+  font-size: 13px;
+  font-weight: 600;
+  color: #d97706;
+  flex-shrink: 0;
+}

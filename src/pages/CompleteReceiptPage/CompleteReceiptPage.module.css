@@ -1,0 +1,109 @@
+/* src/pages/CompleteReceiptPage/CompleteReceiptPage.module.css */
+
+.page {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px 24px;
+  min-height: 100%;
+}
+
+.card {
+  width: 100%;
+  max-width: 560px;
+  background: #fff;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--border);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1.5px solid var(--border);
+}
+
+.title {
+  font-family: var(--font-head);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* ── Confidence chips ── */
+.chip {
+  margin: 16px 24px 0;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.chipSuccess {
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.chipWarn {
+  background: #fef3e2;
+  color: #b45309;
+}
+
+.chipFailed {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+/* ── Receipt preview row ── */
+.previewRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  border-bottom: 1.5px solid var(--border);
+}
+
+.thumbImg {
+  width: 56px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  flex-shrink: 0;
+}
+
+.discardBtn {
+  font-size: 13px;
+  color: #dc2626;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  margin-left: auto;
+}
+
+/* ── Loading ── */
+.loadingMsg {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* ── Mobile ── */
+@media (max-width: 767px) {
+  .page {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .card {
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+    min-height: 100dvh;
+  }
+}
