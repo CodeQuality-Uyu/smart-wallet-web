@@ -40,3 +40,11 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           channelId: live
           projectId: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+
+      - name: Deploy Firestore & Storage rules
+        uses: w9jds/firebase-action@master
+        with:
+          args: deploy --only firestore:rules,storage
+        env:
+          GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
