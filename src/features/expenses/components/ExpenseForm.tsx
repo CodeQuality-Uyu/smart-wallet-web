@@ -10,6 +10,7 @@ import { NewCardModal } from './NewCardModal'
 import { CategoryPickerModal } from './CategoryPickerModal'
 import { NewPlaceModal } from './NewPlaceModal'
 import { CategorySuggestionBanner } from './CategorySuggestionBanner'
+import suggestionStyles from './CategorySuggestionBanner.module.css'
 import { useCategories, useCreateCategory } from '@/features/categories/hooks/useCategories'
 import { useCards } from '@/features/cards/hooks/useCards'
 import { usePlaces } from '@/features/places/hooks/usePlaces'
@@ -49,14 +50,25 @@ function CategorySuggestion({ categories }: { categories: Category[] }): React.R
   const [dismissed, setDismissed] = useState(false)
   const [lastDismissedDesc, setLastDismissedDesc] = useState('')
 
-  const { suggestion } = useCategorySuggestion(values.description, categories)
+  const { suggestion, isLoading } = useCategorySuggestion(values.description, categories)
 
   // Reset dismiss when description changes significantly
   const shouldShow =
     !dismissed ||
     (values.description !== lastDismissedDesc && values.description.length >= 3)
 
-  if (!suggestion || !shouldShow) return null
+  if (!shouldShow) return null
+
+  if (isLoading && !suggestion) {
+    return (
+      <div className={suggestionStyles.loading}>
+        <span className={suggestionStyles.spinner} aria-hidden="true" />
+        Buscando categorías sugeridas…
+      </div>
+    )
+  }
+
+  if (!suggestion) return null
 
   const handleDismiss = () => {
     setDismissed(true)

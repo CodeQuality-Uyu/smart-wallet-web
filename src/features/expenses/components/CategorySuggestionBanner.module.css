@@ -82,3 +82,28 @@
   line-height: 1;
 }
 .dismiss:hover { color: var(--text-primary, #111); }
+
+.loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-top: -8px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: var(--text-secondary, #6b7280);
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--g300, #a8d5b5);
+  border-top-color: var(--g600, #2e7d52);
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

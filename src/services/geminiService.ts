@@ -45,7 +45,10 @@ Devolvé en "matches" hasta 3 ids de categorías existentes que sean relevantes 
 
 async function callGemini(prompt: string): Promise<CategorySuggestionResult> {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined
-  if (!apiKey) throw new Error('VITE_GEMINI_API_KEY not set')
+  if (!apiKey) {
+    console.warn('[gemini] VITE_GEMINI_API_KEY no está configurada — sugerencias deshabilitadas')
+    throw new Error('VITE_GEMINI_API_KEY not set')
+  }
 
   const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
     method: 'POST',
@@ -56,14 +59,23 @@ async function callGemini(prompt: string): Promise<CategorySuggestionResult> {
     }),
   })
 
-  if (!response.ok) throw new Error(`Gemini API error: ${response.status}`)
+  if (!response.ok) {
+    const detail = await response.text().catch(() => '')
+    console.error(`[gemini] API error ${response.status}:`, detail)
+    throw new Error(`Gemini API error: ${response.status}`)
+  }
 
   const data = (await response.json()) as {
     candidates?: { content?: { parts?: { text?: string }[] } }[]
   }
 
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
-  return JSON.parse(text) as CategorySuggestionResult
+  try {
+    return JSON.parse(text) as CategorySuggestionResult
+  } catch {
+    console.error('[gemini] respuesta no es JSON válido:', text)
+    throw new Error('Gemini returned invalid JSON')
+  }
 }
 
 export function suggestCategory(

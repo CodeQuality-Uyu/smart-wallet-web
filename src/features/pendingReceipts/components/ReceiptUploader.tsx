@@ -61,7 +61,7 @@ export function ReceiptUploader(): React.ReactElement {
           </p>
           <div className={styles.pickBtns}>
             <button
-              className={styles.btnPrimary}
+              className={`${styles.btnPrimary} ${styles.cameraBtn}`}
               onClick={() => {
                 if (fileInputRef.current) {
                   fileInputRef.current.setAttribute('capture', 'environment')

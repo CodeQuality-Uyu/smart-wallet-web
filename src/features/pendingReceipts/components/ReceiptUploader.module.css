@@ -51,6 +51,14 @@
   margin-top: 4px;
 }
 
+/* En desktop no hay cámara: "Sacar foto" y "Subir imagen" hacen lo mismo,
+   así que ocultamos el botón de cámara y dejamos solo subir imagen. */
+@media (min-width: 768px) {
+  .cameraBtn {
+    display: none;
+  }
+}
+
 /* ── Preview state ── */
 .previewArea {
   display: flex;
