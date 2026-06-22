@@ -16,6 +16,7 @@ interface GeminiReceiptResult {
   date?: string
   placeName?: string
   categoryNames?: string[]
+  lines?: { name?: string; amount?: number }[]
   confidence: 'high' | 'low' | 'failed'
 }
 
@@ -57,12 +58,14 @@ Respondé ÚNICAMENTE con un JSON válido (sin markdown, sin explicaciones) con 
   "date": "<fecha en formato YYYY-MM-DD si se puede leer, sino omitir>",
   "placeName": "<nombre del local tal como aparece en el comprobante>",
   "categoryNames": ["<nombre de categoría 1>", "<nombre de categoría 2>"],
+  "lines": [{"name": "<nombre del ítem>", "amount": <precio del ítem como número, sin símbolo>}],
   "confidence": "<high si todos los datos clave son claros, low si alguno es dudoso, failed si no se puede leer nada útil>"
 }
 
 Reglas:
 - En "categoryNames" incluí los nombres de las categorías del usuario que mejor correspondan al gasto (1 o 2 máximo). Si ninguna aplica, sugerí un nombre nuevo descriptivo.
 - En "placeName" usá el nombre exacto del local del comprobante. Si coincide aproximadamente con alguno de los locales del usuario, usá ese nombre.
+- En "lines" incluí cada ítem/producto del ticket con su nombre y precio individual. Si el comprobante no detalla ítems (es un total único), devolvé "lines" como array vacío. No inventes ítems.
 - Si no podés determinar un campo, omitilo. "confidence" es obligatorio.`
 }
 
@@ -139,12 +142,19 @@ export async function analyzeReceiptImage(
 
   const resolved = resolveIds(parsed, ctx)
 
+  const lines = (parsed.lines ?? [])
+    .filter((l): l is { name: string; amount: number } =>
+      typeof l?.name === 'string' && l.name.trim().length > 0 && typeof l?.amount === 'number' && !Number.isNaN(l.amount),
+    )
+    .map((l) => ({ name: l.name.trim(), amount: l.amount }))
+
   return {
     description: parsed.description,
     amount: parsed.amount,
     currency: parsed.currency === 'USD' ? Currency.USD : parsed.currency === 'UYU' ? Currency.UYU : undefined,
     date: parsed.date,
     confidence: parsed.confidence,
+    ...(lines.length > 0 ? { lines } : {}),
     ...resolved,
   }
 }

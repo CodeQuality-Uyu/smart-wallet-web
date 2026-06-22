@@ -95,6 +95,19 @@
   flex-shrink: 0;
 }
 
+.retryBtn {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--g700, #047857);
+  background: none;
+  border: 1.5px solid var(--g700, #047857);
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 7px 12px;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
 .discardBtn {
   font-size: 13px;
   color: #dc2626;
@@ -103,7 +116,86 @@
   cursor: pointer;
   text-decoration: underline;
   padding: 0;
-  margin-left: auto;
+}
+
+/* ── Ticket lines ── */
+.linesSection {
+  padding: 16px 24px;
+  border-bottom: 1.5px solid var(--border);
+}
+
+.linesHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.linesTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.addLineBtn {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--g700, #047857);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.linesEmpty {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.linesList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.lineRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lineName {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  font-size: 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+}
+
+.lineAmount {
+  width: 90px;
+  flex-shrink: 0;
+  padding: 8px 10px;
+  font-size: 14px;
+  text-align: right;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+}
+
+.lineRemove {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  font-size: 13px;
+  color: #dc2626;
+  background: none;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
 }
 
 /* ── Loading ── */

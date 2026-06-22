@@ -104,7 +104,11 @@ export const firestoreExpensesBackend: IExpensesBackend = {
   async create(payload: CreateExpensePayload): Promise<Expense> {
     const uid = requireUid()
     const now = new Date().toISOString()
-    const data = stripUndefined({ ...payload, ticketLines: [], createdAt: now, updatedAt: now })
+    const ticketLines = (payload.ticketLines ?? []).map((line) => ({
+      id: crypto.randomUUID(),
+      ...line,
+    }))
+    const data = stripUndefined({ ...payload, ticketLines, createdAt: now, updatedAt: now })
     const ref = await addDoc(collection(firestore, 'users', uid, 'expenses'), data)
     return { id: ref.id, ...data } as Expense
   },

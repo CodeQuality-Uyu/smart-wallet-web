@@ -111,7 +111,10 @@ export interface Expense extends Timestamps {
   statementAttachmentId?: string
 }
 
-export type CreateExpensePayload = Omit<Expense, 'id' | 'createdAt' | 'updatedAt' | 'ticketLines'>
+export type CreateExpensePayload = Omit<Expense, 'id' | 'createdAt' | 'updatedAt' | 'ticketLines'> & {
+  // Líneas iniciales del ticket (sin id); el backend genera el id de cada una.
+  ticketLines?: Omit<TicketLine, 'id'>[]
+}
 export type UpdateExpensePayload = Partial<CreateExpensePayload>
 
 export interface ExpenseFilters {
@@ -485,6 +488,7 @@ export interface PendingReceiptExtractedData {
   categoryIds?: string[]
   suggestedPlaceName?: string    // name returned by Gemini if no placeId match
   suggestedCategoryNames?: string[] // names returned by Gemini if no categoryIds match
+  lines?: { name: string; amount: number }[] // ítems del ticket extraídos por la IA
   confidence?: 'high' | 'low' | 'failed'
 }
 

@@ -15,7 +15,7 @@ import {
   groupExpensesByCategory,
 } from '@/utils/groupByDate'
 import { formatCurrency, formatAmountNoSymbol } from '@/utils/formatCurrency'
-import { Currency, PeriodFilter, GroupBy } from '@/types/enums'
+import { Currency, PeriodFilter, GroupBy, ReceiptStatus } from '@/types/enums'
 import { CURRENCY_OPTIONS } from '@/constants/currencyOptions'
 import { usePendingReceipts } from '@/features/pendingReceipts/hooks/usePendingReceipts'
 import styles from './ExpensesPage.module.css'
@@ -56,7 +56,11 @@ export default function ExpensesPage(): React.ReactElement {
   const { data: categories = [] } = useCategories()
   const { data: cards = [] } = useCards()
   const { data: places = [] } = usePlaces()
-  const { data: pendingReceipts = [] } = usePendingReceipts()
+  const { data: allReceipts = [] } = usePendingReceipts()
+  const pendingReceipts = useMemo(
+    () => allReceipts.filter((r) => r.status === ReceiptStatus.Pending),
+    [allReceipts],
+  )
 
   const now = new Date()
   const monthLabel = `${MONTH_NAMES[now.getMonth()] ?? ''} ${now.getFullYear()}`

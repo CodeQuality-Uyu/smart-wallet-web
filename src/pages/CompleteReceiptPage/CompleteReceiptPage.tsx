@@ -37,10 +37,32 @@ export default function CompleteReceiptPage(): React.ReactElement {
     { label: 'Extrayendo datos', state: 'pending' },
   ])
   const [extractedData, setExtractedData] = useState<PendingReceiptExtractedData | null>(null)
+  const [lines, setLines] = useState<{ name: string; amount: number }[]>([])
   const [analysisError, setAnalysisError] = useState(false)
   const hasStarted = useRef(false)
 
   const receipt = receipts.find((r) => r.id === id)
+
+  // Sincroniza los ítems editables con lo que extrajo la IA.
+  useEffect(() => {
+    setLines(extractedData?.lines ?? [])
+  }, [extractedData])
+
+  function updateLine(index: number, field: 'name' | 'amount', value: string): void {
+    setLines((prev) =>
+      prev.map((l, i) =>
+        i === index ? { ...l, [field]: field === 'amount' ? Number(value) || 0 : value } : l,
+      ),
+    )
+  }
+
+  function removeLine(index: number): void {
+    setLines((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  function addLine(): void {
+    setLines((prev) => [...prev, { name: '', amount: 0 }])
+  }
 
   function setStep(index: number, state: ProcessingStep['state']): void {
     setSteps((prev) =>
@@ -99,7 +121,23 @@ export default function CompleteReceiptPage(): React.ReactElement {
     setPhase('form')
   }
 
+  async function handleRetry(): Promise<void> {
+    if (!receipt) return
+    setAnalysisError(false)
+    setExtractedData(null)
+    setSteps([
+      { label: 'Imagen recibida', state: 'pending' },
+      { label: 'Analizando con IA', state: 'pending' },
+      { label: 'Extrayendo datos', state: 'pending' },
+    ])
+    await runAnalysis()
+  }
+
   async function handleSubmit(values: ExpenseFormValues): Promise<void> {
+    if (!receipt) return
+    const validLines = lines
+      .map((l) => ({ name: l.name.trim(), amount: l.amount }))
+      .filter((l) => l.name.length > 0 && l.amount > 0)
     const payload: CreateExpensePayload = {
       description: values.description,
       amount: values.amount,
@@ -108,8 +146,12 @@ export default function CompleteReceiptPage(): React.ReactElement {
       categoryIds: values.categoryIds,
       placeId: values.placeId || undefined,
       date: values.date,
+      // El comprobante pendiente ya está en Storage: lo usamos como recibo del gasto.
+      receiptUrl: receipt.imageUrl,
+      ...(validLines.length > 0 ? { ticketLines: validLines } : {}),
     }
     const expense = await createExpense(payload)
+    // Si el usuario adjuntó un archivo nuevo, ese reemplaza al comprobante original.
     if (values.receiptFile) {
       await expensesService.uploadReceipt(expense.id, values.receiptFile)
     }
@@ -200,9 +242,55 @@ export default function CompleteReceiptPage(): React.ReactElement {
 
         <div className={styles.previewRow}>
           <img src={receipt.imageUrl} alt="Comprobante" className={styles.thumbImg} />
+          <button className={styles.retryBtn} onClick={() => void handleRetry()}>
+            🔄 Reanalizar con IA
+          </button>
           <button className={styles.discardBtn} onClick={() => void handleDiscard()}>
             Descartar comprobante
           </button>
+        </div>
+
+        <div className={styles.linesSection}>
+          <div className={styles.linesHeader}>
+            <span className={styles.linesTitle}>🧾 Ítems del ticket</span>
+            <button type="button" className={styles.addLineBtn} onClick={addLine}>
+              + Agregar ítem
+            </button>
+          </div>
+          {lines.length === 0 ? (
+            <p className={styles.linesEmpty}>
+              No se detectaron ítems. Podés agregarlos a mano o dejarlo vacío.
+            </p>
+          ) : (
+            <ul className={styles.linesList}>
+              {lines.map((line, i) => (
+                <li key={i} className={styles.lineRow}>
+                  <input
+                    className={styles.lineName}
+                    value={line.name}
+                    placeholder="Nombre del ítem"
+                    onChange={(e) => updateLine(i, 'name', e.target.value)}
+                  />
+                  <input
+                    className={styles.lineAmount}
+                    type="number"
+                    inputMode="decimal"
+                    value={line.amount || ''}
+                    placeholder="0"
+                    onChange={(e) => updateLine(i, 'amount', e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className={styles.lineRemove}
+                    aria-label="Quitar ítem"
+                    onClick={() => removeLine(i)}
+                  >
+                    ✕
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <ExpenseForm

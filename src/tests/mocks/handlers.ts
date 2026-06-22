@@ -157,7 +157,9 @@ export const handlers = [
 
   http.post(`${BASE}/expenses`, async ({ request }) => {
     const body = await request.json() as Record<string, unknown>
-    const created = { ...body, id: crypto.randomUUID(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), ticketLines: [] }
+    const rawLines = Array.isArray(body['ticketLines']) ? (body['ticketLines'] as Record<string, unknown>[]) : []
+    const ticketLines = rawLines.map((line) => ({ id: crypto.randomUUID(), ...line }))
+    const created = { ...body, id: crypto.randomUUID(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), ticketLines }
     mockExpenses.unshift(created as unknown as typeof mockExpenses[0])
     return HttpResponse.json(created, { status: 201 })
   }),
