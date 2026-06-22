@@ -16,8 +16,8 @@
 .modal {
   background: #fff;
   border-radius: 16px;
-  width: 100%;
-  max-width: 880px;
+  width: 95vw;
+  max-width: 1080px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -246,13 +246,37 @@
 }
 
 .tableWrapper {
-  overflow-x: auto;
+  overflow-x: scroll;
   border: 1px solid var(--border-card);
   border-radius: 10px;
 }
+.tableWrapper::-webkit-scrollbar {
+  height: 12px;
+}
+.tableWrapper::-webkit-scrollbar-track {
+  background: var(--border-subtle);
+  border-radius: 0 0 10px 10px;
+}
+.tableWrapper::-webkit-scrollbar-thumb {
+  background: var(--g400, #9ca3af);
+  border-radius: 99px;
+  border: 3px solid var(--border-subtle);
+}
+.tableWrapper::-webkit-scrollbar-thumb:hover {
+  background: var(--g500, #6b7280);
+}
+
+/* Stacked cell content (input/select + badge/chip below) */
+.stackCell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
 
 .table {
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
   font-size: 13px;
 }
@@ -271,6 +295,7 @@
   padding: 8px 10px;
   border-top: 1px solid var(--border-subtle);
   vertical-align: middle;
+  white-space: nowrap;
 }
 .table tr:hover td { background: #fafafa; }
 .rowSkipped td { opacity: 0.4; }
@@ -321,11 +346,29 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  margin-top: 5px;
+  padding: 3px 9px;
   font-size: 10px;
-  color: var(--g600);
-  margin-left: 4px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--g700, var(--g600));
+  background: linear-gradient(135deg, var(--g50, #f0fdf4), #eef2ff);
+  border: 1px solid var(--g200, #c8e6d4);
+  border-radius: 99px;
   cursor: pointer;
-  text-decoration: underline dotted;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+.catSuggestion:hover {
+  background: linear-gradient(135deg, var(--g100, #dcfce7), #e0e7ff);
+  border-color: var(--g400, #6ee7a8);
+}
+.catSuggestion:active {
+  transform: scale(0.96);
+}
+.catSuggestion:disabled {
+  opacity: 0.55;
+  cursor: progress;
 }
 
 .amountCell {

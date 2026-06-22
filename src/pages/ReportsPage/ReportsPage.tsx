@@ -332,9 +332,12 @@ export default function ReportsPage(): React.ReactElement {
                 <button
                   className={styles.attachmentRemove}
                   onClick={() => removeAttachment.mutate(att.id)}
+                  disabled={removeAttachment.isPending}
                   title="Eliminar"
                 >
-                  ✕
+                  {removeAttachment.isPending && removeAttachment.variables === att.id
+                    ? <LoadingSpinner size="sm" />
+                    : '✕'}
                 </button>
               </div>
             ))}

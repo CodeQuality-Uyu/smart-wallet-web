@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { parsePdf, parsePdfFromUrl, detectDuplicates } from '@/services/statementService'
 import { expensesService } from '@/services/expensesService'
 import { reportAttachmentsService } from '@/services/reportAttachmentsService'
+import { useCreateCategory } from '@/features/categories/hooks/useCategories'
 import { useUserPrefs } from '@/hooks/useUserPrefs'
 import { StatementImportAction } from '@/types/enums'
 import type { Card, Category, Place, Expense, ReportAttachment, StatementImportRow } from '@/types/models'
@@ -12,7 +13,7 @@ import { cardLabel } from '@/features/cards/cardUtils'
 import { Currency } from '@/types/enums'
 import styles from './StatementImportModal.module.css'
 
-type Step = 'setup' | 'processing' | 'reviewing' | 'saving'
+type Step = 'setup' | 'uploading' | 'processing' | 'reviewing' | 'saving'
 
 interface Props {
   isOpen: boolean
@@ -38,6 +39,7 @@ export function StatementImportModal({
   const qc = useQueryClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { data: userPrefs } = useUserPrefs()
+  const createCategory = useCreateCategory()
 
   const resolvedDefaultCardId =
     existingAttachment?.cardId ??
@@ -118,6 +120,7 @@ export function StatementImportModal({
         return
       }
       setError(null)
+      setStep('uploading')
 
       let attachment: ReportAttachment
       try {
@@ -126,6 +129,7 @@ export function StatementImportModal({
         })
       } catch (err) {
         setError((err as Error).message ?? 'Error al subir el archivo')
+        setStep('setup')
         return
       }
 
@@ -182,6 +186,33 @@ export function StatementImportModal({
   const updateRow = useCallback((rowId: string, patch: Partial<StatementImportRow>) => {
     setRows((prev) => prev.map((r) => (r.rowId === rowId ? { ...r, ...patch } : r)))
   }, [])
+
+  const applySuggestion = useCallback(
+    async (rowId: string, suggestedName: string) => {
+      const match = categories.find(
+        (c) =>
+          c.name.toLowerCase().includes(suggestedName.toLowerCase()) ||
+          suggestedName.toLowerCase().includes(c.name.toLowerCase()),
+      )
+      if (match) {
+        updateRow(rowId, { categoryId: match.id })
+        return
+      }
+      // No existing category matches the AI suggestion → create it and assign.
+      try {
+        const created = await createCategory.mutateAsync({
+          name: suggestedName,
+          icon: '🏷️',
+          color: 'var(--g500)',
+          active: true,
+        })
+        updateRow(rowId, { categoryId: created.id })
+      } catch (err) {
+        setError((err as Error).message ?? 'No se pudo crear la categoría sugerida')
+      }
+    },
+    [categories, createCategory, updateRow],
+  )
 
   if (!isOpen) return null
 
@@ -272,6 +303,16 @@ export function StatementImportModal({
             </div>
           )}
 
+          {/* ── Uploading step ── */}
+          {step === 'uploading' && (
+            <div className={styles.processingCenter}>
+              <div className={styles.processingIcon}>📤</div>
+              <div className={styles.spinner} />
+              <div className={styles.processingTitle}>Subiendo PDF…</div>
+              <div className={styles.processingHint}>Guardando el archivo de forma segura</div>
+            </div>
+          )}
+
           {/* ── Processing step ── */}
           {step === 'processing' && (
             <div className={styles.processingCenter}>
@@ -331,14 +372,21 @@ export function StatementImportModal({
                             />
                           </td>
                           <td>
-                            <div className={styles.descCell} title={row.description}>
-                              {row.description}
+                            <div className={styles.stackCell}>
+                              <input
+                                type="text"
+                                className={styles.tableInput}
+                                value={row.description}
+                                style={{ minWidth: 180 }}
+                                title={row.description}
+                                onChange={(e) => updateRow(row.rowId, { description: e.target.value })}
+                              />
+                              {row.matchedExpenseId && (
+                                <div className={styles.dupBadge}>
+                                  ⚠️ Posible duplicado
+                                </div>
+                              )}
                             </div>
-                            {row.matchedExpenseId && (
-                              <div className={styles.dupBadge}>
-                                ⚠️ Posible duplicado
-                              </div>
-                            )}
                           </td>
                           <td className={styles.amountCell}>
                             <input
@@ -366,33 +414,30 @@ export function StatementImportModal({
                             </select>
                           </td>
                           <td>
-                            <select
-                              className={styles.tableSelect}
-                              value={row.categoryId ?? ''}
-                              onChange={(e) =>
-                                updateRow(row.rowId, { categoryId: e.target.value || undefined })
-                              }
-                            >
-                              <option value="">Sin categoría</option>
-                              {categories.map((c) => (
-                                <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-                              ))}
-                            </select>
-                            {row.suggestedCategoryName && !row.categoryId && (
-                              <button
-                                className={styles.catSuggestion}
-                                onClick={() => {
-                                  const match = categories.find((c) =>
-                                    c.name.toLowerCase().includes(row.suggestedCategoryName!.toLowerCase()) ||
-                                    row.suggestedCategoryName!.toLowerCase().includes(c.name.toLowerCase()),
-                                  )
-                                  if (match) updateRow(row.rowId, { categoryId: match.id })
-                                }}
-                                title={`Sugerencia IA: ${row.suggestedCategoryName}`}
+                            <div className={styles.stackCell}>
+                              <select
+                                className={styles.tableSelect}
+                                value={row.categoryId ?? ''}
+                                onChange={(e) =>
+                                  updateRow(row.rowId, { categoryId: e.target.value || undefined })
+                                }
                               >
-                                ✨ {row.suggestedCategoryName}
-                              </button>
-                            )}
+                                <option value="">Sin categoría</option>
+                                {categories.map((c) => (
+                                  <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                                ))}
+                              </select>
+                              {row.suggestedCategoryName && !row.categoryId && (
+                                <button
+                                  className={styles.catSuggestion}
+                                  disabled={createCategory.isPending}
+                                  onClick={() => void applySuggestion(row.rowId, row.suggestedCategoryName!)}
+                                  title={`Sugerencia IA: ${row.suggestedCategoryName} (clic para asignar o crear)`}
+                                >
+                                  ✨ {row.suggestedCategoryName}
+                                </button>
+                              )}
+                            </div>
                           </td>
                           <td>
                             <select
