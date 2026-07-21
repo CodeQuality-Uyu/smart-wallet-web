@@ -168,7 +168,9 @@ export const handlers = [
     const expense = mockExpenses.find((e) => e.id === params['id'])
     if (!expense) return new HttpResponse(null, { status: 404 })
     const body = await request.json() as Record<string, unknown>
-    return HttpResponse.json({ ...expense, ...body, updatedAt: new Date().toISOString() })
+    const merged: Record<string, unknown> = { ...expense, ...body, updatedAt: new Date().toISOString() }
+    if (body['placeId'] === null) delete merged['placeId']
+    return HttpResponse.json(merged)
   }),
 
   http.delete(`${BASE}/expenses/:id`, () => new HttpResponse(null, { status: 204 })),
@@ -949,6 +951,15 @@ export const handlers = [
     }
     mockReportAttachments.push(newAtt)
     return HttpResponse.json(newAtt, { status: 201 })
+  }),
+
+  http.patch(`${BASE}/report-attachments/:id/pending-lines`, async ({ params, request }) => {
+    const att = mockReportAttachments.find((a) => a.id === params.id)
+    if (!att) return new HttpResponse(null, { status: 404 })
+    const body = await request.json() as { lines: unknown[] }
+    const now = new Date().toISOString()
+    Object.assign(att, { pendingLines: body.lines, pendingLinesAt: now })
+    return HttpResponse.json(att)
   }),
 
   http.patch(`${BASE}/report-attachments/:id/mark-processed`, async ({ params, request }) => {

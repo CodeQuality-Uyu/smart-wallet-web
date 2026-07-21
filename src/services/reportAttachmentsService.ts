@@ -1,7 +1,7 @@
 // src/services/reportAttachmentsService.ts
 
 import { getReportAttachmentsBackend } from '@/backend'
-import type { ReportAttachment } from '@/types/models'
+import type { ReportAttachment, StatementImportRow } from '@/types/models'
 
 export const reportAttachmentsService = {
   async list(yearMonth: string): Promise<ReportAttachment[]> {
@@ -9,6 +9,9 @@ export const reportAttachmentsService = {
   },
   async upload(yearMonth: string, file: File, options?: { cardId?: string }): Promise<ReportAttachment> {
     return (await getReportAttachmentsBackend()).upload(yearMonth, file, options)
+  },
+  async savePendingLines(id: string, lines: StatementImportRow[]): Promise<ReportAttachment> {
+    return (await getReportAttachmentsBackend()).savePendingLines(id, lines)
   },
   async markProcessed(id: string, data: { importedExpenseCount: number }): Promise<ReportAttachment> {
     return (await getReportAttachmentsBackend()).markProcessed(id, data)

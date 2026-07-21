@@ -36,7 +36,10 @@ export const mswExpensesBackend: IExpensesBackend = {
   },
 
   async update(id: string, payload: UpdateExpensePayload): Promise<Expense> {
-    const { data } = await httpClient.patch<Expense>(`/expenses/${id}`, payload)
+    // JSON drops `undefined`, so signal an explicit place-clear with null.
+    const body: Record<string, unknown> = { ...payload }
+    if ('placeId' in payload && !payload.placeId) body['placeId'] = null
+    const { data } = await httpClient.patch<Expense>(`/expenses/${id}`, body)
     return data
   },
 

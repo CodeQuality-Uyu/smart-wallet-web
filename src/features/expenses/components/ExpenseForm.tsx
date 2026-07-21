@@ -250,7 +250,7 @@ export function ExpenseForm({
               />
             </FormField>
 
-            <FormField name="placeId" label="Lugar">
+            <FormField name="placeId" label="Lugar (opcional)">
               <SelectInput
                 name="placeId"
                 options={placeOptions}

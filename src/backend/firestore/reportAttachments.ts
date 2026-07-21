@@ -14,7 +14,7 @@ import {
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import { firestore, firebaseStorage } from './config'
 import { firebaseAuth } from './config'
-import type { IReportAttachmentsBackend, ReportAttachment } from '../types'
+import type { IReportAttachmentsBackend, ReportAttachment, StatementImportRow } from '../types'
 
 function requireUid(): string {
   const uid = firebaseAuth.currentUser?.uid
@@ -56,10 +56,23 @@ export const firestoreReportAttachmentsBackend: IReportAttachmentsBackend = {
     return { id: docRef.id, ...payload }
   },
 
+  async savePendingLines(id: string, lines: StatementImportRow[]): Promise<ReportAttachment> {
+    const uid = requireUid()
+    const docRef = doc(firestore, 'users', uid, 'reportAttachments', id)
+    const now = new Date().toISOString()
+    // Firestore rejects `undefined` values; strip optional keys via JSON round-trip.
+    const cleanLines = JSON.parse(JSON.stringify(lines)) as StatementImportRow[]
+    await updateDoc(docRef, { pendingLines: cleanLines, pendingLinesAt: now })
+    const snap = await getDoc(docRef)
+    return { id: snap.id, ...snap.data() } as ReportAttachment
+  },
+
   async markProcessed(id: string, data: { importedExpenseCount: number }): Promise<ReportAttachment> {
     const uid = requireUid()
     const docRef = doc(firestore, 'users', uid, 'reportAttachments', id)
     const now = new Date().toISOString()
+    // Keep pendingLines as the record of processed lines (imported ones flagged) so the
+    // document can be reopened without re-running the AI extraction.
     await updateDoc(docRef, { processed: true, processedAt: now, importedExpenseCount: data.importedExpenseCount })
     const snap = await getDoc(docRef)
     return { id: snap.id, ...snap.data() } as ReportAttachment

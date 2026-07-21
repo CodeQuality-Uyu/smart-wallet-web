@@ -17,7 +17,7 @@ import {
 import { formatCurrency, formatAmountNoSymbol } from '@/utils/formatCurrency'
 import { Currency, PeriodFilter, GroupBy, ReceiptStatus } from '@/types/enums'
 import { CURRENCY_OPTIONS } from '@/constants/currencyOptions'
-import { usePendingReceipts } from '@/features/pendingReceipts/hooks/usePendingReceipts'
+import { usePendingReceipts, useDeletePendingReceipt } from '@/features/pendingReceipts/hooks/usePendingReceipts'
 import styles from './ExpensesPage.module.css'
 
 const MONTH_NAMES = [
@@ -61,6 +61,7 @@ export default function ExpensesPage(): React.ReactElement {
     () => allReceipts.filter((r) => r.status === ReceiptStatus.Pending),
     [allReceipts],
   )
+  const deleteReceipt = useDeletePendingReceipt()
 
   const now = new Date()
   const monthLabel = `${MONTH_NAMES[now.getMonth()] ?? ''} ${now.getFullYear()}`
@@ -222,24 +223,39 @@ export default function ExpensesPage(): React.ReactElement {
                   month: 'short',
                 })
                 return (
-                  <button
-                    key={r.id}
-                    className={styles.pendingItem}
-                    onClick={() => void navigate(`/receipts/${r.id}/complete`)}
-                  >
-                    <img
-                      src={r.imageUrl}
-                      alt="Comprobante"
-                      className={styles.pendingThumb}
-                    />
-                    <div className={styles.pendingInfo}>
-                      <span className={styles.pendingItemTitle}>
-                        {r.extractedData?.description ?? 'Comprobante sin procesar'}
-                      </span>
-                      <span className={styles.pendingItemDate}>{date}</span>
-                    </div>
-                    <span className={styles.pendingComplete}>Completar →</span>
-                  </button>
+                  <div key={r.id} className={styles.pendingItem}>
+                    <button
+                      type="button"
+                      className={styles.pendingDelete}
+                      aria-label="Eliminar comprobante"
+                      disabled={deleteReceipt.isPending}
+                      onClick={() => {
+                        if (window.confirm('¿Eliminar este comprobante?')) {
+                          deleteReceipt.mutate(r.id)
+                        }
+                      }}
+                    >
+                      🗑️
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.pendingItemMain}
+                      onClick={() => void navigate(`/receipts/${r.id}/complete`)}
+                    >
+                      <img
+                        src={r.imageUrl}
+                        alt="Comprobante"
+                        className={styles.pendingThumb}
+                      />
+                      <div className={styles.pendingInfo}>
+                        <span className={styles.pendingItemTitle}>
+                          {r.extractedData?.description ?? 'Comprobante sin procesar'}
+                        </span>
+                        <span className={styles.pendingItemDate}>{date}</span>
+                      </div>
+                      <span className={styles.pendingComplete}>Completar →</span>
+                    </button>
+                  </div>
                 )
               })}
             </div>

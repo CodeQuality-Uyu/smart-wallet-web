@@ -11,6 +11,7 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  deleteField,
   getDoc,
   doc,
   query,
@@ -116,7 +117,10 @@ export const firestoreExpensesBackend: IExpensesBackend = {
   async update(id: string, payload: UpdateExpensePayload): Promise<Expense> {
     const uid = requireUid()
     const ref = doc(firestore, 'users', uid, 'expenses', id)
-    await updateDoc(ref, stripUndefined({ ...payload, updatedAt: new Date().toISOString() }))
+    const data: Record<string, unknown> = stripUndefined({ ...payload, updatedAt: new Date().toISOString() })
+    // Explicitly clearing the optional place removes the field from the document.
+    if ('placeId' in payload && !payload.placeId) data['placeId'] = deleteField()
+    await updateDoc(ref, data)
     const snap = await getDoc(ref)
     return { id: snap.id, ...snap.data() } as Expense
   },

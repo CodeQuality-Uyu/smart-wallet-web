@@ -89,10 +89,12 @@ export default function HomePage(): React.ReactElement {
     refetch,
   } = useMetrics(PeriodFilter.Month)
   const { data: budget, isLoading: loadingBudget } = useBudget()
-  const { data: expensesPage, isLoading: loadingExpenses } = useExpenses()
+  const { data: expensesPage, isLoading: loadingExpenses } = useExpenses({ period: 'month' })
   const { data: categories = [], isLoading: loadingCategories } = useCategories()
   const { data: recurring = [], isLoading: loadingRecurring } = useRecurringList()
   const { data: cards = [] } = useCards()
+
+  const [movPage, setMovPage] = React.useState(0)
 
   if (loadingMetrics || loadingBudget || loadingExpenses || loadingCategories || loadingRecurring) {
     return <LoadingSpinner fullPage />
@@ -244,8 +246,15 @@ export default function HomePage(): React.ReactElement {
 
   const shownTips = tips.slice(0, 3)
 
-  // ── Recent expenses ───────────────────────────────────────
+  // ── Recent expenses (mes actual, paginado) ────────────────
+  const MOV_PAGE_SIZE = 10
   const expenses = expensesPage?.data ?? []
+  const movTotalPages = Math.max(1, Math.ceil(expenses.length / MOV_PAGE_SIZE))
+  const movCurrentPage = Math.min(movPage, movTotalPages - 1)
+  const pagedExpenses = expenses.slice(
+    movCurrentPage * MOV_PAGE_SIZE,
+    movCurrentPage * MOV_PAGE_SIZE + MOV_PAGE_SIZE
+  )
 
   const spendCards = [
     {
@@ -348,7 +357,7 @@ export default function HomePage(): React.ReactElement {
               {expenses.length === 0 ? (
                 <p className={styles.desktopEmpty}>No hay gastos este mes.</p>
               ) : (
-                groupExpensesByDate(expenses.slice(0, 10)).map((group) => (
+                groupExpensesByDate(pagedExpenses).map((group) => (
                   <React.Fragment key={group.date}>
                     <div className={styles.desktopDateHeader}>{group.label}</div>
                     {group.expenses.map((expense) => {
@@ -388,6 +397,27 @@ export default function HomePage(): React.ReactElement {
                 ))
               )}
             </div>
+            {movTotalPages > 1 && (
+              <div className={styles.desktopPagination}>
+                <button
+                  className={styles.desktopPageBtn}
+                  disabled={movCurrentPage === 0}
+                  onClick={() => setMovPage((p) => Math.max(0, p - 1))}
+                >
+                  ← Anterior
+                </button>
+                <span className={styles.desktopPageInfo}>
+                  {movCurrentPage + 1} / {movTotalPages}
+                </span>
+                <button
+                  className={styles.desktopPageBtn}
+                  disabled={movCurrentPage >= movTotalPages - 1}
+                  onClick={() => setMovPage((p) => Math.min(movTotalPages - 1, p + 1))}
+                >
+                  Siguiente →
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

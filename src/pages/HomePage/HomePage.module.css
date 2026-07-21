@@ -371,6 +371,21 @@
 
 .desktopEmpty { text-align: center; padding: 40px; font-size: 13px; color: var(--muted); }
 
+/* Movements pagination */
+.desktopPagination {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 14px 24px 0; margin-top: 24px;
+  border-top: 1px solid var(--border);
+}
+.desktopPageBtn {
+  font-family: inherit; font-size: 12px; font-weight: 600;
+  color: var(--gold-dk); background: none; border: none; cursor: pointer;
+  padding: 6px 4px; transition: opacity .15s;
+}
+.desktopPageBtn:hover:not(:disabled) { opacity: .7; }
+.desktopPageBtn:disabled { color: var(--muted); cursor: default; opacity: .5; }
+.desktopPageInfo { font-size: 12px; font-weight: 600; color: var(--muted); }
+
 /* Right sidebar */
 .desktopSidebar {
   grid-column: 2;

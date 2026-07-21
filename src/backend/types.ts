@@ -27,6 +27,7 @@ import type {
   CreateExpensePayload,
   UpdateExpensePayload,
   TicketLine,
+  StatementImportRow,
   PaginatedResponse,
   ExpenseFilters,
   MetricsSummary,
@@ -78,6 +79,7 @@ export type {
   CreateExpensePayload,
   UpdateExpensePayload,
   TicketLine,
+  StatementImportRow,
   PaginatedResponse,
   ExpenseFilters,
   MetricsSummary,
@@ -378,11 +380,14 @@ export interface ReportAttachment {
   processedAt?: string
   importedExpenseCount?: number
   cardId?: string
+  pendingLines?: StatementImportRow[]
+  pendingLinesAt?: string
 }
 
 export interface IReportAttachmentsBackend {
   list(yearMonth: string): Promise<ReportAttachment[]>
   upload(yearMonth: string, file: File, options?: { cardId?: string }): Promise<ReportAttachment>
+  savePendingLines(id: string, lines: StatementImportRow[]): Promise<ReportAttachment>
   markProcessed(id: string, data: { importedExpenseCount: number }): Promise<ReportAttachment>
   remove(id: string): Promise<void>
 }

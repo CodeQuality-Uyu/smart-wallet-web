@@ -64,7 +64,7 @@ export function TextInput({ name, icon, ...props }: TextInputProps): React.React
 
 // ─── SelectInput ──────────────────────────────────────────
 
-interface SelectOption {
+export interface SelectOption {
   value: string
   label: string
 }
@@ -95,6 +95,44 @@ export function SelectInput({
         aria-describedby={hasError ? `${name}-error` : undefined}
         aria-invalid={hasError}
         {...field}
+        {...props}
+      >
+        {placeholder && <option value="">{placeholder}</option>}
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
+        ))}
+      </select>
+    </div>
+  )
+}
+
+// ─── ControlledSelectInput ────────────────────────────────
+// Same look & styles as SelectInput, but plain value/onChange (no Formik).
+
+interface ControlledSelectInputProps
+  extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'onChange' | 'value'> {
+  value: string
+  onChange: (value: string) => void
+  options: SelectOption[]
+  placeholder?: string
+  icon?: string
+}
+
+export function ControlledSelectInput({
+  value,
+  onChange,
+  options,
+  placeholder,
+  icon,
+  ...props
+}: ControlledSelectInputProps): React.ReactElement {
+  return (
+    <div className={[styles.inputWrap, styles.selectWrap].join(' ')}>
+      {icon && <span className={styles.inputIcon} aria-hidden>{icon}</span>}
+      <select
+        className={[styles.input, styles.select, icon ? styles.inputWithIcon : ''].join(' ')}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
         {...props}
       >
         {placeholder && <option value="">{placeholder}</option>}

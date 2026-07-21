@@ -42,9 +42,10 @@ jobs:
           projectId: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
 
       - name: Deploy Firestore & Storage rules
-        uses: w9jds/firebase-action@master
-        with:
-          args: deploy --only firestore:rules,storage
         env:
-          GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+        run: |
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/gcp_key.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/gcp_key.json"
+          npx --yes firebase-tools deploy --only firestore:rules,storage --project "$PROJECT_ID" --non-interactive

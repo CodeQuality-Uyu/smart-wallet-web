@@ -475,6 +475,8 @@ export interface ReportAttachment {
   processedAt?: string
   importedExpenseCount?: number
   cardId?: string
+  pendingLines?: StatementImportRow[]  // líneas extraídas por IA, pendientes de aprobación
+  pendingLinesAt?: string              // cuándo se procesó y guardaron las líneas pendientes
 }
 
 // ─── Pending receipts ─────────────────────────────────────
@@ -522,4 +524,5 @@ export interface StatementImportRow extends StatementLine {
   notes?: string
   matchedExpenseId?: string
   matchScore?: number
+  imported?: boolean   // ya se creó el gasto para esta línea (no re-importar)
 }

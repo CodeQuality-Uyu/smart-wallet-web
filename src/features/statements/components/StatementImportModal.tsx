@@ -6,14 +6,43 @@ import { parsePdf, parsePdfFromUrl, detectDuplicates } from '@/services/statemen
 import { expensesService } from '@/services/expensesService'
 import { reportAttachmentsService } from '@/services/reportAttachmentsService'
 import { useCreateCategory } from '@/features/categories/hooks/useCategories'
+import { ControlledSelectInput } from '@/components/ui/FormField'
 import { useUserPrefs } from '@/hooks/useUserPrefs'
 import { StatementImportAction } from '@/types/enums'
 import type { Card, Category, Place, Expense, ReportAttachment, StatementImportRow } from '@/types/models'
 import { cardLabel } from '@/features/cards/cardUtils'
 import { Currency } from '@/types/enums'
+import { formatAmount } from '@/utils/formatCurrency'
 import styles from './StatementImportModal.module.css'
 
 type Step = 'setup' | 'uploading' | 'processing' | 'reviewing' | 'saving'
+
+// Header "select all" checkbox with an indeterminate (partial) state painted blue.
+function SelectAllCheckbox({
+  checked,
+  indeterminate,
+  onChange,
+}: {
+  checked: boolean
+  indeterminate: boolean
+  onChange: () => void
+}): React.ReactElement {
+  const ref = useRef<HTMLInputElement>(null)
+  React.useEffect(() => {
+    if (ref.current) ref.current.indeterminate = indeterminate
+  }, [indeterminate])
+  return (
+    <input
+      ref={ref}
+      type="checkbox"
+      className={styles.checkbox}
+      checked={checked}
+      onChange={onChange}
+      title={checked ? 'Desmarcar todos' : 'Marcar todos'}
+      style={indeterminate ? { accentColor: '#2563eb' } : undefined}
+    />
+  )
+}
 
 interface Props {
   isOpen: boolean
@@ -47,23 +76,41 @@ export function StatementImportModal({
     cards[0]?.id ??
     ''
 
-  const [step, setStep] = useState<Step>(existingAttachment ? 'processing' : 'setup')
+  const hasPendingLines = (existingAttachment?.pendingLines?.length ?? 0) > 0
+  const [step, setStep] = useState<Step>(
+    existingAttachment ? (hasPendingLines ? 'reviewing' : 'processing') : 'setup',
+  )
   const [processSwitch, setProcessSwitch] = useState(true)
   const [selectedCardId, setSelectedCardId] = useState(resolvedDefaultCardId)
-  const [rows, setRows] = useState<StatementImportRow[]>([])
+  const [rows, setRows] = useState<StatementImportRow[]>(existingAttachment?.pendingLines ?? [])
   const [error, setError] = useState<string | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
   const [currentAttachmentId, setCurrentAttachmentId] = useState<string | null>(
     existingAttachment?.id ?? null,
   )
+  const [sourceUrl, setSourceUrl] = useState<string | null>(existingAttachment?.url ?? null)
 
   const handleClose = useCallback(() => {
-    setStep(existingAttachment ? 'processing' : 'setup')
+    setStep('setup')
     setRows([])
     setError(null)
-    setCurrentAttachmentId(existingAttachment?.id ?? null)
+    setCurrentAttachmentId(null)
     onClose()
-  }, [onClose, existingAttachment])
+  }, [onClose])
+
+  // Persist the extracted lines on the attachment so they survive a close and
+  // don't need to be re-processed (re-sent to the AI) next time.
+  const persistPendingLines = useCallback(
+    async (attachmentId: string, detectedRows: StatementImportRow[]) => {
+      try {
+        await reportAttachmentsService.savePendingLines(attachmentId, detectedRows)
+        void qc.invalidateQueries({ queryKey: ['reportAttachments', yearMonth] })
+      } catch {
+        /* non-blocking: user can still review/save in this session */
+      }
+    },
+    [qc, yearMonth],
+  )
 
   const processFile = useCallback(
     async (file: File, attachmentId: string) => {
@@ -74,30 +121,47 @@ export function StatementImportModal({
         const detectedRows = detectDuplicates(lines, existingExpenses, selectedCardId, categories)
         setRows(detectedRows)
         setCurrentAttachmentId(attachmentId)
+        await persistPendingLines(attachmentId, detectedRows)
         setStep('reviewing')
       } catch (err) {
         setError((err as Error).message ?? 'Error al procesar el PDF')
         setStep('setup')
       }
     },
-    [existingExpenses, selectedCardId, categories],
+    [existingExpenses, selectedCardId, categories, persistPendingLines],
+  )
+
+  const extractFromUrl = useCallback(
+    async (url: string, attachmentId: string | null, hadRows: boolean) => {
+      setStep('processing')
+      setError(null)
+      try {
+        const lines = await parsePdfFromUrl(url)
+        const detectedRows = detectDuplicates(lines, existingExpenses, selectedCardId, categories)
+        setRows(detectedRows)
+        if (attachmentId) {
+          setCurrentAttachmentId(attachmentId)
+          await persistPendingLines(attachmentId, detectedRows)
+        }
+        setStep('reviewing')
+      } catch (err) {
+        setError((err as Error).message ?? 'Error al procesar el PDF')
+        setStep(hadRows ? 'reviewing' : 'setup')
+      }
+    },
+    [existingExpenses, selectedCardId, categories, persistPendingLines],
   )
 
   const processExistingAttachment = useCallback(async () => {
     if (!existingAttachment) return
-    setStep('processing')
-    setError(null)
-    try {
-      const lines = await parsePdfFromUrl(existingAttachment.url)
-      const detectedRows = detectDuplicates(lines, existingExpenses, selectedCardId, categories)
-      setRows(detectedRows)
-      setCurrentAttachmentId(existingAttachment.id)
-      setStep('reviewing')
-    } catch (err) {
-      setError((err as Error).message ?? 'Error al procesar el PDF')
-      setStep(existingAttachment ? 'reviewing' : 'setup')
-    }
-  }, [existingAttachment, existingExpenses, selectedCardId, categories])
+    await extractFromUrl(existingAttachment.url, existingAttachment.id, true)
+  }, [existingAttachment, extractFromUrl])
+
+  // Re-run the AI extraction on the same document (discards current edits).
+  const reprocess = useCallback(async () => {
+    if (!sourceUrl) return
+    await extractFromUrl(sourceUrl, currentAttachmentId, true)
+  }, [sourceUrl, currentAttachmentId, extractFromUrl])
 
   // Sync default card once userPrefs loads (only if user hasn't manually changed it)
   React.useEffect(() => {
@@ -106,10 +170,24 @@ export function StatementImportModal({
     }
   }, [resolvedDefaultCardId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Start processing existing attachment on open
+  // (Re)initialize whenever the modal opens.
   React.useEffect(() => {
-    if (isOpen && existingAttachment && step === 'processing' && rows.length === 0 && !error) {
+    if (!isOpen) return
+    setError(null)
+    setCurrentAttachmentId(existingAttachment?.id ?? null)
+    setSourceUrl(existingAttachment?.url ?? null)
+    const pending = existingAttachment?.pendingLines ?? []
+    if (existingAttachment && pending.length > 0) {
+      // Lines already extracted & saved → jump straight to review (no re-processing).
+      setRows(pending)
+      setStep('reviewing')
+    } else if (existingAttachment) {
+      setRows([])
+      setStep('processing')
       void processExistingAttachment()
+    } else {
+      setRows([])
+      setStep('setup')
     }
   }, [isOpen]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -134,6 +212,7 @@ export function StatementImportModal({
       }
 
       void qc.invalidateQueries({ queryKey: ['reportAttachments', yearMonth] })
+      setSourceUrl(attachment.url)
 
       if (!processSwitch) {
         handleClose()
@@ -146,7 +225,7 @@ export function StatementImportModal({
   )
 
   const handleSave = useCallback(async () => {
-    const toImport = rows.filter((r) => r.action === StatementImportAction.Import)
+    const toImport = rows.filter((r) => r.action === StatementImportAction.Import && !r.imported)
     if (toImport.length === 0) {
       handleClose()
       return
@@ -168,10 +247,32 @@ export function StatementImportModal({
 
       await expensesService.createBatch(payloads)
 
+      // Flag the just-imported lines but KEEP the full extracted set stored, so the
+      // document can be reopened later showing what was imported vs still pending.
+      const importedIds = new Set(toImport.map((r) => r.rowId))
+      const updatedRows = rows.map((r) =>
+        importedIds.has(r.rowId)
+          ? { ...r, imported: true, action: StatementImportAction.Skip }
+          : r,
+      )
+      const stillPending = updatedRows.filter((r) => !r.imported)
+
       if (currentAttachmentId) {
-        await reportAttachmentsService.markProcessed(currentAttachmentId, {
-          importedExpenseCount: toImport.length,
-        })
+        let updated = await reportAttachmentsService.savePendingLines(currentAttachmentId, updatedRows)
+        // Only mark the document fully processed once nothing is left to import.
+        if (stillPending.length === 0) {
+          const alreadyImported = existingExpenses.filter(
+            (e) => e.statementAttachmentId === currentAttachmentId,
+          ).length
+          updated = await reportAttachmentsService.markProcessed(currentAttachmentId, {
+            importedExpenseCount: alreadyImported + toImport.length,
+          })
+        }
+        // Update the feed cache directly with the persisted attachment so the
+        // "Revisar (N)" count reflects the new imported/pending state immediately.
+        qc.setQueryData<ReportAttachment[]>(['reportAttachments', yearMonth], (prev) =>
+          prev ? prev.map((a) => (a.id === currentAttachmentId ? updated : a)) : prev,
+        )
         void qc.invalidateQueries({ queryKey: ['reportAttachments', yearMonth] })
       }
 
@@ -181,11 +282,34 @@ export function StatementImportModal({
       setError((err as Error).message ?? 'Error al guardar los gastos')
       setStep('reviewing')
     }
-  }, [rows, selectedCardId, currentAttachmentId, yearMonth, qc, handleClose])
+  }, [rows, selectedCardId, currentAttachmentId, existingExpenses, yearMonth, qc, handleClose])
 
   const updateRow = useCallback((rowId: string, patch: Partial<StatementImportRow>) => {
     setRows((prev) => prev.map((r) => (r.rowId === rowId ? { ...r, ...patch } : r)))
   }, [])
+
+  const toggleAll = useCallback(() => {
+    setRows((prev) => {
+      const selectable = prev.filter((r) => !r.imported)
+      const allImport =
+        selectable.length > 0 && selectable.every((r) => r.action === StatementImportAction.Import)
+      const next = allImport ? StatementImportAction.Skip : StatementImportAction.Import
+      return prev.map((r) => (r.imported ? r : { ...r, action: next }))
+    })
+  }, [])
+
+  // Remove a line entirely (e.g. subscriptions already tracked elsewhere).
+  // Persist so the removal survives closing/reopening without re-processing.
+  const removeRow = useCallback(
+    (rowId: string) => {
+      setRows((prev) => {
+        const next = prev.filter((r) => r.rowId !== rowId)
+        if (currentAttachmentId) void persistPendingLines(currentAttachmentId, next)
+        return next
+      })
+    },
+    [currentAttachmentId, persistPendingLines],
+  )
 
   const applySuggestion = useCallback(
     async (rowId: string, suggestedName: string) => {
@@ -216,7 +340,18 @@ export function StatementImportModal({
 
   if (!isOpen) return null
 
-  const importCount = rows.filter((r) => r.action === StatementImportAction.Import).length
+  const selectableRows = rows.filter((r) => !r.imported)
+  const importedCount = rows.length - selectableRows.length
+  const importCount = selectableRows.filter((r) => r.action === StatementImportAction.Import).length
+  const allSelected = selectableRows.length > 0 && importCount === selectableRows.length
+  const someSelected = importCount > 0 && importCount < selectableRows.length
+
+  // Totals per currency straight from the document processing (all extracted lines).
+  const documentTotals = rows.reduce<Record<string, number>>((acc, r) => {
+    acc[r.currency] = (acc[r.currency] ?? 0) + (Number.isFinite(r.amount) ? r.amount : 0)
+    return acc
+  }, {})
+  const documentCurrencies = Object.keys(documentTotals) as Currency[]
 
   return (
     <div className={styles.overlay} onClick={(e) => e.target === e.currentTarget && handleClose()}>
@@ -327,32 +462,63 @@ export function StatementImportModal({
           {step === 'reviewing' && (
             <>
               <div className={styles.reviewHeader}>
-                <span className={styles.reviewTitle}>Revisá y editá los gastos antes de guardar</span>
-                <span className={styles.reviewCount}>{importCount} de {rows.length} a importar</span>
+                <div className={styles.reviewTitleRow}>
+                  <span className={styles.reviewTitle}>Revisá y editá los gastos antes de guardar</span>
+                  <button
+                    type="button"
+                    className={styles.reprocessBtn}
+                    onClick={() => void reprocess()}
+                    disabled={!sourceUrl}
+                    title="Volver a extraer las líneas con IA (descarta los cambios actuales)"
+                  >
+                    🔄 Reprocesar
+                  </button>
+                </div>
+                <span className={styles.reviewCount}>
+                  {importCount} de {selectableRows.length} a importar
+                  {importedCount > 0 ? ` · ${importedCount} ya importado${importedCount !== 1 ? 's' : ''}` : ''}
+                </span>
               </div>
               <div className={styles.tableWrapper}>
                 <table className={styles.table}>
                   <thead>
                     <tr>
-                      <th>✓</th>
+                      <th>
+                        <SelectAllCheckbox
+                          checked={allSelected}
+                          indeterminate={someSelected}
+                          onChange={toggleAll}
+                        />
+                      </th>
                       <th>Fecha</th>
                       <th>Descripción</th>
-                      <th>Monto</th>
                       <th>Moneda</th>
+                      <th>Monto</th>
                       <th>Categoría</th>
                       <th>Local</th>
-                      <th>Tarjeta</th>
+                      <th></th>
                     </tr>
                   </thead>
                   <tbody>
                     {rows.map((row) => {
                       const isSkipped = row.action === StatementImportAction.Skip
                       return (
-                        <tr key={row.rowId} className={isSkipped ? styles.rowSkipped : undefined}>
+                        <tr
+                          key={row.rowId}
+                          className={
+                            row.imported
+                              ? styles.rowImported
+                              : isSkipped
+                                ? styles.rowSkipped
+                                : undefined
+                          }
+                        >
                           <td>
                             <input
                               type="checkbox"
-                              checked={!isSkipped}
+                              className={styles.checkbox}
+                              checked={!row.imported && !isSkipped}
+                              disabled={row.imported}
                               onChange={(e) =>
                                 updateRow(row.rowId, {
                                   action: e.target.checked
@@ -381,24 +547,17 @@ export function StatementImportModal({
                                 title={row.description}
                                 onChange={(e) => updateRow(row.rowId, { description: e.target.value })}
                               />
-                              {row.matchedExpenseId && (
+                              {row.imported && (
+                                <div className={styles.importedBadge}>
+                                  ✓ Ya importado
+                                </div>
+                              )}
+                              {row.matchedExpenseId && !row.imported && (
                                 <div className={styles.dupBadge}>
                                   ⚠️ Posible duplicado
                                 </div>
                               )}
                             </div>
-                          </td>
-                          <td className={styles.amountCell}>
-                            <input
-                              type="number"
-                              className={styles.tableInput}
-                              value={row.amount}
-                              min={0}
-                              style={{ width: 80 }}
-                              onChange={(e) =>
-                                updateRow(row.rowId, { amount: parseFloat(e.target.value) || 0 })
-                              }
-                            />
                           </td>
                           <td>
                             <select
@@ -413,20 +572,30 @@ export function StatementImportModal({
                               <option value={Currency.USD}>USD</option>
                             </select>
                           </td>
+                          <td className={styles.amountCell}>
+                            <input
+                              type="number"
+                              className={styles.tableInput}
+                              value={row.amount}
+                              min={0}
+                              style={{ width: 80 }}
+                              onChange={(e) =>
+                                updateRow(row.rowId, { amount: parseFloat(e.target.value) || 0 })
+                              }
+                            />
+                          </td>
                           <td>
-                            <div className={styles.stackCell}>
-                              <select
-                                className={styles.tableSelect}
+                            <div className={styles.stackCell} style={{ minWidth: 190 }}>
+                              <ControlledSelectInput
                                 value={row.categoryId ?? ''}
-                                onChange={(e) =>
-                                  updateRow(row.rowId, { categoryId: e.target.value || undefined })
-                                }
-                              >
-                                <option value="">Sin categoría</option>
-                                {categories.map((c) => (
-                                  <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-                                ))}
-                              </select>
+                                onChange={(v) => updateRow(row.rowId, { categoryId: v || undefined })}
+                                options={categories.map((c) => ({
+                                  value: c.id,
+                                  label: `${c.icon} ${c.name}`,
+                                }))}
+                                placeholder="Sin categoría"
+                                icon={row.categoryId ? undefined : '🏷️'}
+                              />
                               {row.suggestedCategoryName && !row.categoryId && (
                                 <button
                                   className={styles.catSuggestion}
@@ -440,32 +609,29 @@ export function StatementImportModal({
                             </div>
                           </td>
                           <td>
-                            <select
-                              className={styles.tableSelect}
-                              value={row.placeId ?? ''}
-                              onChange={(e) =>
-                                updateRow(row.rowId, { placeId: e.target.value || undefined })
-                              }
-                            >
-                              <option value="">Sin local</option>
-                              {places.map((p) => (
-                                <option key={p.id} value={p.id}>{p.icon ?? '📍'} {p.name}</option>
-                              ))}
-                            </select>
+                            <div style={{ minWidth: 190 }}>
+                              <ControlledSelectInput
+                                value={row.placeId ?? ''}
+                                onChange={(v) => updateRow(row.rowId, { placeId: v || undefined })}
+                                options={places.map((p) => ({
+                                  value: p.id,
+                                  label: p.icon ? `${p.icon} ${p.name}` : p.name,
+                                }))}
+                                placeholder="Sin local"
+                                icon="📍"
+                              />
+                            </div>
                           </td>
                           <td>
-                            <select
-                              className={styles.tableSelect}
-                              value={row.cardId ?? ''}
-                              onChange={(e) =>
-                                updateRow(row.rowId, { cardId: e.target.value || undefined })
-                              }
+                            <button
+                              type="button"
+                              className={styles.rowDelete}
+                              onClick={() => removeRow(row.rowId)}
+                              title="Eliminar línea"
+                              aria-label="Eliminar línea"
                             >
-                              <option value="">Sin tarjeta</option>
-                              {cards.map((c) => (
-                                <option key={c.id} value={c.id}>{cardLabel(c)}</option>
-                              ))}
-                            </select>
+                              🗑️
+                            </button>
                           </td>
                         </tr>
                       )
@@ -488,20 +654,38 @@ export function StatementImportModal({
         {/* Footer */}
         {(step === 'reviewing' || step === 'saving') && (
           <div className={styles.footer}>
-            <button className={styles.btnCancel} onClick={handleClose} disabled={step === 'saving'}>
-              Cancelar
-            </button>
-            <button
-              className={styles.btnSave}
-              onClick={() => void handleSave()}
-              disabled={step === 'saving' || importCount === 0}
-            >
-              {step === 'saving'
-                ? 'Guardando…'
-                : importCount === 0
-                  ? 'Sin gastos seleccionados'
-                  : `Guardar ${importCount} gasto${importCount !== 1 ? 's' : ''}`}
-            </button>
+            {/* Invoice-style document total, fixed at the bottom */}
+            <div className={styles.invoiceTotal}>
+              <span className={styles.invoiceTotalLabel}>Total del documento</span>
+              <div className={styles.invoiceTotalAmounts}>
+                {documentCurrencies.length === 0 ? (
+                  <span className={styles.invoiceTotalAmount}>—</span>
+                ) : (
+                  documentCurrencies.map((cur) => (
+                    <span key={cur} className={styles.invoiceTotalAmount}>
+                      {formatAmount(documentTotals[cur], cur)}
+                    </span>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className={styles.footerActions}>
+              <button className={styles.btnCancel} onClick={handleClose} disabled={step === 'saving'}>
+                Cancelar
+              </button>
+              <button
+                className={styles.btnSave}
+                onClick={() => void handleSave()}
+                disabled={step === 'saving' || importCount === 0}
+              >
+                {step === 'saving'
+                  ? 'Guardando…'
+                  : importCount === 0
+                    ? 'Sin gastos seleccionados'
+                    : `Guardar ${importCount} gasto${importCount !== 1 ? 's' : ''}`}
+              </button>
+            </div>
           </div>
         )}
       </div>

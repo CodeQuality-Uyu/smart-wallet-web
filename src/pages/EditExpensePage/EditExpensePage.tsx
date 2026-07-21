@@ -17,7 +17,7 @@ export default function EditExpensePage(): React.ReactElement {
   const { mutateAsync: updateExpense } = useUpdateExpense(id ?? '')
 
   async function handleSubmit(values: ExpenseFormValues): Promise<void> {
-    await updateExpense(values)
+    await updateExpense({ ...values, placeId: values.placeId || undefined })
     if (values.receiptFile && id) {
       await expensesService.uploadReceipt(id, values.receiptFile)
     }

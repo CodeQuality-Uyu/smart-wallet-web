@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx vite:*)"
+      "Bash(npx vite:*)",
+      "Bash(cat firebase.json)",
+      "Bash(ls -la firestore.rules storage.rules)",
+      "PowerShell(npx tsc --noEmit -p tsconfig.json 2>&1)"
     ]
   }
 }

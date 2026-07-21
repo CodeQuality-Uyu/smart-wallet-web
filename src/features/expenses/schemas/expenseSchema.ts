@@ -25,7 +25,7 @@ export const expenseSchema = Yup.object({
     .min(1, 'Seleccioná al menos una categoría')
     .required('Las categorías son requeridas'),
 
-  placeId: Yup.string().required('El lugar es requerido'),
+  placeId: Yup.string().optional(),
 
   date: Yup.string()
     .matches(/^\d{4}-\d{2}-\d{2}$/, 'Formato de fecha inválido (AAAA-MM-DD)')

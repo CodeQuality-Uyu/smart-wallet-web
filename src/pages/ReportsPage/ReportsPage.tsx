@@ -4,12 +4,14 @@ import { useMetrics } from '@/hooks/useMetrics'
 import { useBudget } from '@/hooks/useBudget'
 import { useCategories } from '@/features/categories/hooks/useCategories'
 import { useProductCategories } from '@/features/products/hooks/useProductCategories'
-import { useExpenses } from '@/features/expenses/hooks/useExpenses'
+import { useExpenses, useDeleteExpense } from '@/features/expenses/hooks/useExpenses'
 import { usePlaces } from '@/features/places/hooks/usePlaces'
 import { useCards } from '@/features/cards/hooks/useCards'
+import { cardLabel } from '@/features/cards/cardUtils'
 import { useReportAttachments, useRemoveReportAttachment } from '@/hooks/useReportAttachments'
 import { useMonthClosings } from '@/hooks/useMonthClosings'
 import { StatementImportModal } from '@/features/statements/components/StatementImportModal'
+import { DeleteAttachmentModal } from '@/features/statements/components/DeleteAttachmentModal'
 import { MonthAnalysisSection } from '@/features/analysis/components/MonthAnalysisSection'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { formatAmount } from '@/utils/formatCurrency'
@@ -35,10 +37,36 @@ export default function ReportsPage(): React.ReactElement {
   const { data: closings = [] } = useMonthClosings()
   const isClosed = closings.some((c) => c.id === selectedYearMonth)
   const removeAttachment = useRemoveReportAttachment(selectedYearMonth)
+  const deleteExpense = useDeleteExpense()
   const { data: cards = [] } = useCards()
 
   const [modalOpen, setModalOpen] = useState(false)
   const [processingAttachment, setProcessingAttachment] = useState<ReportAttachment | undefined>()
+  const [deletingAttachment, setDeletingAttachment] = useState<ReportAttachment | undefined>()
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  const linkedExpenses = useMemo(() => {
+    if (!deletingAttachment) return []
+    return (expensesData?.data ?? []).filter((e) => e.statementAttachmentId === deletingAttachment.id)
+  }, [deletingAttachment, expensesData])
+
+  async function handleConfirmDelete(deleteExpenses: boolean): Promise<void> {
+    if (!deletingAttachment) return
+    setIsDeleting(true)
+    try {
+      if (deleteExpenses) {
+        for (const exp of linkedExpenses) {
+          await deleteExpense.mutateAsync(exp.id)
+        }
+      }
+      await removeAttachment.mutateAsync(deletingAttachment.id)
+      setDeletingAttachment(undefined)
+    } catch {
+      /* keep modal open on error so the user can retry */
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   const sortedCategories = useMemo(() => {
     if (!metrics?.byCategory) return []
@@ -313,10 +341,33 @@ export default function ReportsPage(): React.ReactElement {
                     <span className={styles.attachmentMeta}>
                       {formatSize(att.size)} · {new Date(att.uploadedAt).toLocaleDateString('es-UY', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </span>
+                    {(() => {
+                      const card = att.cardId ? cards.find((c) => c.id === att.cardId) : undefined
+                      return card ? (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 600, background: 'var(--border-subtle)', color: 'var(--muted-desktop)', borderRadius: 99, padding: '2px 8px' }}>
+                          💳 {cardLabel(card)}
+                        </span>
+                      ) : null
+                    })()}
                     {att.processed ? (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 700, background: 'var(--g50)', color: 'var(--g600)', borderRadius: 99, padding: '2px 8px' }}>
-                        ✓ Procesado{att.importedExpenseCount !== undefined ? ` (${att.importedExpenseCount} gastos)` : ''}
-                      </span>
+                      <button
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 700, background: 'var(--g50)', color: 'var(--g600)', border: '1px solid var(--g200, #c8e6d4)', borderRadius: 99, padding: '2px 8px', cursor: 'pointer' }}
+                        onClick={() => { setProcessingAttachment(att); setModalOpen(true) }}
+                        title="Volver a abrir para revisar o reprocesar"
+                      >
+                        ✓ Procesado{(() => {
+                          const live = att.pendingLines?.filter((l) => l.imported).length ?? 0
+                          const count = live > 0 ? live : att.importedExpenseCount
+                          return count !== undefined ? ` (${count} gasto${count !== 1 ? 's' : ''})` : ''
+                        })()} · Abrir
+                      </button>
+                    ) : att.pendingLines && att.pendingLines.some((l) => !l.imported) ? (
+                      <button
+                        style={{ fontSize: 11, fontWeight: 700, color: 'var(--warning, #b45309)', background: 'var(--warning-bg, #fef3c7)', border: '1px solid var(--warning, #f59e0b)', borderRadius: 8, padding: '2px 8px', cursor: 'pointer' }}
+                        onClick={() => { setProcessingAttachment(att); setModalOpen(true) }}
+                      >
+                        Revisar ({att.pendingLines.filter((l) => !l.imported).length}) →
+                      </button>
                     ) : att.mimeType === 'application/pdf' ? (
                       <button
                         style={{ fontSize: 11, fontWeight: 600, color: 'var(--g600)', background: 'none', border: '1px solid var(--g300)', borderRadius: 8, padding: '2px 8px', cursor: 'pointer' }}
@@ -331,13 +382,10 @@ export default function ReportsPage(): React.ReactElement {
                 </div>
                 <button
                   className={styles.attachmentRemove}
-                  onClick={() => removeAttachment.mutate(att.id)}
-                  disabled={removeAttachment.isPending}
+                  onClick={() => setDeletingAttachment(att)}
                   title="Eliminar"
                 >
-                  {removeAttachment.isPending && removeAttachment.variables === att.id
-                    ? <LoadingSpinner size="sm" />
-                    : '✕'}
+                  ✕
                 </button>
               </div>
             ))}
@@ -361,6 +409,17 @@ export default function ReportsPage(): React.ReactElement {
         existingExpenses={expensesData?.data ?? []}
         existingAttachment={processingAttachment}
       />
+
+      {/* ── Delete confirmation modal ── */}
+      {deletingAttachment && (
+        <DeleteAttachmentModal
+          attachment={deletingAttachment}
+          linkedExpenseCount={linkedExpenses.length}
+          isDeleting={isDeleting}
+          onClose={() => { if (!isDeleting) setDeletingAttachment(undefined) }}
+          onConfirm={(deleteExpenses) => void handleConfirmDelete(deleteExpenses)}
+        />
+      )}
     </div>
   )
 }

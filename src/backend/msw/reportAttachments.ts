@@ -1,7 +1,7 @@
 // src/backend/msw/reportAttachments.ts
 
 import { httpClient } from '@/api/httpClient'
-import type { IReportAttachmentsBackend, ReportAttachment } from '../types'
+import type { IReportAttachmentsBackend, ReportAttachment, StatementImportRow } from '../types'
 
 export const mswReportAttachmentsBackend: IReportAttachmentsBackend = {
   async list(yearMonth: string): Promise<ReportAttachment[]> {
@@ -18,6 +18,11 @@ export const mswReportAttachmentsBackend: IReportAttachmentsBackend = {
     if (options?.cardId) form.append('cardId', options.cardId)
     const { data } = await httpClient.post<ReportAttachment>('/report-attachments', form)
     return data
+  },
+
+  async savePendingLines(id: string, lines: StatementImportRow[]): Promise<ReportAttachment> {
+    const { data: result } = await httpClient.patch<ReportAttachment>(`/report-attachments/${id}/pending-lines`, { lines })
+    return result
   },
 
   async markProcessed(id: string, data: { importedExpenseCount: number }): Promise<ReportAttachment> {
