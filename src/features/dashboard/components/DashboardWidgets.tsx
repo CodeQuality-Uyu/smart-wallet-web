@@ -119,17 +119,20 @@ function QueryWidgetCard({
   dragHandle?: React.ReactNode
 }): React.ReactElement {
   const cfg = widget.query
-  const { data: expensesPage, isLoading } = useExpenses({ period: cfg?.period })
+  // Traemos todos los gastos y el motor filtra por el rango del período (alineado a
+  // mes calendario). Así el fetch no corta el mes del borde (ej. principios de abril).
+  const { data: expensesPage, isLoading } = useExpenses()
 
   if (!cfg) return <LoadingCard />
   if (cfg.source === 'expenses' && isLoading) return <LoadingCard />
 
   const now = new Date()
+  const range = periodRange(cfg.period, now)
   const records =
     cfg.source === 'recurring'
-      ? recurringPaymentsToRecords(recurring, cfg.filters.recurringId, periodRange(cfg.period, now))
+      ? recurringPaymentsToRecords(recurring, cfg.filters.recurringId, range)
       : (expensesPage?.data ?? [])
-  const result = runQuery(cfg, records, lookups, now)
+  const result = runQuery(cfg, records, lookups, now, range)
   return (
     <QueryWidgetView
       title={widget.title}

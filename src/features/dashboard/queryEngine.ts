@@ -216,11 +216,21 @@ function fillTimeSeries(
   return out
 }
 
-export function runQuery(cfg: QueryConfig, records: QueryRecord[], lk: QueryLookups, now?: Date): QueryResult {
+export function runQuery(
+  cfg: QueryConfig,
+  records: QueryRecord[],
+  lk: QueryLookups,
+  now?: Date,
+  range?: { start: string; end: string },
+): QueryResult {
   const catFilter = cfg.filters.categoryIds?.length
     ? expandCategoryFilter(cfg.filters.categoryIds, lk.categories)
     : null
-  const filtered = records.filter((e) => matches(e, cfg, catFilter))
+  // El rango scopea por fecha (los datos vienen sin filtrar por período). Alinea a
+  // mes calendario, así los gráficos mensuales incluyen el mes completo del borde.
+  const filtered = records.filter(
+    (e) => matches(e, cfg, catFilter) && (!range || (e.date >= range.start && e.date <= range.end)),
+  )
   const total = aggregate(cfg.aggregate, filtered.map((e) => e.amount))
 
   let groups: QueryGroup[] = []
@@ -245,10 +255,13 @@ export function runQuery(cfg: QueryConfig, records: QueryRecord[], lk: QueryLook
     }))
     if (isTime) {
       groups.sort((a, b) => a.key.localeCompare(b.key))
-      // Zero-fill hasta `now` para incluir el período actual y los huecos.
-      if (now && minDate) {
+      // Zero-fill continuo: desde el inicio del período (si hay rango) o el primer
+      // dato, hasta el fin del rango / hoy. Así el eje incluye meses vacíos y el actual.
+      const fillStart = range ? parseDate(range.start) : minDate
+      const fillEnd = range ? parseDate(range.end) : now
+      if (fillStart && fillEnd) {
         const byKey = new Map(groups.map((g) => [g.key, g]))
-        groups = fillTimeSeries(byKey, cfg.groupBy, minDate, now)
+        groups = fillTimeSeries(byKey, cfg.groupBy, fillStart, fillEnd)
       }
     } else {
       groups.sort((a, b) => b.value - a.value)

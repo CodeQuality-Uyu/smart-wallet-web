@@ -2,12 +2,18 @@
 
 import React, { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useExpenses } from '@/features/expenses/hooks/useExpenses'
+import { useExpenses, useUpdateExpense, useDeleteExpense } from '@/features/expenses/hooks/useExpenses'
 import { ReportOriginBadge } from '@/features/expenses/components/ReportOriginBadge'
+import { ExpenseForm } from '@/features/expenses/components/ExpenseForm'
+import type { ExpenseFormValues } from '@/features/expenses/schemas/expenseSchema'
+import { expensesService } from '@/services/expensesService'
 import { useCategories } from '@/features/categories/hooks/useCategories'
 import { useCards } from '@/features/cards/hooks/useCards'
 import { usePlaces } from '@/features/places/hooks/usePlaces'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { Modal } from '@/components/ui/Modal'
+import { Button } from '@/components/ui/Button'
+import { KebabMenu, type KebabMenuItem } from '@/components/shared/KebabMenu'
 import { PeriodControl, PeriodDescription } from '@/components/ui/PeriodControl'
 import {
   groupExpensesByDate,
@@ -19,6 +25,7 @@ import { formatCurrency, formatAmountNoSymbol } from '@/utils/formatCurrency'
 import { Currency, PeriodFilter, GroupBy, ReceiptStatus } from '@/types/enums'
 import { CURRENCY_OPTIONS } from '@/constants/currencyOptions'
 import { usePendingReceipts, useDeletePendingReceipt } from '@/features/pendingReceipts/hooks/usePendingReceipts'
+import type { Expense } from '@/types/models'
 import styles from './ExpensesPage.module.css'
 
 const MONTH_NAMES = [
@@ -43,6 +50,91 @@ const GROUP_OPTIONS = [
   { value: GroupBy.Category, label: 'Categoría' },
 ]
 
+const PAGE_SIZE = 10
+
+// Modal de edición: usa ExpenseForm reutilizando la lógica de EditExpensePage.
+// Es su propio componente para poder llamar useUpdateExpense(expense.id) por-id.
+function EditExpenseModal({
+  expense,
+  onClose,
+}: {
+  expense: Expense
+  onClose: () => void
+}): React.ReactElement {
+  const { mutateAsync: updateExpense } = useUpdateExpense(expense.id)
+
+  async function handleSubmit(values: ExpenseFormValues): Promise<void> {
+    await updateExpense({ ...values, placeId: values.placeId || undefined })
+    if (values.receiptFile) {
+      await expensesService.uploadReceipt(expense.id, values.receiptFile)
+    }
+    onClose()
+  }
+
+  const initialValues: Partial<ExpenseFormValues> = {
+    description: expense.description,
+    amount: expense.amount,
+    currency: expense.currency,
+    cardId: expense.cardId,
+    categoryIds: expense.categoryIds,
+    placeId: expense.placeId ?? '',
+    date: expense.date,
+  }
+
+  return (
+    <Modal title="Editar gasto" onClose={onClose} width={620}>
+      <div className={styles.editModalBody}>
+        <ExpenseForm
+          initialValues={initialValues}
+          onSubmit={handleSubmit}
+          submitLabel="Guardar cambios"
+          variant="desktop"
+          onCancel={onClose}
+        />
+      </div>
+    </Modal>
+  )
+}
+
+// Modal de confirmación de eliminación.
+function DeleteExpenseModal({
+  expense,
+  onClose,
+}: {
+  expense: Expense
+  onClose: () => void
+}): React.ReactElement {
+  const { mutateAsync: deleteExpense, isPending } = useDeleteExpense()
+
+  async function handleDelete(): Promise<void> {
+    await deleteExpense(expense.id)
+    onClose()
+  }
+
+  return (
+    <Modal title="Eliminar gasto" onClose={onClose} width={420}>
+      <p className={styles.deleteText}>
+        ¿Seguro que querés eliminar <strong>{expense.description}</strong>? Esta acción no se puede
+        deshacer.
+      </p>
+      <div className={styles.deleteActions}>
+        <Button type="button" variant="ghost" size="sm" onClick={onClose} disabled={isPending}>
+          Cancelar
+        </Button>
+        <Button
+          type="button"
+          variant="danger"
+          size="sm"
+          loading={isPending}
+          onClick={() => void handleDelete()}
+        >
+          Eliminar
+        </Button>
+      </div>
+    </Modal>
+  )
+}
+
 export default function ExpensesPage(): React.ReactElement {
   const navigate = useNavigate()
   const [period, setPeriod] = useState(PeriodFilter.Month)
@@ -52,6 +144,9 @@ export default function ExpensesPage(): React.ReactElement {
   const [filterPlaceId] = useState('')
   const [filterCategoryIds, setFilterCategoryIds] = useState<string[]>([])
   const [groupBy, setGroupBy] = useState<GroupBy>(GroupBy.Day)
+  const [tablePage, setTablePage] = useState(0)
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
+  const [deletingExpense, setDeletingExpense] = useState<Expense | null>(null)
 
   const { data: page, isLoading } = useExpenses({ period })
   const { data: categories = [] } = useCategories()
@@ -94,6 +189,30 @@ export default function ExpensesPage(): React.ReactElement {
         return groupExpensesByDate(filtered)
     }
   }, [filtered, groupBy, places, categories])
+
+  // Volver a la primera página al cambiar filtros/agrupación
+  React.useEffect(() => {
+    setTablePage(0)
+  }, [search, period, filterCurrency, filterCategoryIds, groupBy])
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const currentPage = Math.min(tablePage, totalPages - 1)
+  const pagedFiltered = useMemo(
+    () => filtered.slice(currentPage * PAGE_SIZE, currentPage * PAGE_SIZE + PAGE_SIZE),
+    [filtered, currentPage],
+  )
+  const pagedGroups = useMemo(() => {
+    switch (groupBy) {
+      case GroupBy.Week:
+        return groupExpensesByWeek(pagedFiltered)
+      case GroupBy.Place:
+        return groupExpensesByPlace(pagedFiltered, places)
+      case GroupBy.Category:
+        return groupExpensesByCategory(pagedFiltered, categories)
+      default:
+        return groupExpensesByDate(pagedFiltered)
+    }
+  }, [pagedFiltered, groupBy, places, categories])
 
   const totalUsd = filtered
     .filter((e) => e.currency === Currency.USD)
@@ -273,17 +392,18 @@ export default function ExpensesPage(): React.ReactElement {
                 <th>Medio de pago</th>
                 <th>Fecha</th>
                 <th className={styles.desktopThRight}>Monto</th>
+                <th className={styles.desktopThActions}>Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {groups.length === 0 ? (
+              {pagedGroups.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className={styles.desktopEmpty}>
+                  <td colSpan={6} className={styles.desktopEmpty}>
                     No hay gastos en este período.
                   </td>
                 </tr>
               ) : (
-                groups.map((group) => {
+                pagedGroups.map((group) => {
                   const gUsd = group.expenses
                     .filter((e) => e.currency === Currency.USD)
                     .reduce((s, e) => s + e.amount, 0)
@@ -296,7 +416,7 @@ export default function ExpensesPage(): React.ReactElement {
                         <td colSpan={4} className={styles.desktopGroupLabel}>
                           {group.label}
                         </td>
-                        <td className={styles.desktopGroupTotal}>
+                        <td colSpan={2} className={styles.desktopGroupTotal}>
                           {gUsd > 0 && (
                             <span className={styles.groupTotalItem}>
                               <span className={styles.groupTotalAmt}>
@@ -326,6 +446,15 @@ export default function ExpensesPage(): React.ReactElement {
                           'es-UY',
                           { day: 'numeric', month: 'short' }
                         )
+                        const menuItems: KebabMenuItem[] = [
+                          { label: 'Editar', icon: '✏️', onClick: () => setEditingExpense(expense) },
+                          {
+                            label: 'Eliminar',
+                            icon: '🗑️',
+                            danger: true,
+                            onClick: () => setDeletingExpense(expense),
+                          },
+                        ]
                         return (
                           <tr
                             key={expense.id}
@@ -362,6 +491,12 @@ export default function ExpensesPage(): React.ReactElement {
                               </p>
                               <p className={styles.desktopAmtCurr}>{expense.currency}</p>
                             </td>
+                            <td
+                              className={styles.desktopTdActions}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <KebabMenu items={menuItems} ariaLabel="Acciones del gasto" />
+                            </td>
                           </tr>
                         )
                       })}
@@ -371,7 +506,41 @@ export default function ExpensesPage(): React.ReactElement {
               )}
             </tbody>
           </table>
+          {totalPages > 1 && (
+            <div className={styles.desktopPagination}>
+              <button
+                className={styles.desktopPageBtn}
+                disabled={currentPage === 0}
+                onClick={() => setTablePage((p) => Math.max(0, p - 1))}
+              >
+                ← Anterior
+              </button>
+              <span className={styles.desktopPageInfo}>
+                {currentPage + 1} / {totalPages}
+              </span>
+              <button
+                className={styles.desktopPageBtn}
+                disabled={currentPage >= totalPages - 1}
+                onClick={() => setTablePage((p) => Math.min(totalPages - 1, p + 1))}
+              >
+                Siguiente →
+              </button>
+            </div>
+          )}
         </div>
+
+        {editingExpense && (
+          <EditExpenseModal
+            expense={editingExpense}
+            onClose={() => setEditingExpense(null)}
+          />
+        )}
+        {deletingExpense && (
+          <DeleteExpenseModal
+            expense={deletingExpense}
+            onClose={() => setDeletingExpense(null)}
+          />
+        )}
       </div>
     )
 }

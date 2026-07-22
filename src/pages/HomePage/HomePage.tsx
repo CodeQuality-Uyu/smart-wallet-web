@@ -1,23 +1,26 @@
 // src/pages/HomePage.tsx
 
-import React from 'react'
+import React, { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Formik, Form } from 'formik'
 import { useMetrics } from '@/hooks/useMetrics'
 import { useBudget } from '@/hooks/useBudget'
-import { useExpenses } from '@/features/expenses/hooks/useExpenses'
-import { ReportOriginBadge } from '@/features/expenses/components/ReportOriginBadge'
-import { useCategories } from '@/features/categories/hooks/useCategories'
 import {
   useRecurringList,
   useConfirmRecurringPayment,
   useSkipRecurringMonth,
 } from '@/features/recurring/hooks/useRecurring'
-import { useCards } from '@/features/cards/hooks/useCards'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { KebabMenu, type KebabMenuItem } from '@/components/shared/KebabMenu'
+import { Modal } from '@/components/ui/Modal'
+import { FormField, TextInput } from '@/components/ui/FormField'
+import { Button } from '@/components/ui/Button'
+import {
+  confirmPaymentSchema,
+  type ConfirmPaymentFormValues,
+} from '@/features/recurring/schemas/confirmPaymentSchema'
 import { DashboardWidgets } from '@/features/dashboard/components/DashboardWidgets'
-import { groupExpensesByDate } from '@/utils/groupByDate'
 import { formatCurrency } from '@/utils/formatCurrency'
 import {
   PeriodFilter,
@@ -47,10 +50,13 @@ function PendingPaymentRow({
 }): React.ReactElement {
   const { mutateAsync: confirmPayment, isPending: paying } = useConfirmRecurringPayment(r.id)
   const { mutateAsync: skipMonth, isPending: skipping } = useSkipRecurringMonth(r.id)
+  const [showPayModal, setShowPayModal] = useState(false)
+  const receiptFileInputRef = useRef<HTMLInputElement>(null)
   const busy = paying || skipping
 
-  async function handlePay(): Promise<void> {
-    await confirmPayment({ amount: r.amount })
+  async function handleConfirmPay(values: ConfirmPaymentFormValues): Promise<void> {
+    await confirmPayment({ amount: values.amount, receiptFile: values.receiptFile ?? undefined })
+    setShowPayModal(false)
   }
 
   async function handleSkip(): Promise<void> {
@@ -59,7 +65,7 @@ function PendingPaymentRow({
   }
 
   const menuItems: KebabMenuItem[] = [
-    { label: 'Pagar', icon: '💳', onClick: () => void handlePay() },
+    { label: 'Pagar', icon: '💳', onClick: () => setShowPayModal(true) },
     { label: 'Omitir', icon: '⊘', onClick: () => void handleSkip() },
   ]
 
@@ -82,6 +88,68 @@ function PendingPaymentRow({
       <div className={styles.pendingMenuWrap}>
         <KebabMenu items={menuItems} ariaLabel="Acciones del pago" loading={busy} />
       </div>
+
+      {showPayModal && (
+        <Modal title={`Pagar · ${r.name}`} onClose={() => setShowPayModal(false)} width={440}>
+          <Formik<ConfirmPaymentFormValues>
+            initialValues={{ amount: r.amount, receiptFile: undefined }}
+            validationSchema={confirmPaymentSchema}
+            onSubmit={handleConfirmPay}
+          >
+            {({ isSubmitting, setFieldValue, values, errors, touched }) => (
+              <Form>
+                <FormField name="amount" label="Monto de esta factura">
+                  <TextInput name="amount" type="number" inputMode="decimal" icon="$" />
+                </FormField>
+
+                <input
+                  ref={receiptFileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] ?? null
+                    void setFieldValue('receiptFile', file)
+                  }}
+                />
+                <div
+                  className={styles.payUploadArea}
+                  onClick={() => receiptFileInputRef.current?.click()}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === 'Enter' && receiptFileInputRef.current?.click()}
+                >
+                  {values.receiptFile ? (
+                    <p>📄 {values.receiptFile.name}</p>
+                  ) : (
+                    <p>
+                      📄 Subir comprobante{' '}
+                      <span style={{ color: 'var(--muted)' }}>(opcional)</span>
+                    </p>
+                  )}
+                </div>
+                {touched.receiptFile && errors.receiptFile && (
+                  <p className={styles.payFieldError}>{errors.receiptFile as string}</p>
+                )}
+
+                <div className={styles.payFormActions}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowPayModal(false)}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button type="submit" variant="secondary" size="sm" loading={isSubmitting}>
+                    Confirmar pago
+                  </Button>
+                </div>
+              </Form>
+            )}
+          </Formik>
+        </Modal>
+      )}
     </div>
   )
 }
@@ -121,14 +189,9 @@ export default function HomePage(): React.ReactElement {
     refetch,
   } = useMetrics(PeriodFilter.Month)
   const { data: budget, isLoading: loadingBudget } = useBudget()
-  const { data: expensesPage, isLoading: loadingExpenses } = useExpenses({ period: 'month' })
-  const { data: categories = [], isLoading: loadingCategories } = useCategories()
   const { data: recurring = [], isLoading: loadingRecurring } = useRecurringList()
-  const { data: cards = [] } = useCards()
 
-  const [movPage, setMovPage] = React.useState(0)
-
-  if (loadingMetrics || loadingBudget || loadingExpenses || loadingCategories || loadingRecurring) {
+  if (loadingMetrics || loadingBudget || loadingRecurring) {
     return <LoadingSpinner fullPage />
   }
   if (metricsError || !metrics) return <ErrorMessage onRetry={() => void refetch()} />
@@ -256,16 +319,6 @@ export default function HomePage(): React.ReactElement {
 
   const shownTips = tips.slice(0, 3)
 
-  // ── Recent expenses (mes actual, paginado) ────────────────
-  const MOV_PAGE_SIZE = 10
-  const expenses = expensesPage?.data ?? []
-  const movTotalPages = Math.max(1, Math.ceil(expenses.length / MOV_PAGE_SIZE))
-  const movCurrentPage = Math.min(movPage, movTotalPages - 1)
-  const pagedExpenses = expenses.slice(
-    movCurrentPage * MOV_PAGE_SIZE,
-    movCurrentPage * MOV_PAGE_SIZE + MOV_PAGE_SIZE
-  )
-
   return (
       <div className={styles.desktopGrid}>
         {/* Right: column of independent cards */}
@@ -274,95 +327,6 @@ export default function HomePage(): React.ReactElement {
           <div className={styles.desktopMainBox}>
             <p className={styles.desktopSubtitle}>{monthLabel}</p>
             <DashboardWidgets />
-          </div>
-
-          {/* Movements */}
-          <div className={styles.desktopMainBox}>
-            <div className={styles.desktopSectionHeader}>
-              <div className={styles.desktopMovHeaderLeft}>
-                <h2 className={styles.desktopSectionTitle}>Últimos movimientos</h2>
-                <button
-                  className={styles.desktopAddBtn}
-                  onClick={() => void navigate('/expenses/new')}
-                  title="Nuevo gasto"
-                >
-                  ＋
-                </button>
-              </div>
-              <button className={styles.desktopSeeAll} onClick={() => void navigate('/expenses')}>
-                Ver todos →
-              </button>
-            </div>
-            <div className={styles.desktopMovList}>
-              {expenses.length === 0 ? (
-                <p className={styles.desktopEmpty}>No hay gastos este mes.</p>
-              ) : (
-                groupExpensesByDate(pagedExpenses).map((group) => (
-                  <React.Fragment key={group.date}>
-                    <div className={styles.desktopDateHeader}>{group.label}</div>
-                    {group.expenses.map((expense) => {
-                      const firstCat = categories.find((c) => expense.categoryIds.includes(c.id))
-                      const card = cards.find((c) => c.id === expense.cardId)
-                      const cardLabel = card
-                        ? `${card.type === 'credit' ? 'Crédito' : card.type === 'debit' ? 'Débito' : 'Transf.'} ${card.bank}`
-                        : null
-                      const subtitle = [firstCat?.name, cardLabel].filter(Boolean).join(' · ')
-                      return (
-                        <button
-                          key={expense.id}
-                          className={styles.desktopMovRow}
-                          onClick={() => void navigate(`/expenses/${expense.id}`)}
-                        >
-                          <span className={styles.desktopMovIcon}>{firstCat?.icon ?? '💸'}</span>
-                          <div className={styles.desktopMovInfo}>
-                            <span className={styles.desktopMovName}>{expense.description}</span>
-                            <span className={styles.desktopMovSubRow}>
-                              {subtitle && (
-                                <span className={styles.desktopMovSub}>{subtitle}</span>
-                              )}
-                              <ReportOriginBadge expense={expense} />
-                            </span>
-                          </div>
-                          <div className={styles.desktopMovAmt}>
-                            <span className={styles.desktopMovAmtVal}>
-                              {expense.currency === Currency.USD ? 'U$S' : '$'}{' '}
-                              {formatCurrency(expense.amount, expense.currency).replace(
-                                /^[^\d]*/,
-                                ''
-                              )}
-                            </span>
-                            <span className={styles.desktopMovAmtCurrBadge}>
-                              {expense.currency}
-                            </span>
-                          </div>
-                        </button>
-                      )
-                    })}
-                  </React.Fragment>
-                ))
-              )}
-            </div>
-            {movTotalPages > 1 && (
-              <div className={styles.desktopPagination}>
-                <button
-                  className={styles.desktopPageBtn}
-                  disabled={movCurrentPage === 0}
-                  onClick={() => setMovPage((p) => Math.max(0, p - 1))}
-                >
-                  ← Anterior
-                </button>
-                <span className={styles.desktopPageInfo}>
-                  {movCurrentPage + 1} / {movTotalPages}
-                </span>
-                <button
-                  className={styles.desktopPageBtn}
-                  disabled={movCurrentPage >= movTotalPages - 1}
-                  onClick={() => setMovPage((p) => Math.min(movTotalPages - 1, p + 1))}
-                >
-                  Siguiente →
-                </button>
-              </div>
-            )}
           </div>
         </div>
 

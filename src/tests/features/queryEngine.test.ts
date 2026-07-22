@@ -135,6 +135,23 @@ describe('runQuery', () => {
     expect(r.groups.map((g) => g.key)).toEqual(['2026-06', '2026-07'])
   })
 
+  it('con rango: incluye el mes borde completo, rellena vacíos y excluye fuera de rango', () => {
+    const exps = [
+      exp({ id: 'a', amount: 100, currency: Currency.UYU, date: '2026-04-05' }), // abril temprano (dentro del rango)
+      exp({ id: 'b', amount: 200, currency: Currency.UYU, date: '2026-07-10' }),
+      exp({ id: 'c', amount: 999, currency: Currency.UYU, date: '2026-01-15' }), // fuera de rango
+    ]
+    const range = { start: '2026-04-01', end: '2026-07-31' }
+    const r = runQuery(cfg({ groupBy: QueryGroupBy.Month }), exps, lookups, new Date(2026, 6, 22), range)
+    expect(r.groups.map((g) => [g.key, g.value])).toEqual([
+      ['2026-04', 100],
+      ['2026-05', 0],
+      ['2026-06', 0],
+      ['2026-07', 200],
+    ])
+    expect(r.total).toBe(300) // excluye el de enero
+  })
+
   it('con `now` rellena con ceros los meses faltantes hasta el actual', () => {
     const r = runQuery(cfg({ groupBy: QueryGroupBy.Month }), expenses, lookups, new Date(2026, 8, 15))
     expect(r.groups.map((g) => g.key)).toEqual(['2026-06', '2026-07', '2026-08', '2026-09'])

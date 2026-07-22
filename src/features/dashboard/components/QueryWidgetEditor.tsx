@@ -177,8 +177,9 @@ export function QueryWidgetEditor({
   )
   const [error, setError] = React.useState<string | null>(null)
 
-  // Datos reales para la vista previa.
-  const { data: expensesPage, isLoading: loadingExpenses } = useExpenses({ period })
+  // Datos reales para la vista previa. Traemos todos los gastos; el motor filtra por
+  // el rango del período (alineado a mes calendario) — el fetch no corta el mes borde.
+  const { data: expensesPage, isLoading: loadingExpenses } = useExpenses()
   const expenses = expensesPage?.data ?? []
 
   const categoryOptions: SelectOption[] = categories.map((c) => ({ value: c.id, label: `${c.icon} ${c.name}` }))
@@ -229,10 +230,12 @@ export function QueryWidgetEditor({
   }
 
   const previewConfig = buildConfig()
+  const previewNow = new Date()
+  const previewRange = periodRange(period, previewNow)
   const previewRecords = isRecurring
-    ? recurringPaymentsToRecords(recurring, recurringId || undefined, periodRange(period, new Date()))
+    ? recurringPaymentsToRecords(recurring, recurringId || undefined, previewRange)
     : expenses
-  const previewResult = runQuery(previewConfig, previewRecords, { categories, cards, places }, new Date())
+  const previewResult = runQuery(previewConfig, previewRecords, { categories, cards, places }, previewNow, previewRange)
 
   async function handleSave(): Promise<void> {
     setError(null)

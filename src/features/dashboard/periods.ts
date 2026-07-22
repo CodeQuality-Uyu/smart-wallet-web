@@ -39,12 +39,12 @@ export function periodRange(period: PeriodFilter, now: Date): { start: string; e
       const last = new Date(now.getFullYear(), now.getMonth(), 0)
       return { start: isoDate(first), end: isoDate(last) }
     }
+    // Alineados a mes calendario (primero del mes N atrás), para que los gráficos
+    // mensuales incluyan el mes completo del borde (no cortan a mitad de mes).
     case PeriodFilter.ThreeMonths:
-      d.setMonth(d.getMonth() - 3)
-      return { start: isoDate(d), end }
+      return { start: isoDate(new Date(now.getFullYear(), now.getMonth() - 3, 1)), end }
     case PeriodFilter.SixMonths:
-      d.setMonth(d.getMonth() - 6)
-      return { start: isoDate(d), end }
+      return { start: isoDate(new Date(now.getFullYear(), now.getMonth() - 6, 1)), end }
     case PeriodFilter.Year:
       return { start: `${now.getFullYear()}-01-01`, end }
     case PeriodFilter.All:

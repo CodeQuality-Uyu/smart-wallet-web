@@ -453,6 +453,20 @@
   margin-right: 4px;
 }
 
+.desktopPagination {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 14px 24px; margin-top: 4px;
+  border-top: 1px solid var(--border);
+}
+.desktopPageBtn {
+  font-family: inherit; font-size: 12px; font-weight: 600;
+  color: var(--gold-dk); background: none; border: none; cursor: pointer;
+  padding: 6px 4px; transition: opacity .15s;
+}
+.desktopPageBtn:hover:not(:disabled) { opacity: .7; }
+.desktopPageBtn:disabled { color: var(--muted); cursor: default; opacity: .5; }
+.desktopPageInfo { font-size: 12px; font-weight: 600; color: var(--muted); }
+
 .desktopTdAmt { text-align: right; }
 .desktopAmt {
   font-family: var(--font-num); font-size: 14px; font-weight: 600; color: var(--ink);
@@ -466,6 +480,15 @@
 .desktopEmpty {
   text-align: center; padding: 40px; font-size: 13px; color: var(--muted);
 }
+
+/* ── Acciones column ── */
+.desktopThActions { text-align: center !important; width: 90px; }
+.desktopTdActions { text-align: center; }
+
+/* ── Edit / Delete modals ── */
+.editModalBody { padding: 20px 24px 24px; overflow-y: auto; }
+.deleteText { font-size: 14px; color: var(--ink); line-height: 1.5; margin: 0 0 18px; padding: 20px 24px 0; }
+.deleteActions { display: flex; justify-content: space-between; gap: 10px; padding: 0 24px 24px; }
 
 /* ── Pending receipts section ── */
 .pendingSection {
