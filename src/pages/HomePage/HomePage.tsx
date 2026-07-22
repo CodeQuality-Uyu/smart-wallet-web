@@ -5,22 +5,30 @@ import { useNavigate } from 'react-router-dom'
 import { useMetrics } from '@/hooks/useMetrics'
 import { useBudget } from '@/hooks/useBudget'
 import { useExpenses } from '@/features/expenses/hooks/useExpenses'
+import { ReportOriginBadge } from '@/features/expenses/components/ReportOriginBadge'
 import { useCategories } from '@/features/categories/hooks/useCategories'
-import { useRecurringList } from '@/features/recurring/hooks/useRecurring'
+import {
+  useRecurringList,
+  useConfirmRecurringPayment,
+  useSkipRecurringMonth,
+} from '@/features/recurring/hooks/useRecurring'
 import { useCards } from '@/features/cards/hooks/useCards'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
+import { KebabMenu, type KebabMenuItem } from '@/components/shared/KebabMenu'
+import { DashboardWidgets } from '@/features/dashboard/components/DashboardWidgets'
 import { groupExpensesByDate } from '@/utils/groupByDate'
-import { formatCurrency, formatAmountNoSymbol } from '@/utils/formatCurrency'
+import { formatCurrency } from '@/utils/formatCurrency'
 import {
   PeriodFilter,
   Currency,
   RecurringMode,
   RecurringPaymentStatus,
   RecurringStatus,
-  RecurringFrequency,
 } from '@/types/enums'
+import { computeOverdueMonths } from '@/utils/recurringSchedule'
 import { useAuth } from '@/app/providers/AuthContext'
+import type { RecurringExpense } from '@/types/models'
 import styles from './HomePage.module.css'
 
 interface OverdueEntry {
@@ -28,39 +36,63 @@ interface OverdueEntry {
   missedMonths: Array<{ month: number; year: number }>
 }
 
+// Fila de pago pendiente con menú de acciones (Pagar / Omitir). Es su propio
+// componente para poder usar los hooks por-id sin romper las reglas de hooks.
+function PendingPaymentRow({
+  r,
+  onNavigate,
+}: {
+  r: RecurringExpense
+  onNavigate: (id: string) => void
+}): React.ReactElement {
+  const { mutateAsync: confirmPayment, isPending: paying } = useConfirmRecurringPayment(r.id)
+  const { mutateAsync: skipMonth, isPending: skipping } = useSkipRecurringMonth(r.id)
+  const busy = paying || skipping
+
+  async function handlePay(): Promise<void> {
+    await confirmPayment({ amount: r.amount })
+  }
+
+  async function handleSkip(): Promise<void> {
+    const now = new Date()
+    await skipMonth({ month: now.getMonth() + 1, year: now.getFullYear() })
+  }
+
+  const menuItems: KebabMenuItem[] = [
+    { label: 'Pagar', icon: '💳', onClick: () => void handlePay() },
+    { label: 'Omitir', icon: '⊘', onClick: () => void handleSkip() },
+  ]
+
+  return (
+    <div className={styles.pendingRow}>
+      <button
+        className={styles.desktopRecurringRow}
+        onClick={() => onNavigate(r.id)}
+        disabled={busy}
+      >
+        <span className={styles.desktopRecurringIcon}>{r.icon}</span>
+        <div className={styles.desktopRecurringInfo}>
+          <span className={styles.desktopRecurringName}>{r.name}</span>
+          {r.dueDayOfMonth && (
+            <span className={styles.desktopRecurringDue}>Vence el día {r.dueDayOfMonth}</span>
+          )}
+        </div>
+        <span className={styles.desktopRecurringAmt}>{formatCurrency(r.amount, r.currency)}</span>
+      </button>
+      <div className={styles.pendingMenuWrap}>
+        <KebabMenu items={menuItems} ariaLabel="Acciones del pago" loading={busy} />
+      </div>
+    </div>
+  )
+}
+
 function getOverdueItems(
   recurring: import('@/types/models').RecurringExpense[]
 ): OverdueEntry[] {
   const now = new Date()
-  const currentMonth = now.getMonth() + 1
-  const currentYear = now.getFullYear()
-
   return recurring
-    .filter(
-      (r) =>
-        r.status === RecurringStatus.Active &&
-        r.mode === RecurringMode.Manual &&
-        r.frequency === RecurringFrequency.Monthly
-    )
-    .map((r) => {
-      const missedMonths: Array<{ month: number; year: number }> = []
-      for (let i = 1; i <= 3; i++) {
-        let checkMonth = currentMonth - i
-        let checkYear = currentYear
-        if (checkMonth <= 0) {
-          checkMonth += 12
-          checkYear -= 1
-        }
-        const createdDate = new Date(r.createdAt)
-        const checkEnd = new Date(checkYear, checkMonth, 0)
-        if (checkEnd < createdDate) break
-        const wasPaid = r.paymentHistory.some(
-          (h) => h.month === checkMonth && h.year === checkYear && h.status === RecurringPaymentStatus.Paid
-        )
-        if (!wasPaid) missedMonths.push({ month: checkMonth, year: checkYear })
-      }
-      return { item: r, missedMonths }
-    })
+    .filter((r) => r.status === RecurringStatus.Active && r.mode === RecurringMode.Manual)
+    .map((r) => ({ item: r, missedMonths: computeOverdueMonths(r, now) }))
     .filter((entry) => entry.missedMonths.length > 0)
 }
 
@@ -112,28 +144,6 @@ export default function HomePage(): React.ReactElement {
     prevMonths.length > 0 ? prevMonths.reduce((s, m) => s + m.uyu, 0) / prevMonths.length : 0
   const vsAvgUsd = avgUsd > 0 ? Math.round(((metrics.totalUsd - avgUsd) / avgUsd) * 100) : 0
   const vsAvgUyu = avgUyu > 0 ? Math.round(((metrics.totalUyu - avgUyu) / avgUyu) * 100) : 0
-
-  // ── vs previous month ─────────────────────────────────────
-  const usdDeltaPct =
-    metrics.previousPeriodUsd > 0
-      ? Math.round(
-          ((metrics.totalUsd - metrics.previousPeriodUsd) / metrics.previousPeriodUsd) * 100
-        )
-      : 0
-  const uyuDeltaPct =
-    metrics.previousPeriodUyu > 0
-      ? Math.round(
-          ((metrics.totalUyu - metrics.previousPeriodUyu) / metrics.previousPeriodUyu) * 100
-        )
-      : 0
-
-  // ── Budget usage ──────────────────────────────────────────
-  const budgetUsdPct = budget?.usd
-    ? Math.min(Math.round((metrics.totalUsd / budget.usd) * 100), 999)
-    : null
-  const budgetUyuPct = budget?.uyu
-    ? Math.min(Math.round((metrics.totalUyu / budget.uyu) * 100), 999)
-    : null
 
   // ── Category growth (top 3 by delta %) ───────────────────
   const categoryGrowth = metrics.byCategory
@@ -256,84 +266,14 @@ export default function HomePage(): React.ReactElement {
     movCurrentPage * MOV_PAGE_SIZE + MOV_PAGE_SIZE
   )
 
-  const spendCards = [
-    {
-      currency: Currency.USD,
-      total: metrics.totalUsd,
-      prev: metrics.previousPeriodUsd,
-      deltaPct: usdDeltaPct,
-      budgetPct: budgetUsdPct,
-      budget: budget?.usd,
-      symbol: 'U$S',
-      label: 'USD',
-    },
-    {
-      currency: Currency.UYU,
-      total: metrics.totalUyu,
-      prev: metrics.previousPeriodUyu,
-      deltaPct: uyuDeltaPct,
-      budgetPct: budgetUyuPct,
-      budget: budget?.uyu,
-      symbol: '$',
-      label: 'UYU',
-    },
-  ]
-
   return (
       <div className={styles.desktopGrid}>
         {/* Right: column of independent cards */}
         <div className={styles.desktopRightCol}>
-          {/* Stat cards */}
+          {/* Visualizadores configurables por el usuario */}
           <div className={styles.desktopMainBox}>
             <p className={styles.desktopSubtitle}>{monthLabel}</p>
-            <div className={styles.desktopStatRow}>
-              {spendCards.map(
-                ({ currency, total, deltaPct, budgetPct, budget: bgt, symbol, label }) => (
-                  <div key={currency} className={styles.desktopStatCard}>
-                    <div className={styles.desktopStatLabelRow}>
-                      <span className={styles.desktopCurrBadge}>{label}</span>
-                      <span className={styles.desktopStatLabelText}>ESTE MES</span>
-                    </div>
-                    <p className={styles.desktopStatValue}>
-                      <span className={styles.desktopAmtSymbol}>{symbol} </span>
-                      {formatAmountNoSymbol(total, currency)}
-                    </p>
-                    {deltaPct !== 0 && (
-                      <div
-                        className={[
-                          styles.desktopDelta,
-                          deltaPct > 0 ? styles.desktopDeltaUp : styles.desktopDeltaDown,
-                        ].join(' ')}
-                      >
-                        {deltaPct > 0 ? '↑' : '↓'}
-                        {Math.abs(deltaPct)}%{' '}
-                        <span className={styles.desktopDeltaLabel}>vs mes pasado</span>
-                      </div>
-                    )}
-                    {budgetPct !== null && bgt !== undefined && (
-                      <>
-                        <div className={styles.desktopBudgetBar}>
-                          <div
-                            className={[
-                              styles.desktopBudgetFill,
-                              budgetPct >= 90
-                                ? styles.budgetDanger
-                                : budgetPct >= 70
-                                  ? styles.budgetWarn
-                                  : styles.budgetOk,
-                            ].join(' ')}
-                            style={{ width: `${Math.min(budgetPct, 100)}%` }}
-                          />
-                        </div>
-                        <p className={styles.desktopBudgetLabel}>
-                          {budgetPct}% de {formatCurrency(bgt, currency)}
-                        </p>
-                      </>
-                    )}
-                  </div>
-                )
-              )}
-            </div>
+            <DashboardWidgets />
           </div>
 
           {/* Movements */}
@@ -376,7 +316,12 @@ export default function HomePage(): React.ReactElement {
                           <span className={styles.desktopMovIcon}>{firstCat?.icon ?? '💸'}</span>
                           <div className={styles.desktopMovInfo}>
                             <span className={styles.desktopMovName}>{expense.description}</span>
-                            {subtitle && <span className={styles.desktopMovSub}>{subtitle}</span>}
+                            <span className={styles.desktopMovSubRow}>
+                              {subtitle && (
+                                <span className={styles.desktopMovSub}>{subtitle}</span>
+                              )}
+                              <ReportOriginBadge expense={expense} />
+                            </span>
                           </div>
                           <div className={styles.desktopMovAmt}>
                             <span className={styles.desktopMovAmtVal}>
@@ -459,24 +404,11 @@ export default function HomePage(): React.ReactElement {
               <div className={styles.desktopAllPaid}>✅ Todos los pagos al día</div>
             ) : (
               pendingRecurring.map((r) => (
-                <button
+                <PendingPaymentRow
                   key={r.id}
-                  className={styles.desktopRecurringRow}
-                  onClick={() => void navigate(`/settings/recurring/${r.id}`)}
-                >
-                  <span className={styles.desktopRecurringIcon}>{r.icon}</span>
-                  <div className={styles.desktopRecurringInfo}>
-                    <span className={styles.desktopRecurringName}>{r.name}</span>
-                    {r.dueDayOfMonth && (
-                      <span className={styles.desktopRecurringDue}>
-                        Vence el día {r.dueDayOfMonth}
-                      </span>
-                    )}
-                  </div>
-                  <span className={styles.desktopRecurringAmt}>
-                    {formatCurrency(r.amount, r.currency)}
-                  </span>
-                </button>
+                  r={r}
+                  onNavigate={(id) => void navigate(`/settings/recurring/${id}`)}
+                />
               ))
             )}
           </div>

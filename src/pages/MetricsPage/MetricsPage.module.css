@@ -238,6 +238,7 @@
   margin-bottom: 16px;
 }
 
+
 .desktopRingRow1 {
   display: grid; grid-template-columns: 1fr;
   gap: 24px; margin-bottom: 24px;
@@ -388,7 +389,32 @@
   display: flex; flex-direction: column; gap: 6px;
 }
 .desktopCatRow:last-child { margin-bottom: 0; }
-.desktopCatName { font-size: 12px; color: var(--ink); }
+.desktopCatName {
+  font-size: 12px; color: var(--ink);
+  display: flex; align-items: center; gap: 6px;
+}
+/* Fila de subcategoría (drill-down): indentada y con línea de conexión */
+.desktopCatRowChild {
+  margin-left: 16px;
+  padding-left: 10px;
+  border-left: 2px solid var(--g200, #d6e9df);
+}
+.desktopCatRowChild .desktopCatName { color: var(--muted, #6b7280); }
+/* Botón para expandir/contraer un padre */
+.desktopCatToggle {
+  width: 16px; height: 16px;
+  display: flex; align-items: center; justify-content: center;
+  border: none; background: transparent; cursor: pointer;
+  font-size: 10px; color: var(--muted, #6b7280); padding: 0;
+  border-radius: 4px; flex-shrink: 0;
+}
+.desktopCatToggle:hover { background: var(--cream, #faf8f5); color: var(--ink); }
+/* Ocupa el mismo ancho que el toggle para alinear nombres sin hijas */
+.desktopCatToggleSpacer {
+  width: 16px; flex-shrink: 0;
+  font-size: 10px; color: var(--muted, #6b7280);
+  display: flex; align-items: center; justify-content: center;
+}
 .desktopCatBars { display: flex; flex-direction: column; gap: 4px; }
 .desktopCatBarRow {
   display: flex; align-items: center; gap: 8px;

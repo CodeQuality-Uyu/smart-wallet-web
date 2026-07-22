@@ -92,16 +92,46 @@
 
 .tileAdd .tileName { color: var(--g600); }
 
-.editBtn {
-  position: absolute;
-  top: 6px; right: 6px;
-  width: 18px; height: 18px;
-  border-radius: 5px;
+/* ─── Jerarquía de categorías (2 niveles) ─── */
+.treeGroup {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
   background: var(--g50);
-  color: var(--g500);
-  font-size: 11px;
-  border: none;
-  display: flex; align-items: center; justify-content: center;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.childrenGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 9px;
+  padding-left: 12px;
+  border-left: 2px solid var(--g300);
+  margin-left: 4px;
+}
+
+.childTile {
+  border-style: dashed;
+}
+
+.tileChildBadge {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--g600);
+}
+
+.parentHint {
+  font-size: 12px;
+  color: var(--g600);
+  margin: 4px 0 12px;
+}
+
+.tileMenu {
+  position: absolute;
+  top: 4px; right: 4px;
 }
 
 .newBtn {
@@ -129,26 +159,15 @@
   }
 }
 
-/* inline form */
-.form {
-  background: #fff;
-  border-radius: var(--radius);
-  padding: 16px;
-  border: 1.5px solid var(--border-g);
-  margin-bottom: 14px;
-}
-
-.formTitle {
-  font-family: var(--font-head);
-  font-size: 13px; font-weight: 700; color: var(--ink);
-  margin-bottom: 12px;
+/* form body inside modal */
+.formBody {
+  padding: 20px 24px 24px;
+  overflow-y: auto;
 }
 
 .formRow { display: flex; gap: 10px; align-items: flex-start; }
 
-.formPickersRow { display: flex; gap: 20px; margin-bottom: 16px; align-items: flex-start; justify-content: space-between; }
-
-.formPickerGroup { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.formPickerGroup { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
 
 .formPickerLabel {
   font-size: 11px; font-weight: 700; color: var(--muted);
@@ -301,9 +320,10 @@
 .formCancelBtn {
   padding: 9px 16px; border-radius: 12px;
   font-size: 13px; font-weight: 500;
-  background: #f5f2ea; color: var(--muted);
-  border: none; cursor: pointer; font-family: inherit;
+  background: #fff; color: var(--ink);
+  border: 1.5px solid var(--border); cursor: pointer; font-family: inherit;
 }
+.formCancelBtn:hover { background: var(--cream, #faf8f5); }
 
 .formSaveBtn {
   padding: 9px 18px; border-radius: 12px;
@@ -313,15 +333,6 @@
   box-shadow: 0 3px 10px rgba(245,183,50,.3);
 }
 .formSaveBtn:disabled { opacity: .6; cursor: default; }
-
-.formDeleteBtn {
-  display: block; width: 100%;
-  margin-top: 10px; padding: 9px 16px;
-  border-radius: 12px; font-size: 13px; font-weight: 500;
-  background: #fff1f2; color: #e11d48;
-  border: 1px solid #fecdd3; cursor: pointer; font-family: inherit;
-  text-align: center;
-}
 
 @media (min-width: 768px) {
   .body { padding: 0 0 32px; }
@@ -413,6 +424,17 @@
     margin-bottom: 0;
   }
 
+  .treeGroup {
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .childrenGrid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding-left: 16px;
+  }
+
   .tile {
     flex-direction: row;
     align-items: center;
@@ -474,33 +496,13 @@
     color: var(--muted);
   }
 
-  .editBtn {
-    width: 28px; height: 28px;
-    top: 10px; right: 10px;
-    border-radius: 8px;
-    font-size: 13px;
-    background: var(--g50);
-    color: var(--g500);
-    display: flex; align-items: center; justify-content: center;
-    border: none;
-    cursor: pointer;
-    position: absolute;
+  .tileMenu {
+    top: 8px; right: 8px;
   }
 
   /* Form desktop */
-  .form {
-    border-radius: 20px;
-    padding: 28px 32px;
-    margin-bottom: 24px;
-    border-color: #e8e2d4;
-    background: #faf8f5;
-  }
-
-  .formTitle {
-    font-family: var(--font-head);
-    font-size: 18px;
-    font-weight: 700;
-    margin-bottom: 20px;
+  .formBody {
+    padding: 24px 32px 28px;
   }
 
   .formRow {

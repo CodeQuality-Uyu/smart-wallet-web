@@ -1,0 +1,68 @@
+/* src/features/dashboard/components/GuidedWidgetView.module.css */
+/* Estilos del cuerpo (bloques) de un widget guiado. El marco lo aporta WidgetShell. */
+
+/* ── Blocks ───────────────────────────────────────────────── */
+.blocks { display: flex; flex-direction: column; gap: 16px; }
+.block { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.blockLabel { font-size: 11px; font-weight: 600; color: var(--muted); }
+
+/* Comparaciones: separadas del monto y entre sí */
+.comparisons { display: flex; flex-direction: column; gap: 11px; margin-top: 8px; }
+
+.valueRow { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
+.value {
+  font-family: var(--font-num);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -.02em;
+  line-height: 1.1;
+}
+.valueEmpty { color: var(--muted); font-weight: 600; }
+.valueSymbol { font-size: 13px; font-weight: 600; opacity: 0.55; }
+
+/* Sparkline */
+.sparkline { display: flex; align-items: flex-end; gap: 2px; height: 26px; flex-shrink: 0; }
+.sparkBar { width: 4px; border-radius: 1px; background: var(--g300); }
+.sparkBarLast { background: var(--g600); }
+
+/* Etiqueta del tipo de comparación (Presupuesto / Meta / Período anterior) */
+.cmpTag {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--g700);
+  background: var(--g50);
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Delta badge */
+.deltaRow { display: flex; align-items: center; gap: 6px; }
+.delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-num);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 20px;
+}
+.deltaCaption { font-weight: 500; font-family: inherit; opacity: .85; }
+.deltaUp { background: rgba(225,29,72,.1); color: #be123c; }
+.deltaDown { background: rgba(22,163,74,.12); color: #15803d; }
+.deltaFlat { background: var(--g50); color: var(--muted); }
+
+/* Progress */
+.progWrap { display: flex; flex-direction: column; gap: 4px; }
+.progHead { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.progTrack { height: 4px; background: rgba(0,0,0,.08); border-radius: 2px; overflow: hidden; }
+.progFill { height: 100%; border-radius: 2px; transition: width .3s; }
+.progOk { background: #4ade80; }
+.progWarn { background: #facc15; }
+.progDanger { background: #f87171; }
+.progLabel { font-size: 10px; color: var(--muted); }

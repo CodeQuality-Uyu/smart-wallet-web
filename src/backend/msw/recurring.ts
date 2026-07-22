@@ -9,6 +9,7 @@ import type {
   UpdateRecurringPayload,
   ConfirmRecurringPaymentPayload,
   UpdateRecurringPaymentPayload,
+  SkipRecurringMonthPayload,
   RecurringPaymentHistory,
   RecurringStatus,
 } from '../types'
@@ -58,6 +59,16 @@ export const mswRecurringBackend: IRecurringBackend = {
       `/recurring/${id}/confirm-payment`,
       form,
     )
+    return data
+  },
+
+  async skipMonth(id: string, payload: SkipRecurringMonthPayload): Promise<RecurringExpense> {
+    const { data } = await httpClient.post<RecurringExpense>(`/recurring/${id}/skip-month`, payload)
+    return data
+  },
+
+  async unskipMonth(id: string, payload: SkipRecurringMonthPayload): Promise<RecurringExpense> {
+    const { data } = await httpClient.post<RecurringExpense>(`/recurring/${id}/unskip-month`, payload)
     return data
   },
 

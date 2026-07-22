@@ -5,6 +5,7 @@ import { reportAttachmentsService } from '@/services/reportAttachmentsService'
 
 const KEYS = {
   list: (yearMonth: string) => ['reportAttachments', yearMonth] as const,
+  detail: (id: string) => ['reportAttachment', id] as const,
 }
 
 export function useReportAttachments(yearMonth: string) {
@@ -12,6 +13,15 @@ export function useReportAttachments(yearMonth: string) {
     queryKey: KEYS.list(yearMonth),
     queryFn: () => reportAttachmentsService.list(yearMonth),
     enabled: Boolean(yearMonth),
+  })
+}
+
+export function useReportAttachment(id: string | undefined) {
+  return useQuery({
+    queryKey: KEYS.detail(id ?? ''),
+    queryFn: () => reportAttachmentsService.getById(id ?? ''),
+    enabled: Boolean(id),
+    staleTime: 5 * 60 * 1000,
   })
 }
 

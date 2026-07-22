@@ -30,6 +30,10 @@ export const recurringSchema = Yup.object({
     .min(1, 'Mínimo día 1')
     .max(31, 'Máximo día 31')
     .required('El día de vencimiento es requerido'),
+  // Cycle anchor for interval frequencies. Prefilled with the current month/year
+  // (or the record's on edit) and only relevant when frequency !== monthly.
+  startMonth: Yup.number().integer().min(1).max(12).optional(),
+  startYear: Yup.number().integer().min(2000).max(2100).optional(),
 })
 
 export type RecurringFormValues = Yup.InferType<typeof recurringSchema>

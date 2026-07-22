@@ -72,6 +72,21 @@ service cloud.firestore {
         allow read, write: if request.auth != null && request.auth.uid == uid;
       }
 
+      // Dashboard widgets — per-user pinned visualizers (soft delete via active flag)
+      match /dashboardWidgets/{widgetId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+
+      // Recortes — indicadores de recorte dinámicos definidos por el usuario.
+      // La definición y su historial de resultados (subcolección) son privados.
+      match /recortes/{recorteId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+
+        match /results/{resultId} {
+          allow read, write: if request.auth != null && request.auth.uid == uid;
+        }
+      }
+
     }
 
     // Global places pool — shared community data

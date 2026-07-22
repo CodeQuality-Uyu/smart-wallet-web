@@ -7,6 +7,7 @@ export const categorySchema = Yup.object({
   color: Yup.string().optional(),
   limitUYU: Yup.number().typeError('Ingresá un número válido').min(0, 'El límite no puede ser negativo').optional(),
   limitUSD: Yup.number().typeError('Ingresá un número válido').min(0, 'El límite no puede ser negativo').optional(),
+  parentId: Yup.string().optional(),
 })
 
 export type CategoryFormValues = Yup.InferType<typeof categorySchema>

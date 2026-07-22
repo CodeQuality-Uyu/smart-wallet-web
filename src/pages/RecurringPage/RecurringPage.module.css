@@ -220,7 +220,7 @@
   /* ── Stat cards ── */
   .desktopStats {
     display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;
-    margin-bottom: 20px;
+    margin-top: 20px;
   }
   .desktopStatCard {
     background: #fff;
@@ -241,47 +241,6 @@
     display: flex; flex-direction: column; gap: 2px; margin-top: 6px;
     font-size: 12px; color: var(--muted); font-family: var(--font-num);
   }
-
-  /* ── Próximos vencimientos ── */
-  .upcomingCard {
-    background: linear-gradient(135deg, #0c1f1a, #0d3528);
-    border-radius: 24px; padding: 20px 24px;
-    margin-bottom: 20px;
-  }
-  .upcomingTitle {
-    font-size: 13px; font-weight: 700; color: rgba(255,255,255,.75);
-    margin-bottom: 16px; letter-spacing: .02em;
-  }
-  .upcomingPills { display: flex; gap: 12px; flex-wrap: wrap; }
-  .upcomingPill {
-    display: flex; flex-direction: column; gap: 6px;
-    background: rgba(255,255,255,.08);
-    border: 1px solid rgba(255,255,255,.12);
-    border-radius: 16px; padding: 14px 16px;
-    flex: 1; min-width: 160px;
-  }
-  .upcomingPillTop {
-    display: flex; align-items: center; gap: 8px;
-  }
-  .upcomingPillIcon { font-size: 18px; flex-shrink: 0; }
-  .upcomingPillName {
-    font-size: 13px; font-weight: 600; color: #fff;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  }
-  .upcomingPillAmt {
-    font-family: var(--font-num);
-    font-size: 15px; font-weight: 700; color: #f5b732;
-  }
-  .upcomingPillBottom {
-    display: flex; align-items: center; gap: 8px;
-  }
-  .upcomingPillDate { font-size: 11px; color: rgba(255,255,255,.5); flex: 1; }
-  .upcomingPillBadge {
-    font-size: 9px; font-weight: 700; letter-spacing: .06em;
-    border-radius: 6px; padding: 2px 7px;
-  }
-  .upcomingPillBadgeAuto { background: rgba(16,185,129,.2); color: #6ee7b7; }
-  .upcomingPillBadgeManual { background: rgba(245,183,50,.2); color: #f5b732; }
 
   /* ── Main list card ── */
   .desktopListCard {
@@ -317,14 +276,68 @@
 
   .desktopList { padding: 8px 0; }
 
+  /* ── Category group ── */
+  .desktopGroup { border-bottom: 1px solid var(--border); }
+  .desktopGroup:last-child { border-bottom: none; }
+  .desktopGroupHeader {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; padding: 10px 24px;
+    background: var(--cream, #faf8f5); border: none; cursor: pointer;
+    font-family: inherit; text-align: left;
+    border-bottom: 1px solid var(--border);
+    transition: background .15s;
+  }
+  .desktopGroupHeader:hover { background: #f0ebe0; }
+  .desktopGroupChevron {
+    font-size: 11px; color: var(--muted);
+    transition: transform .2s; flex-shrink: 0;
+  }
+  .desktopGroupChevronCollapsed { transform: rotate(-90deg); }
+  .desktopGroupName {
+    font-size: 13px; font-weight: 700; color: var(--ink);
+    flex: 1;
+  }
+  .desktopGroupTotals { display: flex; gap: 12px; align-items: baseline; }
+  .desktopGroupTotal {
+    font-family: var(--font-num);
+    font-size: 13px; font-weight: 700; color: var(--ink);
+  }
+  .desktopGroupTotalUnit {
+    font-size: 10px; font-weight: 500; color: var(--muted); margin-left: 2px;
+  }
+  .desktopGroupCount {
+    font-size: 11px; font-weight: 600; color: var(--muted);
+    background: #fff; border: 1px solid var(--border);
+    border-radius: 99px; padding: 1px 9px; min-width: 22px; text-align: center;
+    font-family: var(--font-num);
+  }
+
   /* ── Desktop row ── */
   .desktopRow {
     display: grid;
-    grid-template-columns: 44px 1fr 120px 100px 44px 36px;
+    grid-template-columns: 44px 1fr 120px 100px 36px;
     align-items: center; gap: 12px;
     padding: 12px 24px;
     border-bottom: 1px solid var(--border);
     transition: background .15s;
+    position: relative;
+    cursor: pointer;
+  }
+
+  /* Paused rows: greyed out with a pause glyph centered over the row */
+  .desktopRowPaused { background: var(--cream, #f7f5f1); }
+  .desktopRowPaused .drIcon { filter: grayscale(1); opacity: .5; }
+  .desktopRowPaused .drName,
+  .desktopRowPaused .drMeta,
+  .desktopRowPaused .drAmount,
+  .desktopRowPaused .drNext,
+  .desktopRowPaused .drBadges { opacity: .45; }
+  .drPauseOverlay {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 22px; color: var(--muted);
+    pointer-events: none; z-index: 1;
+    opacity: .7;
   }
   .desktopRow:last-child { border-bottom: none; }
   .desktopRow:hover { background: var(--cream, #faf8f5); }
@@ -367,44 +380,17 @@
   .drNextLabel { display: block; font-size: 10px; color: var(--muted); }
   .drNextDate { font-size: 12px; font-weight: 600; color: var(--ink); font-family: var(--font-num); }
 
-  /* Toggle switch */
-  .drToggle {
-    width: 36px; height: 20px; border-radius: 99px;
-    border: none; cursor: pointer; padding: 2px;
-    transition: background .2s;
-    display: flex; align-items: center;
-    position: relative;
-  }
-  .drToggleOn  { background: #10b981; }
-  .drToggleOff { background: #d1d5db; }
-  .drToggleKnob {
-    width: 16px; height: 16px; border-radius: 99px; background: #fff;
-    box-shadow: 0 1px 3px rgba(0,0,0,.2);
-    transition: transform .2s;
-  }
-
-  .drEditBtn {
-    width: 30px; height: 30px; border-radius: 8px;
-    background: transparent; border: 1px solid var(--border);
-    cursor: pointer; font-size: 13px;
-    display: flex; align-items: center; justify-content: center;
-    transition: background .15s;
-  }
-  .drEditBtn:hover { background: var(--cream); }
+  .drMenuCell { display: flex; justify-content: flex-end; }
 
   /* ── Desktop form ── */
-  .desktopForm {
-    background: #fff; border: 1px solid var(--border);
-    border-radius: 24px; overflow: hidden;
-    margin-bottom: 20px;
+  .modalForm {
+    display: flex; flex-direction: column;
+    min-height: 0; overflow: hidden;
   }
-  .desktopFormTitle {
-    font-family: var(--font-head);
-    font-size: 17px; font-weight: 700; color: var(--ink);
-    padding: 20px 24px; border-bottom: 1.5px solid var(--border);
-    margin: 0;
+  .desktopFormBody {
+    padding: 20px 24px; display: flex; flex-direction: column; gap: 4px;
+    overflow-y: auto; min-height: 0; flex: 1;
   }
-  .desktopFormBody { padding: 20px 24px; display: flex; flex-direction: column; gap: 4px; }
 
   /* Monto + Moneda inline */
   .desktopAmountRow { display: flex; gap: 10px; align-items: flex-start; }
@@ -433,5 +419,6 @@
     display: flex; justify-content: space-between; align-items: center;
     gap: 12px; padding: 16px 24px;
     border-top: 1.5px solid var(--border);
+    flex-shrink: 0;
   }
 }

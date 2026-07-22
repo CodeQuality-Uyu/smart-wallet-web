@@ -7,6 +7,7 @@ import type {
   UpdateRecurringPayload,
   ConfirmRecurringPaymentPayload,
   UpdateRecurringPaymentPayload,
+  SkipRecurringMonthPayload,
   RecurringPaymentHistory,
 } from '@/types/models'
 import { RecurringStatus } from '@/types/enums'
@@ -41,6 +42,14 @@ export const recurringService = {
     payload: ConfirmRecurringPaymentPayload,
   ): Promise<RecurringPaymentHistory> {
     return (await getRecurringBackend()).confirmPayment(id, payload)
+  },
+
+  async skipMonth(id: string, payload: SkipRecurringMonthPayload): Promise<RecurringExpense> {
+    return (await getRecurringBackend()).skipMonth(id, payload)
+  },
+
+  async unskipMonth(id: string, payload: SkipRecurringMonthPayload): Promise<RecurringExpense> {
+    return (await getRecurringBackend()).unskipMonth(id, payload)
   },
 
   async updatePayment(

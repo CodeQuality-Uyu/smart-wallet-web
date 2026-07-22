@@ -1,8 +1,8 @@
 // src/tests/mocks/handlers.ts
 
 import { http, HttpResponse } from 'msw'
-import { Currency, RecurringPaymentStatus, ReceiptStatus } from '@/types/enums'
-import type { CategorySpend, ProductCategorySpend, MonthAnalysis } from '@/types/models'
+import { Currency, RecurringMode, RecurringPaymentStatus, ReceiptStatus } from '@/types/enums'
+import type { CategorySpend, ProductCategorySpend, MonthAnalysis, GmailPendingItem } from '@/types/models'
 
 import { mockExpenses } from './data/expenses'
 import { mockCategories } from './data/categories'
@@ -21,8 +21,12 @@ import { mockPriceHistory } from './data/priceHistory'
 import { mockNotifications, mockNotificationPrefs } from './data/notifications'
 import { mockReportAttachments } from './data/reportAttachments'
 import { mockUserPrefs } from './data/userPrefs'
+import { mockGmailIntegration, mockGmailQueue } from './data/gmailIntegration'
+import { mockGmailLabels, mockGmailMessages } from './data/gmailMessages'
 import { mockMonthAnalyses } from './data/monthAnalysis'
 import { mockPendingReceipts } from './data/pendingReceipts'
+import { mockDashboardWidgets } from './data/dashboardWidgets'
+import { mockRecortes, mockRecorteResults } from './data/recortes'
 
 const BASE = '/api'
 
@@ -259,6 +263,112 @@ export const handlers = [
     return new HttpResponse(null, { status: 204 })
   }),
 
+  // ─── Dashboard widgets (visualizadores fijos) ───────────
+  http.get(`${BASE}/dashboard-widgets`, () =>
+    HttpResponse.json(
+      mockDashboardWidgets
+        .filter((w) => w.active !== false)
+        .sort((a, b) => a.position - b.position)
+    )
+  ),
+
+  http.post(`${BASE}/dashboard-widgets`, async ({ request }) => {
+    const body = await request.json() as Record<string, unknown>
+    const now = new Date().toISOString()
+    const widget = {
+      position: mockDashboardWidgets.length,
+      ...body,
+      id: crypto.randomUUID(),
+      active: true,
+      createdAt: now,
+      updatedAt: now,
+    } as (typeof mockDashboardWidgets)[number]
+    mockDashboardWidgets.push(widget)
+    return HttpResponse.json(widget, { status: 201 })
+  }),
+
+  http.patch(`${BASE}/dashboard-widgets/:id`, async ({ params, request }) => {
+    const widget = mockDashboardWidgets.find((w) => w.id === params['id'])
+    if (!widget) return new HttpResponse(null, { status: 404 })
+    const body = await request.json() as Record<string, unknown>
+    Object.assign(widget, body, { updatedAt: new Date().toISOString() })
+    return HttpResponse.json(widget)
+  }),
+
+  http.delete(`${BASE}/dashboard-widgets/:id`, ({ params }) => {
+    const widget = mockDashboardWidgets.find((w) => w.id === params['id'])
+    if (!widget) return new HttpResponse(null, { status: 404 })
+    widget.active = false
+    widget.updatedAt = new Date().toISOString()
+    return new HttpResponse(null, { status: 204 })
+  }),
+
+  // ─── Recortes (indicadores de recorte dinámicos) ────────
+  http.get(`${BASE}/recortes`, () =>
+    HttpResponse.json(
+      mockRecortes
+        .filter((r) => r.active !== false)
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    )
+  ),
+
+  http.get(`${BASE}/recortes/:id`, ({ params }) => {
+    const recorte = mockRecortes.find((r) => r.id === params['id'])
+    if (!recorte) return new HttpResponse(null, { status: 404 })
+    return HttpResponse.json(recorte)
+  }),
+
+  http.post(`${BASE}/recortes`, async ({ request }) => {
+    const body = await request.json() as Record<string, unknown>
+    const now = new Date().toISOString()
+    const recorte = {
+      ...body,
+      id: crypto.randomUUID(),
+      active: true,
+      createdAt: now,
+      updatedAt: now,
+    } as (typeof mockRecortes)[number]
+    mockRecortes.push(recorte)
+    return HttpResponse.json(recorte, { status: 201 })
+  }),
+
+  http.patch(`${BASE}/recortes/:id`, async ({ params, request }) => {
+    const recorte = mockRecortes.find((r) => r.id === params['id'])
+    if (!recorte) return new HttpResponse(null, { status: 404 })
+    const body = await request.json() as Record<string, unknown>
+    Object.assign(recorte, body, { updatedAt: new Date().toISOString() })
+    return HttpResponse.json(recorte)
+  }),
+
+  http.delete(`${BASE}/recortes/:id`, ({ params }) => {
+    const recorte = mockRecortes.find((r) => r.id === params['id'])
+    if (!recorte) return new HttpResponse(null, { status: 404 })
+    recorte.active = false
+    recorte.updatedAt = new Date().toISOString()
+    return new HttpResponse(null, { status: 204 })
+  }),
+
+  http.get(`${BASE}/recortes/:id/results`, ({ params }) => {
+    const id = params['id'] as string
+    const results = (mockRecorteResults[id] ?? [])
+      .slice()
+      .sort((a, b) => b.generatedAt.localeCompare(a.generatedAt))
+    return HttpResponse.json(results)
+  }),
+
+  http.post(`${BASE}/recortes/:id/results`, async ({ params, request }) => {
+    const id = params['id'] as string
+    const body = await request.json() as Record<string, unknown>
+    const result = { ...body, id: crypto.randomUUID() } as (typeof mockRecorteResults)[string][number]
+    mockRecorteResults[id] = [result, ...(mockRecorteResults[id] ?? [])]
+    const recorte = mockRecortes.find((r) => r.id === id)
+    if (recorte) {
+      recorte.lastResult = result
+      recorte.updatedAt = new Date().toISOString()
+    }
+    return HttpResponse.json(result, { status: 201 })
+  }),
+
   // ─── Places ─────────────────────────────────────────────
   http.get(`${BASE}/places/global`, ({ request }) => {
     const q = new URL(request.url).searchParams.get('q')?.toLowerCase() ?? ''
@@ -397,10 +507,50 @@ export const handlers = [
       status: RecurringPaymentStatus.Paid,
     }
     if (rec) {
-      rec.paymentHistory = [history, ...(rec.paymentHistory ?? [])]
+      // A real payment supersedes a prior skip for the same period.
+      const kept = (rec.paymentHistory ?? []).filter(
+        (h) => !(h.month === month && h.year === year && h.status === RecurringPaymentStatus.Skipped),
+      )
+      rec.paymentHistory = [history, ...kept]
       rec.currentMonthStatus = RecurringPaymentStatus.Paid
     }
     return HttpResponse.json(history, { status: 201 })
+  }),
+
+  http.post(`${BASE}/recurring/:id/skip-month`, async ({ params, request }) => {
+    const rec = mockRecurring.find((r) => r.id === params['id'])
+    if (!rec) return new HttpResponse(null, { status: 404 })
+    const { month, year } = await request.json() as { month: number; year: number }
+    const already = rec.paymentHistory.find((h) => h.month === month && h.year === year)
+    if (already?.status === RecurringPaymentStatus.Paid) {
+      return HttpResponse.json({ message: 'Este mes ya está pagado' }, { status: 409 })
+    }
+    if (!already || already.status !== RecurringPaymentStatus.Skipped) {
+      rec.paymentHistory = [
+        { id: crypto.randomUUID(), month, year, amount: 0, currency: rec.currency, status: RecurringPaymentStatus.Skipped },
+        ...rec.paymentHistory,
+      ]
+    }
+    const now = new Date()
+    if (month === now.getMonth() + 1 && year === now.getFullYear()) {
+      rec.currentMonthStatus = RecurringPaymentStatus.Skipped
+    }
+    return HttpResponse.json(rec)
+  }),
+
+  http.post(`${BASE}/recurring/:id/unskip-month`, async ({ params, request }) => {
+    const rec = mockRecurring.find((r) => r.id === params['id'])
+    if (!rec) return new HttpResponse(null, { status: 404 })
+    const { month, year } = await request.json() as { month: number; year: number }
+    rec.paymentHistory = rec.paymentHistory.filter(
+      (h) => !(h.month === month && h.year === year && h.status === RecurringPaymentStatus.Skipped),
+    )
+    const now = new Date()
+    if (month === now.getMonth() + 1 && year === now.getFullYear()) {
+      rec.currentMonthStatus =
+        rec.mode === RecurringMode.Auto ? RecurringPaymentStatus.Paid : RecurringPaymentStatus.Pending
+    }
+    return HttpResponse.json(rec)
   }),
 
   http.patch(`${BASE}/recurring/:id/payments/:paymentId`, async ({ params, request }) => {
@@ -466,12 +616,20 @@ export const handlers = [
         return { start, end }
       } else if (p === 'month') {
         return { start: new Date(now.getFullYear(), now.getMonth(), 1), end: new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999) }
+      } else if (p === 'lastMonth') {
+        return { start: new Date(now.getFullYear(), now.getMonth() - 1, 1), end: new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999) }
       } else if (p === '3m') {
         const start = new Date(now); start.setMonth(start.getMonth() - 3); start.setHours(0, 0, 0, 0)
         const end = new Date(now); end.setHours(23, 59, 59, 999)
         return { start, end }
+      } else if (p === '6m') {
+        const start = new Date(now); start.setMonth(start.getMonth() - 6); start.setHours(0, 0, 0, 0)
+        const end = new Date(now); end.setHours(23, 59, 59, 999)
+        return { start, end }
       } else if (p === 'year') {
         return { start: new Date(now.getFullYear(), 0, 1), end: new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999) }
+      } else if (p === 'all') {
+        return { start: new Date(0), end: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999) }
       }
       return null
     }
@@ -480,12 +638,22 @@ export const handlers = [
       const totalUsd = filtered.filter((e) => e.currency === 'USD').reduce((s, e) => s + e.amount, 0)
       const totalUyu = filtered.filter((e) => e.currency === 'UYU').reduce((s, e) => s + e.amount, 0)
       const catMap = new Map(mockCategories.map((c) => [c.id, c]))
-      const byCategoryMap = new Map<string, { usd: number; uyu: number; expenseCount: number }>()
+      const byCategoryMap = new Map<
+        string,
+        { usd: number; uyu: number; expenseCount: number; expenseCountUsd: number; expenseCountUyu: number }
+      >()
       for (const exp of filtered) {
+        // Rollup a la jerarquía: acreditar cada categoría + su padre, deduplicado por gasto
+        const targets = new Set<string>()
         for (const catId of exp.categoryIds) {
-          const entry = byCategoryMap.get(catId) ?? { usd: 0, uyu: 0, expenseCount: 0 }
-          if (exp.currency === 'USD') entry.usd += exp.amount
-          else entry.uyu += exp.amount
+          targets.add(catId)
+          const parentId = catMap.get(catId)?.parentId
+          if (parentId) targets.add(parentId)
+        }
+        for (const catId of targets) {
+          const entry = byCategoryMap.get(catId) ?? { usd: 0, uyu: 0, expenseCount: 0, expenseCountUsd: 0, expenseCountUyu: 0 }
+          if (exp.currency === 'USD') { entry.usd += exp.amount; entry.expenseCountUsd += 1 }
+          else { entry.uyu += exp.amount; entry.expenseCountUyu += 1 }
           entry.expenseCount += 1
           byCategoryMap.set(catId, entry)
         }
@@ -493,7 +661,7 @@ export const handlers = [
       const byCategory = [...byCategoryMap.entries()]
         .map(([catId, totals]) => {
           const cat = catMap.get(catId)
-          return { categoryId: catId, categoryName: cat?.name ?? catId, categoryIcon: cat?.icon ?? '📦', ...totals }
+          return { categoryId: catId, categoryName: cat?.name ?? catId, categoryIcon: cat?.icon ?? '📦', parentId: cat?.parentId, ...totals }
         })
         .sort((a, b) => (b.usd + b.uyu) - (a.usd + a.uyu))
       const productMap = new Map(mockUserProducts.map((p) => [p.id, p]))
@@ -840,6 +1008,55 @@ export const handlers = [
     return HttpResponse.json(mockUserPrefs)
   }),
 
+  // ─── Integraciones ───────────────────────────────────────
+  http.get(`${BASE}/integrations/gmail`, () => HttpResponse.json(mockGmailIntegration)),
+
+  http.patch(`${BASE}/integrations/gmail`, async ({ request }) => {
+    const body = await request.json() as Record<string, unknown>
+    Object.assign(mockGmailIntegration, body)
+    return HttpResponse.json(mockGmailIntegration)
+  }),
+
+  // ─── Gmail: cola de import (pendientes + vistos) ─────────
+  http.get(`${BASE}/integrations/gmail/queue`, () => HttpResponse.json(mockGmailQueue)),
+
+  http.post(`${BASE}/integrations/gmail/queue/seen`, async ({ request }) => {
+    const { ids } = (await request.json()) as { ids: string[] }
+    const set = new Set([...mockGmailQueue.seenIds, ...ids])
+    mockGmailQueue.seenIds = [...set]
+    return HttpResponse.json(mockGmailQueue)
+  }),
+
+  http.post(`${BASE}/integrations/gmail/queue/pending`, async ({ request }) => {
+    const { items } = (await request.json()) as { items: GmailPendingItem[] }
+    const byId = new Map(mockGmailQueue.pending.map((p) => [p.gmailMessageId, p]))
+    for (const item of items) if (!byId.has(item.gmailMessageId)) byId.set(item.gmailMessageId, item)
+    mockGmailQueue.pending = [...byId.values()]
+    return HttpResponse.json(mockGmailQueue)
+  }),
+
+  http.post(`${BASE}/integrations/gmail/queue/pending/remove`, async ({ request }) => {
+    const { messageIds } = (await request.json()) as { messageIds: string[] }
+    const remove = new Set(messageIds)
+    mockGmailQueue.pending = mockGmailQueue.pending.filter((p) => !remove.has(p.gmailMessageId))
+    return HttpResponse.json(mockGmailQueue)
+  }),
+
+  // ─── Gmail (fetch de mails mockeado) ─────────────────────
+  http.get(`${BASE}/gmail/labels`, () => HttpResponse.json(mockGmailLabels)),
+
+  http.post(`${BASE}/gmail/messages`, async ({ request }) => {
+    const { senders } = (await request.json()) as { senders?: string[]; labels?: string[]; windowDays?: number }
+    // Filtro liviano por remitente para simular la búsqueda; si no matchea nada
+    // (o no hay remitentes configurados) devuelve todos para que dev vea datos.
+    const filtered = senders?.length
+      ? mockGmailMessages.filter((m) =>
+          senders.some((s) => m.from.toLowerCase().includes(s.toLowerCase())),
+        )
+      : mockGmailMessages
+    return HttpResponse.json(filtered.length ? filtered : mockGmailMessages)
+  }),
+
   // ─── Gemini AI (category suggestion + statement parsing mock) ─
   // Intercepts all Gemini model variants (2.0-flash, 2.5-flash, etc.)
   http.post(/https:\/\/generativelanguage\.googleapis\.com\/v1beta\/models\/gemini-.+:generateContent/, async ({ request }) => {
@@ -880,6 +1097,19 @@ export const handlers = [
 
     const promptText = parts.find((p): p is { text: string } => 'text' in p)?.text ?? ''
 
+    // Gmail: parse de avisos de compra por email → gastos candidatos.
+    // Devuelve líneas para los 3 mails mock (ver data/gmailMessages.ts).
+    if (promptText.includes('avisos de compra recibidos por email')) {
+      const lines = [
+        { gmailMessageId: 'gmail-msg-1', date: '2026-07-19', description: 'TIENDA INGLESA', amount: 1234, currency: 'UYU', suggestedCategoryName: 'Supermercado' },
+        { gmailMessageId: 'gmail-msg-2', date: '2026-07-17', description: 'NETFLIX.COM', amount: 29.99, currency: 'USD', suggestedCategoryName: 'Entretenimiento' },
+        { gmailMessageId: 'gmail-msg-3', date: '2026-07-15', description: 'DEVOTO EXPRESS', amount: 560, currency: 'UYU', suggestedCategoryName: 'Supermercado' },
+      ]
+      return HttpResponse.json({
+        candidates: [{ content: { parts: [{ text: JSON.stringify({ lines }) }] } }],
+      })
+    }
+
     // Monthly analysis prompt
     if (promptText.includes('análisis mensual')) {
       const mockAnalysis = {
@@ -896,6 +1126,48 @@ export const handlers = [
       }
       return HttpResponse.json({
         candidates: [{ content: { parts: [{ text: JSON.stringify(mockAnalysis) }] } }],
+      })
+    }
+
+    // Recorte: diseño del indicador a partir del prompt del usuario (draft/preview)
+    if (promptText.includes('Diseñá un indicador de recorte')) {
+      const draft = {
+        name: 'Gasto hormiga',
+        description: 'Compras chicas y frecuentes que suman más de lo que parece.',
+        icon: '🐜',
+        color: '#ff7043',
+        outputFormat: 'amount',
+      }
+      return HttpResponse.json({
+        candidates: [{ content: { parts: [{ text: JSON.stringify(draft) }] } }],
+      })
+    }
+
+    // Recorte: cálculo del resultado del indicador
+    if (promptText.includes('Calculá el resultado del indicador de recorte')) {
+      const fmt = promptText.match(/Formato de salida:\s*(\w+)/)?.[1] ?? 'text'
+      const byFormat: Record<string, unknown> = {
+        amount: {
+          amount: 3600,
+          currency: 'UYU',
+          text: 'Estimación sobre los gastos del período seleccionado.',
+        },
+        list: {
+          items: [
+            { label: 'Restaurantes', detail: 'Subió respecto al período anterior.', amount: 2100, currency: 'UYU' },
+            { label: 'Delivery', detail: 'Muchas compras chicas.', amount: 1500, currency: 'UYU' },
+          ],
+        },
+        badge: {
+          badge: { level: 'warning', label: 'Atención — gasto en alza' },
+          text: 'El gasto variable creció respecto al período anterior.',
+        },
+        text: {
+          text: 'Según los datos del período, tu gasto se concentra en pocas categorías; recortar la de mayor peso tendría impacto directo.',
+        },
+      }
+      return HttpResponse.json({
+        candidates: [{ content: { parts: [{ text: JSON.stringify(byFormat[fmt] ?? byFormat['text']) }] } }],
       })
     }
 
@@ -930,6 +1202,12 @@ export const handlers = [
     const url = new URL(request.url)
     const yearMonth = url.searchParams.get('yearMonth') ?? ''
     return HttpResponse.json(mockReportAttachments.filter((a) => a.yearMonth === yearMonth))
+  }),
+
+  http.get(`${BASE}/report-attachments/:id`, ({ params }) => {
+    const att = mockReportAttachments.find((a) => a.id === params.id)
+    if (!att) return new HttpResponse(null, { status: 404 })
+    return HttpResponse.json(att)
   }),
 
   http.post(`${BASE}/report-attachments`, async ({ request }) => {

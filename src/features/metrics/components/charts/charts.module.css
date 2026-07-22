@@ -1,0 +1,38 @@
+/* src/features/metrics/components/charts/charts.module.css */
+
+.empty { font-size: 12px; color: var(--muted); font-style: italic; padding: 8px 0; }
+
+/* tooltip compartido */
+.tooltip {
+  display: flex; flex-direction: column; gap: 2px;
+  background: #fff; border: 1px solid var(--border); border-radius: 10px;
+  padding: 8px 10px; box-shadow: 0 6px 20px rgba(0,0,0,.1);
+}
+.tooltipName { font-size: 11px; font-weight: 700; color: var(--ink); }
+.tooltipVal { font-family: var(--font-num); font-size: 12px; font-weight: 700; color: var(--ink); }
+
+/* distribución */
+.distWrap { display: flex; flex-direction: column; gap: 14px; }
+.distBlock { display: flex; flex-direction: column; gap: 2px; }
+.distCur { font-size: 10px; font-weight: 800; letter-spacing: .04em; padding-left: 2px; }
+
+/* anillo de ahorro */
+.ringWrap { position: relative; width: 100%; }
+.ringCenter {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; pointer-events: none;
+}
+.ringPct { font-family: var(--font-num); font-size: 22px; font-weight: 800; color: var(--ink); line-height: 1; }
+.ringLbl { font-size: 10px; color: var(--muted); font-weight: 600; }
+
+/* fijos vs variables */
+.splitWrap { display: flex; flex-direction: column; gap: 8px; }
+.splitLegend { display: flex; flex-wrap: wrap; gap: 12px; }
+.splitItem { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink); font-weight: 600; }
+.splitDot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+/* presupuesto */
+.budgetWrap { display: flex; flex-direction: column; gap: 6px; }
+.budgetHead { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.budgetLbl { font-size: 12px; font-weight: 700; color: var(--ink); }
+.budgetPct { font-family: var(--font-num); font-size: 11px; color: var(--muted); }

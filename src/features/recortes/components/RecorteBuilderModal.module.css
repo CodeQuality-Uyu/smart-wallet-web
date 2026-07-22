@@ -1,0 +1,138 @@
+/* src/features/recortes/components/RecorteBuilderModal.module.css */
+
+/* El panel del Modal tiene overflow:hidden + max-height; el body toma el alto
+   restante y scrollea, así el botón de acción siempre queda alcanzable. */
+.body {
+  padding: 20px 24px 24px; display: flex; flex-direction: column; gap: 12px;
+  flex: 1; min-height: 0; overflow-y: auto;
+}
+
+.label { font-size: 12px; font-weight: 700; color: var(--ink); margin-top: 4px; }
+.labelHint { font-weight: 500; color: var(--muted); }
+
+/* category picker: chips multi-select para acotar el análisis.
+   Sin scroll propio: scrollea el body del modal (evita el doble scroll). */
+.catPicker { display: flex; flex-wrap: wrap; gap: 8px; }
+.catChip {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1.5px solid var(--border); border-radius: 20px;
+  padding: 6px 12px; background: #fff;
+  font-family: inherit; font-size: 12.5px; font-weight: 600; color: var(--ink);
+  cursor: pointer;
+}
+.catChip:hover { border-color: var(--g500, #22c55e); }
+.catChipActive { border-color: var(--g600, #16a34a); background: var(--g50, #f0fdf4); }
+
+.input, .textarea {
+  width: 100%; box-sizing: border-box;
+  border: 1px solid var(--border); border-radius: 12px;
+  padding: 10px 12px; font-family: inherit; font-size: 14px; color: var(--ink);
+  background: #fff;
+  /* En una columna flex con scroll, los ítems se encogen por debajo de su alto
+     natural: sin esto los textareas colapsan a una línea. */
+  flex-shrink: 0;
+}
+.textarea { resize: vertical; line-height: 1.5; min-height: 76px; field-sizing: content; }
+.input:focus, .textarea:focus { outline: none; border-color: var(--g500, #22c55e); }
+
+/* suggestions */
+.suggestions { display: flex; flex-direction: column; gap: 8px; }
+.suggTitle { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+.suggList { display: flex; flex-wrap: wrap; gap: 8px; }
+.suggChip {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid var(--border); border-radius: 20px;
+  padding: 7px 14px; background: var(--cream, #faf8f5);
+  font-family: inherit; font-size: 12.5px; font-weight: 600; color: var(--ink);
+  cursor: pointer;
+}
+.suggChip:hover { border-color: var(--g500, #22c55e); background: var(--g50, #f0fdf4); }
+
+/* preview head: icon chip + nombre/descripción */
+.previewHead { display: flex; align-items: center; gap: 14px; }
+.previewIcon {
+  width: 48px; height: 48px; border-radius: 14px; color: #fff; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 24px;
+}
+.previewMeta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.previewName { font-size: 15px; font-weight: 700; color: var(--ink); }
+.previewDesc { font-size: 12.5px; color: var(--muted); line-height: 1.35; }
+
+/* icon picker: grilla de presets + emoji libre como última celda */
+.iconPicker { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
+.icoBtn {
+  width: 100%; height: 36px; box-sizing: border-box; border-radius: 8px;
+  background: #fff; border: 1.5px solid var(--border); font-size: 18px;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.icoBtn:hover { border-color: var(--g500, #22c55e); }
+.icoBtnActive {
+  border-color: var(--g600, #16a34a); background: var(--g50, #f0fdf4);
+  box-shadow: 0 0 0 2px rgba(16,185,129,.15);
+}
+.icoCustom {
+  width: 100%; height: 36px; box-sizing: border-box; text-align: center; font-size: 16px;
+  border: 1.5px dashed var(--border); border-radius: 8px; padding: 0;
+  background: var(--cream, #faf8f5); font-family: inherit;
+}
+.icoCustom:focus { outline: none; border-color: var(--g500, #22c55e); }
+
+/* color picker: grilla de presets + selector custom como última celda */
+.colorPicker { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
+.colorBtn {
+  width: 100%; height: 36px; box-sizing: border-box; border-radius: 8px;
+  border: 2.5px solid transparent; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform .1s;
+}
+.colorBtn:hover { transform: scale(1.12); }
+.colorBtnActive {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--swatch-color);
+  border-color: var(--swatch-color);
+}
+.colorBtnActive::after {
+  content: '✓'; font-size: 13px; font-weight: 800; line-height: 1; color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,.35); pointer-events: none;
+}
+.colorCustom {
+  width: 100%; height: 36px; box-sizing: border-box; padding: 2px;
+  border: 1.5px dashed var(--border); border-radius: 8px; background: #fff; cursor: pointer;
+}
+.colorCustom::-webkit-color-swatch-wrapper { padding: 0; }
+.colorCustom::-webkit-color-swatch { border: none; border-radius: 5px; }
+
+/* output format grid */
+.formatGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.formatCard {
+  display: flex; flex-direction: column; gap: 3px; text-align: left;
+  border: 1px solid var(--border); border-radius: 14px; padding: 12px;
+  background: #fff; cursor: pointer;
+}
+.formatCard:hover { border-color: var(--g500, #22c55e); }
+.formatActive { border-color: var(--g600, #16a34a); background: var(--g50, #f0fdf4); }
+.formatIcon { font-size: 20px; }
+.formatLabel { font-size: 13px; font-weight: 700; color: var(--ink); }
+.formatHint { font-size: 11px; color: var(--muted); line-height: 1.35; }
+
+/* range mode radios */
+.rangeModes { display: flex; gap: 18px; }
+.rangeMode {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 13px; font-weight: 600; color: var(--ink); cursor: pointer;
+}
+.rangeMode input { accent-color: var(--g600, #16a34a); cursor: pointer; }
+
+.dateInput {
+  width: 100%; box-sizing: border-box;
+  border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px;
+  font-family: inherit; font-size: 14px; color: var(--ink); background: #fff;
+}
+.dateInput:focus { outline: none; border-color: var(--g500, #22c55e); }
+
+.actions { display: flex; justify-content: space-between; gap: 10px; margin-top: 8px; }
+
+.error { font-size: 12px; color: var(--rose, #e11d48); }
+
+@media (max-width: 520px) {
+  .formatGrid { grid-template-columns: 1fr; }
+}

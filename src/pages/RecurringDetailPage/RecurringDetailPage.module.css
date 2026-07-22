@@ -330,9 +330,34 @@
   .dkPauseBtnActivate { border-color: var(--g500); color: var(--g600); }
   .dkPauseBtnActivate:hover { background: var(--g50, #f0fdf4); border-color: var(--g600); }
 
+  .dkFooterActions { display: flex; gap: 12px; align-items: stretch; }
+  .dkFooterActions .dkPauseBtn { flex: 1; }
+  .dkDeleteBtn {
+    padding: 14px 20px;
+    border-radius: 16px; border: 1.5px solid var(--rose, #f43f5e);
+    background: #fff; color: var(--rose, #f43f5e);
+    font-family: var(--font-head); font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all .15s; flex-shrink: 0;
+  }
+  .dkDeleteBtn:hover { background: var(--rose, #f43f5e); color: #fff; }
+  .dkDeleteBtn:disabled { opacity: .6; cursor: default; }
+
   /* ── Desktop edit ── */
   .dkEditWrap { padding: 32px 40px 48px; }
   .dkBreadcrumb { margin-bottom: 20px; }
+  .dkBackBtn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border: 1.5px solid var(--border); border-radius: 12px;
+    background: transparent; font-size: 13px; font-weight: 600; color: var(--muted);
+    cursor: pointer; font-family: inherit; transition: all .15s;
+  }
+  .dkBackBtn:hover { border-color: var(--muted); color: var(--ink); }
+  .labelRightBtn {
+    background: none; border: none; cursor: pointer;
+    font-size: 11px; font-weight: 600; color: var(--g600);
+    font-family: inherit; padding: 0;
+  }
+  .labelRightBtn:hover { text-decoration: underline; }
   .dkEditCard {
     background: #fff; border: 1px solid var(--border);
     border-radius: 24px; padding: 28px 32px;
@@ -370,3 +395,36 @@
     border-top: none;
   }
 }
+
+/* ─── Skip month ─── */
+.histHeaderActions { display: flex; align-items: center; gap: 8px; }
+.overdueActions { display: flex; align-items: center; gap: 8px; }
+.skipBtn {
+  font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 20px;
+  border: 1.5px solid var(--border); background: none; color: var(--muted);
+  cursor: pointer; font-family: inherit; white-space: nowrap; transition: background .15s, color .15s;
+}
+.skipBtn:hover:not(:disabled) { background: var(--g50); color: var(--ink); }
+.skipBtn:disabled { opacity: .5; cursor: default; }
+.skippedBanner {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: var(--g50); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 10px 14px; margin-bottom: 12px; font-size: 13px; color: var(--muted);
+}
+.skipUndoBtn {
+  font-size: 12px; font-weight: 600; color: var(--g600);
+  background: none; border: 1px solid var(--g200); border-radius: 8px;
+  padding: 4px 10px; cursor: pointer; font-family: inherit; white-space: nowrap;
+}
+.skipUndoBtn:hover { background: var(--g50); }
+.skippedRow {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.skippedRow:last-child { border-bottom: none; }
+.skippedIcon {
+  width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+  background: var(--border); color: var(--muted); font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.skippedTag { font-size: 12px; color: var(--muted); font-style: italic; }

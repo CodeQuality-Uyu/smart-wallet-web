@@ -7,6 +7,9 @@ export const reportAttachmentsService = {
   async list(yearMonth: string): Promise<ReportAttachment[]> {
     return (await getReportAttachmentsBackend()).list(yearMonth)
   },
+  async getById(id: string): Promise<ReportAttachment | null> {
+    return (await getReportAttachmentsBackend()).getById(id)
+  },
   async upload(yearMonth: string, file: File, options?: { cardId?: string }): Promise<ReportAttachment> {
     return (await getReportAttachmentsBackend()).upload(yearMonth, file, options)
   },

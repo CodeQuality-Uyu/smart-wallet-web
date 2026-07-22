@@ -37,9 +37,14 @@ export const firestoreCategoriesBackend: ICategoriesBackend = {
   async create(payload: CreateCategoryPayload): Promise<Category> {
     const uid = requireUid()
     const now = new Date().toISOString()
-    const data = { ...payload, active: true, createdAt: now, updatedAt: now }
+    const data: Record<string, unknown> = { ...payload, active: true, createdAt: now, updatedAt: now }
+    // Firestore rechaza undefined: descartar campos opcionales sin valor
+    // (parentId de categorías raíz, límites sin configurar, etc.)
+    for (const key of Object.keys(data)) {
+      if (data[key] === undefined || data[key] === '') delete data[key]
+    }
     const ref = await addDoc(collection(firestore, 'users', uid, 'categories'), data)
-    return { id: ref.id, ...data }
+    return { id: ref.id, ...data } as Category
   },
 
   async update(id: string, payload: UpdateCategoryPayload): Promise<Category> {
@@ -48,6 +53,8 @@ export const firestoreCategoriesBackend: ICategoriesBackend = {
     const data: Record<string, unknown> = { ...payload, updatedAt: new Date().toISOString() }
     if (payload.limitUYU == null) data['limitUYU'] = deleteField()
     if (payload.limitUSD == null) data['limitUSD'] = deleteField()
+    // Desanidar (volver a raíz) elimina el campo en lugar de escribir undefined
+    if (payload.parentId == null || payload.parentId === '') data['parentId'] = deleteField()
     await updateDoc(ref, data)
     const snap = await getDoc(ref)
     return { id: snap.id, ...snap.data() } as Category

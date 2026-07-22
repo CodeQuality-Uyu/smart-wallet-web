@@ -30,6 +30,29 @@ Cuando el usuario escribe el nombre de un gasto en `NewExpensePage`, se llama a 
 
 ---
 
+### Recortes dinámicos (indicadores definidos por el usuario)
+
+El usuario escribe en lenguaje natural qué quiere vigilar (ej. *"detectá si gasto de más en delivery"*) y Gemini interviene en dos momentos:
+
+1. **Diseño del indicador** (`draftRecorte`): a partir del prompt libre, Gemini propone `name`, `description`, `icon`, `color` y `outputFormat` (`amount` | `text` | `list` | `badge`). El usuario edita ese preview antes de crear.
+2. **Cálculo del resultado** (`computeRecorte`): usa **function calling**. En vez de mandarle un contexto fijo, se le exponen funciones read-only (`spend_by_category`, `spend_by_place`, `spend_total`, `list_expenses`) y Gemini **pide** los datos que necesita, en un loop de hasta 6 vueltas. Así el análisis no depende de que anticipemos cada tipo de dato (categorías, locales, etc.). El total lo computa siempre nuestro código vía `spend_total` (exacto, coincide con Métricas). Cada cálculo se persiste como historial en `users/{uid}/recortes/{id}/results`, junto con un `dataSnapshot` de agregados para auditar.
+
+> **Function calling — formato REST:** `tools:[{ functionDeclarations }]`; el modelo responde con `parts:[{ functionCall:{ id, name, args } }]`; el resultado se devuelve como turno `role:'user'` con `parts:[{ functionResponse:{ name, response, id } }]`. Con `tools` no se usa `responseMimeType`, por eso el JSON final se parsea defensivo. Ver [docs](https://ai.google.dev/gemini-api/docs/generate-content/function-calling).
+
+> **Modo desarrollo (MSW):** `computeRecorte` está **deshabilitado** (lanza un aviso) — el análisis con IA corre solo contra el backend real. El diseño (`draftRecorte`) y el panel "Ver datos" (`getRecorteData`, sin IA) sí funcionan en MSW.
+
+**Archivos relevantes:**
+- `src/services/recorteAnalysisService.ts` — draft + loop de function calling + parseo defensivo
+- `src/services/recorteTools.ts` — declaraciones de funciones + `loadRecorteBundle` (datos) + ejecutor
+- `src/features/recortes/` — hooks, componentes (builder, card, result view, data panel) y plantillas
+- `src/pages/RecortesPage/` — feed con botón de recalcular por tarjeta
+
+> Objetivo a mediano plazo: cuando los recortes cubran los casos actuales, las heurísticas hardcodeadas de `savingsSuggestions.ts` se eliminan (ver `TECH_DEBT.md`).
+
+En modo MSW, el handler de Gemini reconoce ambos prompts (`Diseñá un indicador de recorte` y `Calculá el resultado del indicador de recorte`) y devuelve respuestas predefinidas por formato.
+
+---
+
 ## Capacidades potenciales (no implementadas)
 
 Gemini puede aportar valor en otras áreas del proyecto con el mismo patrón de integración:

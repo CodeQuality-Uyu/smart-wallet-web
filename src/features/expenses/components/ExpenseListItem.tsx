@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { Expense, Category } from '@/types/models'
 import { formatCurrency } from '@/utils/formatCurrency'
+import { ReportOriginBadge } from './ReportOriginBadge'
 import styles from './ExpenseListItem.module.css'
 
 interface ExpenseListItemProps {
@@ -62,6 +63,7 @@ export function ExpenseListItem({
             </span>
           ))}
           {expense.placeId && <span className={styles.place}>📍</span>}
+          <ReportOriginBadge expense={expense} />
         </div>
       </div>
 

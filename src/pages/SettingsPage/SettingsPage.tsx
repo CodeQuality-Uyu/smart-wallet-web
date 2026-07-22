@@ -71,6 +71,12 @@ const SECTIONS: SettingItem[] = [
     description: 'Alertas, canales y horario silencioso',
     path: '/settings/notifications',
   },
+  {
+    icon: '🔌',
+    label: 'Integraciones',
+    description: 'Conectá Gmail y otras fuentes para importar gastos',
+    path: '/settings/integrations',
+  },
 ]
 
 export default function SettingsPage(): React.ReactElement {

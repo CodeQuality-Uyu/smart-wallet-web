@@ -1,0 +1,31 @@
+/* src/features/dashboard/components/EngineChooser.module.css */
+
+.body {
+  padding: 18px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.intro { font-size: 13px; color: var(--muted); margin-bottom: 2px; }
+
+.card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+  padding: 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  background: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color .15s, background .15s, transform .1s;
+}
+.card:hover { border-color: var(--g500); background: var(--g50); }
+.card:active { transform: scale(.99); }
+
+.icon { font-size: 28px; flex-shrink: 0; }
+.text { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+.title { font-family: var(--font-head); font-size: 15px; font-weight: 700; color: var(--ink); }
+.desc { font-size: 12px; line-height: 1.45; color: var(--muted); }
+.arrow { font-size: 18px; color: var(--g500); flex-shrink: 0; }

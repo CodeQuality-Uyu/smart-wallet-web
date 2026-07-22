@@ -4,6 +4,7 @@
 import { collection, getDocs, query, orderBy } from 'firebase/firestore'
 import { firebaseAuth, firestore } from './config'
 import { PeriodFilter, Currency, RecurringFrequency, RecurringStatus } from '@/types/enums'
+import { intervalMonths } from '@/utils/recurringSchedule'
 import type { IMetricsBackend, MetricsSummary, MetricsPeriod as MPeriod } from '../types'
 import type { Expense, Category, RecurringExpense, Product, ProductCategory } from "@/types/models"
 
@@ -41,6 +42,9 @@ function getYearMonthBounds(yearMonth: string): { start: string; end: string } {
 function getPeriodBounds(period: MPeriod): { start: string; end: string } {
   const now = new Date()
   const today = isoDate(now)
+  if (period === PeriodFilter.All) {
+    return { start: '1970-01-01', end: today }
+  }
   if (period === PeriodFilter.SevenDays) {
     const d = new Date(now)
     d.setDate(d.getDate() - 7)
@@ -51,9 +55,19 @@ function getPeriodBounds(period: MPeriod): { start: string; end: string } {
     const m = String(now.getMonth() + 1).padStart(2, '0')
     return { start: `${y}-${m}-01`, end: today }
   }
+  if (period === PeriodFilter.LastMonth) {
+    const first = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    const last = new Date(now.getFullYear(), now.getMonth(), 0)
+    return { start: isoDate(first), end: isoDate(last) }
+  }
   if (period === PeriodFilter.ThreeMonths) {
     const d = new Date(now)
     d.setMonth(d.getMonth() - 3)
+    return { start: isoDate(d), end: today }
+  }
+  if (period === PeriodFilter.SixMonths) {
+    const d = new Date(now)
+    d.setMonth(d.getMonth() - 6)
     return { start: isoDate(d), end: today }
   }
   // Year
@@ -62,6 +76,10 @@ function getPeriodBounds(period: MPeriod): { start: string; end: string } {
 
 function getPreviousPeriodBounds(period: MPeriod): { start: string; end: string } {
   const now = new Date()
+  if (period === PeriodFilter.All) {
+    // No meaningful "previous" for an all-time view — return an empty range.
+    return { start: '1970-01-02', end: '1970-01-01' }
+  }
   if (period === PeriodFilter.SevenDays) {
     const end = new Date(now)
     end.setDate(end.getDate() - 7)
@@ -74,11 +92,24 @@ function getPreviousPeriodBounds(period: MPeriod): { start: string; end: string 
     const last = new Date(now.getFullYear(), now.getMonth(), 0)
     return { start: isoDate(first), end: isoDate(last) }
   }
+  if (period === PeriodFilter.LastMonth) {
+    // Previous of "last month" is the month before it.
+    const first = new Date(now.getFullYear(), now.getMonth() - 2, 1)
+    const last = new Date(now.getFullYear(), now.getMonth() - 1, 0)
+    return { start: isoDate(first), end: isoDate(last) }
+  }
   if (period === PeriodFilter.ThreeMonths) {
     const end = new Date(now)
     end.setMonth(end.getMonth() - 3)
     const start = new Date(end)
     start.setMonth(start.getMonth() - 3)
+    return { start: isoDate(start), end: isoDate(end) }
+  }
+  if (period === PeriodFilter.SixMonths) {
+    const end = new Date(now)
+    end.setMonth(end.getMonth() - 6)
+    const start = new Date(end)
+    start.setMonth(start.getMonth() - 6)
     return { start: isoDate(start), end: isoDate(end) }
   }
   // Year
@@ -88,6 +119,21 @@ function getPreviousPeriodBounds(period: MPeriod): { start: string; end: string 
 
 function sumByCurrency(expenses: Expense[], currency: Currency): number {
   return expenses.filter((e) => e.currency === currency).reduce((s, e) => s + e.amount, 0)
+}
+
+/**
+ * Categorías a acreditar por un gasto, con rollup a la jerarquía (2 niveles):
+ * cada categoría taggeada + su padre. Devuelve un Set para deduplicar, así un
+ * gasto taggeado a padre e hija a la vez no cuenta dos veces en el total del padre.
+ */
+function rollupTargets(categoryIds: string[], catMap: Map<string, Category>): Set<string> {
+  const targets = new Set<string>()
+  for (const cid of categoryIds) {
+    targets.add(cid)
+    const parentId = catMap.get(cid)?.parentId
+    if (parentId) targets.add(parentId)
+  }
+  return targets
 }
 
 export const firestoreMetricsBackend: IMetricsBackend = {
@@ -127,18 +173,15 @@ export const firestoreMetricsBackend: IMetricsBackend = {
     const previousPeriodUyu = sumByCurrency(prevExpenses, Currency.UYU)
 
     // Fixed costs = active recurring expenses (by amount × currency).
-    // Only count monthly items toward the monthly fixed cost;
+    // Interval frequencies (bimonthly, quarterly, annual…) are prorated to a
+    // monthly-equivalent so they contribute their fair share to the monthly fixed cost.
     const activeRecurring = recurring.filter((r) => r.status === RecurringStatus.Active)
     const fixedUsd = activeRecurring
       .filter((r) => r.currency === Currency.USD)
-      .filter(r => r.frequency === RecurringFrequency.Monthly)
-      .reduce((s, r) => s + r.amount
-        , 0)
+      .reduce((s, r) => s + r.amount / intervalMonths(r.frequency), 0)
     const fixedUyu = activeRecurring
       .filter((r) => r.currency === Currency.UYU)
-      .filter(r => r.frequency === RecurringFrequency.Monthly)
-      .reduce((s, r) => s + r.amount
-        , 0)
+      .reduce((s, r) => s + r.amount / intervalMonths(r.frequency), 0)
 
     // Monthly history — last 6 months
     const now = new Date()
@@ -167,12 +210,20 @@ export const firestoreMetricsBackend: IMetricsBackend = {
 
     // By category
     const catMap = new Map(categories.map((c) => [c.id, c]))
-    const catTotals = new Map<string, { usd: number; uyu: number; expenseCount: number }>()
+    const catTotals = new Map<
+      string,
+      { usd: number; uyu: number; expenseCount: number; usdCount: number; uyuCount: number }
+    >()
     for (const exp of currentExpenses) {
-      for (const cid of exp.categoryIds) {
-        const cur = catTotals.get(cid) ?? { usd: 0, uyu: 0, expenseCount: 0 }
-        if (exp.currency === Currency.USD) cur.usd += exp.amount
-        else cur.uyu += exp.amount
+      for (const cid of rollupTargets(exp.categoryIds, catMap)) {
+        const cur = catTotals.get(cid) ?? { usd: 0, uyu: 0, expenseCount: 0, usdCount: 0, uyuCount: 0 }
+        if (exp.currency === Currency.USD) {
+          cur.usd += exp.amount
+          cur.usdCount += 1
+        } else {
+          cur.uyu += exp.amount
+          cur.uyuCount += 1
+        }
         cur.expenseCount += 1
         catTotals.set(cid, cur)
       }
@@ -184,20 +235,31 @@ export const firestoreMetricsBackend: IMetricsBackend = {
           categoryId,
           categoryName: cat?.name ?? categoryId,
           categoryIcon: cat?.icon ?? '🏷',
+          parentId: cat?.parentId,
           usd: totals.usd,
           uyu: totals.uyu,
           expenseCount: totals.expenseCount,
+          expenseCountUsd: totals.usdCount,
+          expenseCountUyu: totals.uyuCount,
         }
       })
       .sort((a, b) => b.usd + b.uyu / 100 - (a.usd + a.uyu / 100))
 
     // Previous period by category
-    const prevCatTotals = new Map<string, { usd: number; uyu: number; expenseCount: number }>()
+    const prevCatTotals = new Map<
+      string,
+      { usd: number; uyu: number; expenseCount: number; usdCount: number; uyuCount: number }
+    >()
     for (const exp of prevExpenses) {
-      for (const cid of exp.categoryIds) {
-        const cur = prevCatTotals.get(cid) ?? { usd: 0, uyu: 0, expenseCount: 0 }
-        if (exp.currency === Currency.USD) cur.usd += exp.amount
-        else cur.uyu += exp.amount
+      for (const cid of rollupTargets(exp.categoryIds, catMap)) {
+        const cur = prevCatTotals.get(cid) ?? { usd: 0, uyu: 0, expenseCount: 0, usdCount: 0, uyuCount: 0 }
+        if (exp.currency === Currency.USD) {
+          cur.usd += exp.amount
+          cur.usdCount += 1
+        } else {
+          cur.uyu += exp.amount
+          cur.uyuCount += 1
+        }
         cur.expenseCount += 1
         prevCatTotals.set(cid, cur)
       }
@@ -208,9 +270,12 @@ export const firestoreMetricsBackend: IMetricsBackend = {
         categoryId,
         categoryName: cat?.name ?? categoryId,
         categoryIcon: cat?.icon ?? '🏷',
+        parentId: cat?.parentId,
         usd: totals.usd,
         uyu: totals.uyu,
         expenseCount: totals.expenseCount,
+        expenseCountUsd: totals.usdCount,
+        expenseCountUyu: totals.uyuCount,
       }
     })
 

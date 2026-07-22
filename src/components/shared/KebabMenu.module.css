@@ -1,0 +1,30 @@
+/* src/components/shared/KebabMenu.module.css */
+
+.trigger {
+  width: 30px; height: 30px; border-radius: 8px;
+  background: transparent; border: 1px solid var(--border);
+  cursor: pointer; font-size: 18px; line-height: 1; color: var(--muted);
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s, color .15s;
+}
+.trigger:hover { background: var(--cream, #faf8f5); color: var(--ink); }
+.trigger:disabled { opacity: .6; cursor: default; }
+
+.backdrop { position: fixed; inset: 0; z-index: 90; }
+.menu {
+  position: fixed; z-index: 91; width: 176px;
+  background: #fff; border: 1px solid var(--border); border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.14);
+  padding: 6px; display: flex; flex-direction: column; gap: 2px;
+}
+.item {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; padding: 9px 12px; border: none; border-radius: 8px;
+  background: transparent; cursor: pointer; text-align: left;
+  font-family: inherit; font-size: 13px; font-weight: 500; color: var(--ink);
+  transition: background .12s;
+}
+.item:hover { background: var(--cream, #faf8f5); }
+.item:disabled { opacity: .5; cursor: default; }
+.itemDanger { color: var(--rose, #f43f5e); }
+.itemDanger:hover { background: #fff5f6; }

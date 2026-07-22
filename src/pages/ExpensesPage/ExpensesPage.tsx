@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useExpenses } from '@/features/expenses/hooks/useExpenses'
+import { ReportOriginBadge } from '@/features/expenses/components/ReportOriginBadge'
 import { useCategories } from '@/features/categories/hooks/useCategories'
 import { useCards } from '@/features/cards/hooks/useCards'
 import { usePlaces } from '@/features/places/hooks/usePlaces'
@@ -336,6 +337,7 @@ export default function ExpensesPage(): React.ReactElement {
                                 {firstCat?.icon ?? '💸'}
                               </span>
                               {expense.description}
+                              <ReportOriginBadge expense={expense} className={styles.reportBadgeInline} />
                             </td>
                             <td>
                               {expCats.map((c) => (

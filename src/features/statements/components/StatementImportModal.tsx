@@ -6,7 +6,9 @@ import { parsePdf, parsePdfFromUrl, detectDuplicates } from '@/services/statemen
 import { expensesService } from '@/services/expensesService'
 import { reportAttachmentsService } from '@/services/reportAttachmentsService'
 import { useCreateCategory } from '@/features/categories/hooks/useCategories'
-import { ControlledSelectInput } from '@/components/ui/FormField'
+import { RecurringFormModal } from '@/features/recurring/components/RecurringFormModal'
+import type { RecurringFormValues } from '@/features/recurring/schemas/recurringSchema'
+import { ImportReviewTable } from './ImportReviewTable'
 import { useUserPrefs } from '@/hooks/useUserPrefs'
 import { StatementImportAction } from '@/types/enums'
 import type { Card, Category, Place, Expense, ReportAttachment, StatementImportRow } from '@/types/models'
@@ -16,33 +18,6 @@ import { formatAmount } from '@/utils/formatCurrency'
 import styles from './StatementImportModal.module.css'
 
 type Step = 'setup' | 'uploading' | 'processing' | 'reviewing' | 'saving'
-
-// Header "select all" checkbox with an indeterminate (partial) state painted blue.
-function SelectAllCheckbox({
-  checked,
-  indeterminate,
-  onChange,
-}: {
-  checked: boolean
-  indeterminate: boolean
-  onChange: () => void
-}): React.ReactElement {
-  const ref = useRef<HTMLInputElement>(null)
-  React.useEffect(() => {
-    if (ref.current) ref.current.indeterminate = indeterminate
-  }, [indeterminate])
-  return (
-    <input
-      ref={ref}
-      type="checkbox"
-      className={styles.checkbox}
-      checked={checked}
-      onChange={onChange}
-      title={checked ? 'Desmarcar todos' : 'Marcar todos'}
-      style={indeterminate ? { accentColor: '#2563eb' } : undefined}
-    />
-  )
-}
 
 interface Props {
   isOpen: boolean
@@ -89,6 +64,8 @@ export function StatementImportModal({
     existingAttachment?.id ?? null,
   )
   const [sourceUrl, setSourceUrl] = useState<string | null>(existingAttachment?.url ?? null)
+  // Seed for the "convert line → recurring payment" modal (null = closed).
+  const [recurringSeed, setRecurringSeed] = useState<Partial<RecurringFormValues> | null>(null)
 
   const handleClose = useCallback(() => {
     setStep('setup')
@@ -288,6 +265,23 @@ export function StatementImportModal({
     setRows((prev) => prev.map((r) => (r.rowId === rowId ? { ...r, ...patch } : r)))
   }, [])
 
+  // Seed the recurring-payment form with a line's data and open it.
+  const openRecurringFromRow = useCallback(
+    (row: StatementImportRow) => {
+      const day = Number(row.date?.split('-')[2]) || undefined
+      setRecurringSeed({
+        name: row.description,
+        description: row.description,
+        amount: row.amount,
+        currency: row.currency,
+        categoryIds: row.categoryId ? [row.categoryId] : [],
+        cardId: row.cardId ?? selectedCardId,
+        ...(day ? { dueDayOfMonth: day } : {}),
+      })
+    },
+    [selectedCardId],
+  )
+
   const toggleAll = useCallback(() => {
     setRows((prev) => {
       const selectable = prev.filter((r) => !r.imported)
@@ -479,166 +473,19 @@ export function StatementImportModal({
                   {importedCount > 0 ? ` · ${importedCount} ya importado${importedCount !== 1 ? 's' : ''}` : ''}
                 </span>
               </div>
-              <div className={styles.tableWrapper}>
-                <table className={styles.table}>
-                  <thead>
-                    <tr>
-                      <th>
-                        <SelectAllCheckbox
-                          checked={allSelected}
-                          indeterminate={someSelected}
-                          onChange={toggleAll}
-                        />
-                      </th>
-                      <th>Fecha</th>
-                      <th>Descripción</th>
-                      <th>Moneda</th>
-                      <th>Monto</th>
-                      <th>Categoría</th>
-                      <th>Local</th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((row) => {
-                      const isSkipped = row.action === StatementImportAction.Skip
-                      return (
-                        <tr
-                          key={row.rowId}
-                          className={
-                            row.imported
-                              ? styles.rowImported
-                              : isSkipped
-                                ? styles.rowSkipped
-                                : undefined
-                          }
-                        >
-                          <td>
-                            <input
-                              type="checkbox"
-                              className={styles.checkbox}
-                              checked={!row.imported && !isSkipped}
-                              disabled={row.imported}
-                              onChange={(e) =>
-                                updateRow(row.rowId, {
-                                  action: e.target.checked
-                                    ? StatementImportAction.Import
-                                    : StatementImportAction.Skip,
-                                })
-                              }
-                            />
-                          </td>
-                          <td>
-                            <input
-                              type="date"
-                              className={styles.tableInput}
-                              value={row.date}
-                              style={{ minWidth: 120 }}
-                              onChange={(e) => updateRow(row.rowId, { date: e.target.value })}
-                            />
-                          </td>
-                          <td>
-                            <div className={styles.stackCell}>
-                              <input
-                                type="text"
-                                className={styles.tableInput}
-                                value={row.description}
-                                style={{ minWidth: 180 }}
-                                title={row.description}
-                                onChange={(e) => updateRow(row.rowId, { description: e.target.value })}
-                              />
-                              {row.imported && (
-                                <div className={styles.importedBadge}>
-                                  ✓ Ya importado
-                                </div>
-                              )}
-                              {row.matchedExpenseId && !row.imported && (
-                                <div className={styles.dupBadge}>
-                                  ⚠️ Posible duplicado
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                          <td>
-                            <select
-                              className={styles.tableSelect}
-                              value={row.currency}
-                              style={{ minWidth: 70 }}
-                              onChange={(e) =>
-                                updateRow(row.rowId, { currency: e.target.value as Currency })
-                              }
-                            >
-                              <option value={Currency.UYU}>UYU</option>
-                              <option value={Currency.USD}>USD</option>
-                            </select>
-                          </td>
-                          <td className={styles.amountCell}>
-                            <input
-                              type="number"
-                              className={styles.tableInput}
-                              value={row.amount}
-                              min={0}
-                              style={{ width: 80 }}
-                              onChange={(e) =>
-                                updateRow(row.rowId, { amount: parseFloat(e.target.value) || 0 })
-                              }
-                            />
-                          </td>
-                          <td>
-                            <div className={styles.stackCell} style={{ minWidth: 190 }}>
-                              <ControlledSelectInput
-                                value={row.categoryId ?? ''}
-                                onChange={(v) => updateRow(row.rowId, { categoryId: v || undefined })}
-                                options={categories.map((c) => ({
-                                  value: c.id,
-                                  label: `${c.icon} ${c.name}`,
-                                }))}
-                                placeholder="Sin categoría"
-                                icon={row.categoryId ? undefined : '🏷️'}
-                              />
-                              {row.suggestedCategoryName && !row.categoryId && (
-                                <button
-                                  className={styles.catSuggestion}
-                                  disabled={createCategory.isPending}
-                                  onClick={() => void applySuggestion(row.rowId, row.suggestedCategoryName!)}
-                                  title={`Sugerencia IA: ${row.suggestedCategoryName} (clic para asignar o crear)`}
-                                >
-                                  ✨ {row.suggestedCategoryName}
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                          <td>
-                            <div style={{ minWidth: 190 }}>
-                              <ControlledSelectInput
-                                value={row.placeId ?? ''}
-                                onChange={(v) => updateRow(row.rowId, { placeId: v || undefined })}
-                                options={places.map((p) => ({
-                                  value: p.id,
-                                  label: p.icon ? `${p.icon} ${p.name}` : p.name,
-                                }))}
-                                placeholder="Sin local"
-                                icon="📍"
-                              />
-                            </div>
-                          </td>
-                          <td>
-                            <button
-                              type="button"
-                              className={styles.rowDelete}
-                              onClick={() => removeRow(row.rowId)}
-                              title="Eliminar línea"
-                              aria-label="Eliminar línea"
-                            >
-                              🗑️
-                            </button>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              <ImportReviewTable
+                rows={rows}
+                categories={categories}
+                places={places}
+                allSelected={allSelected}
+                someSelected={someSelected}
+                createCategoryPending={createCategory.isPending}
+                onToggleAll={toggleAll}
+                onUpdateRow={updateRow}
+                onRemoveRow={removeRow}
+                onApplySuggestion={applySuggestion}
+                onOpenRecurring={openRecurringFromRow}
+              />
             </>
           )}
 
@@ -689,6 +536,14 @@ export function StatementImportModal({
           </div>
         )}
       </div>
+
+      {recurringSeed && (
+        <RecurringFormModal
+          title="🔁 Nuevo pago recurrente"
+          initialValues={recurringSeed}
+          onClose={() => setRecurringSeed(null)}
+        />
+      )}
     </div>
   )
 }

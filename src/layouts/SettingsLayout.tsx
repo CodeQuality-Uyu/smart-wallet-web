@@ -20,6 +20,7 @@ const SECTIONS: SectionItem[] = [
   { icon: '🏷️', label: 'Categorías', path: '/settings/categories' },
   { icon: '💳', label: 'Medios de pago', path: '/settings/cards' },
   { icon: '🔔', label: 'Notificaciones', path: '/settings/notifications' },
+  { icon: '🔌', label: 'Integraciones', path: '/settings/integrations' },
   { icon: '📥', label: 'Exportar datos', path: '/settings/export' },
   { icon: '🎯', label: 'Metas de Ahorro', path: '/settings/savings-goals' },
   { icon: '🔒', label: 'Seguridad', path: '/settings/security' },

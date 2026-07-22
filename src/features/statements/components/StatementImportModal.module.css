@@ -458,6 +458,34 @@
   border-color: var(--rose, #e11d48);
 }
 
+.rowActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.rowRecurring {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity 0.15s, background 0.15s, border-color 0.15s;
+}
+.rowRecurring:hover {
+  opacity: 1;
+  background: var(--g50, #ecfdf5);
+  border-color: var(--g500, #10b981);
+}
+
 .descCell {
   max-width: 180px;
   overflow: hidden;

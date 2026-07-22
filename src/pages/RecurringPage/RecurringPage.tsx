@@ -4,19 +4,27 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Formik, Form } from 'formik'
 import type { FormikHelpers } from 'formik'
-import { useRecurringList, useCreateRecurring, useToggleRecurringStatus } from '@/features/recurring/hooks/useRecurring'
+import { useRecurringList, useCreateRecurring, useToggleRecurringStatus, useDeleteRecurring } from '@/features/recurring/hooks/useRecurring'
 import { useCategories } from '@/features/categories/hooks/useCategories'
 import { useCards } from '@/features/cards/hooks/useCards'
 import { CategoryChips } from '@/features/expenses/components/CategoryChips'
-import { CategoryPickerModal } from '@/features/expenses/components/CategoryPickerModal'
 import { recurringSchema, type RecurringFormValues } from '@/features/recurring/schemas/recurringSchema'
+import { RecurringFormModal } from '@/features/recurring/components/RecurringFormModal'
 import { FormField, TextInput, SelectInput } from '@/components/ui/FormField'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { Button } from '@/components/ui/Button'
+import { KebabMenu, type KebabMenuItem } from '@/components/shared/KebabMenu'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { formatCurrency } from '@/utils/formatCurrency'
-import { RecurringMode, RecurringFrequency, RecurringStatus, RecurringPaymentStatus, Currency, CardType } from '@/types/enums'
+import {
+  frequencyLabel,
+  frequencyPeriodLabel,
+  monthlyEquivalent,
+  computeOverdueMonths,
+  FREQUENCY_OPTIONS,
+} from '@/utils/recurringSchedule'
+import { RecurringMode, RecurringFrequency, RecurringStatus, Currency, CardType } from '@/types/enums'
 import type { RecurringExpense } from '@/types/models'
 import styles from './RecurringPage.module.css'
 
@@ -28,6 +36,19 @@ const CURRENCY_OPTIONS = [
 ]
 
 const MONTH_NAMES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
+
+const FREQ_SELECT_OPTIONS = FREQUENCY_OPTIONS.map((o) => ({ value: o.value, label: o.label }))
+const MONTH_SELECT_OPTIONS = MONTH_NAMES.map((n, i) => ({ value: String(i + 1), label: n }))
+
+// Period filter tabs for the desktop list — one per RecurringFrequency plus "Todos".
+const FREQ_TAB_OPTIONS: { value: 'all' | RecurringFrequency; label: string }[] = [
+  { value: 'all', label: 'Todos' },
+  { value: RecurringFrequency.Monthly, label: 'Mensual' },
+  { value: RecurringFrequency.Bimonthly, label: 'Bimestral' },
+  { value: RecurringFrequency.Quarterly, label: 'Trimestral' },
+  { value: RecurringFrequency.Biannual, label: 'Semestral' },
+  { value: RecurringFrequency.Annual, label: 'Anual' },
+]
 
 function getNextDueDate(dueDayOfMonth: number): string {
   const now = new Date()
@@ -44,50 +65,22 @@ interface OverdueEntry {
 
 function getOverdueItems(recurring: RecurringExpense[]): OverdueEntry[] {
   const now = new Date()
-  const currentMonth = now.getMonth() + 1
-  const currentYear = now.getFullYear()
-
   return recurring
-    .filter(
-      (r) =>
-        r.status === RecurringStatus.Active &&
-        r.mode === RecurringMode.Manual &&
-        r.frequency === RecurringFrequency.Monthly,
-    )
-    .map((r) => {
-      const missedMonths: Array<{ month: number; year: number }> = []
-      for (let i = 1; i <= 3; i++) {
-        let checkMonth = currentMonth - i
-        let checkYear = currentYear
-        if (checkMonth <= 0) {
-          checkMonth += 12
-          checkYear -= 1
-        }
-        // Don't check before this recurring was created
-        const createdDate = new Date(r.createdAt)
-        const checkEnd = new Date(checkYear, checkMonth, 0) // last day of checkMonth
-        if (checkEnd < createdDate) break
-
-        const wasPaid = r.paymentHistory.some(
-          (h) => h.month === checkMonth && h.year === checkYear && h.status === RecurringPaymentStatus.Paid,
-        )
-        if (!wasPaid) missedMonths.push({ month: checkMonth, year: checkYear })
-      }
-      return { item: r, missedMonths }
-    })
+    .filter((r) => r.status === RecurringStatus.Active && r.mode === RecurringMode.Manual)
+    .map((r) => ({ item: r, missedMonths: computeOverdueMonths(r, now) }))
     .filter((entry) => entry.missedMonths.length > 0)
 }
 
 interface DesktopRowProps {
   item: RecurringExpense
-  categories: { id: string; name: string; icon?: string }[]
   cards: { id: string; bank: string; type: CardType; lastFour?: string }[]
   onNavigate: (id: string) => void
   showModeBadge: boolean
 }
 
-function DesktopRow({ item, categories, cards, onNavigate, showModeBadge }: DesktopRowProps): React.ReactElement {
+function DesktopRow({ item, cards, onNavigate, showModeBadge }: DesktopRowProps): React.ReactElement {
   const { mutate: toggle, isPending } = useToggleRecurringStatus(item.id)
+  const { mutate: remove, isPending: isDeleting } = useDeleteRecurring()
   const [optimisticActive, setOptimisticActive] = React.useState(item.status === RecurringStatus.Active)
 
   // Sync optimistic state when server data changes
@@ -95,28 +88,48 @@ function DesktopRow({ item, categories, cards, onNavigate, showModeBadge }: Desk
     setOptimisticActive(item.status === RecurringStatus.Active)
   }, [item.status])
 
-  const catLabels = item.categoryIds
-    .map((id) => categories.find((c) => c.id === id))
-    .filter(Boolean)
-    .map((c) => c!.name)
-    .join(', ')
   const card = cards.find((c) => c.id === item.cardId)
   const cardLabel = card
     ? `${card.type === CardType.Credit ? 'Crédito' : card.type === CardType.Debit ? 'Débito' : 'Transf.'} ${card.bank}`
     : ''
   const symbol = item.currency === Currency.USD ? 'U$S' : '$'
-  const freqLabel = item.frequency === RecurringFrequency.Monthly ? 'Mensual' : 'Anual'
+  const freqLabel = frequencyLabel(item.frequency)
   const nextLabel = item.dueDayOfMonth ? getNextDueDate(item.dueDayOfMonth) : '—'
 
-  function handleToggle(e: React.MouseEvent): void {
-    e.stopPropagation()
+  function handleToggle(): void {
     const next = !optimisticActive
     setOptimisticActive(next)
     toggle(next ? RecurringStatus.Active : RecurringStatus.Paused)
   }
 
+  function handleDelete(): void {
+    if (window.confirm(`¿Eliminar "${item.name}"? Esta acción no se puede deshacer.`)) {
+      remove(item.id)
+    }
+  }
+
+  const menuItems: KebabMenuItem[] = [
+    { label: 'Editar', icon: '✏️', onClick: () => onNavigate(item.id) },
+    {
+      label: optimisticActive ? 'Pausar' : 'Activar',
+      icon: optimisticActive ? '⏸' : '▶',
+      onClick: handleToggle,
+      disabled: isPending,
+    },
+    ...(!optimisticActive
+      ? [{ label: 'Eliminar', icon: '🗑', danger: true, disabled: isDeleting, onClick: handleDelete }]
+      : []),
+  ]
+
   return (
-    <div className={styles.desktopRow}>
+    <div
+      className={[styles.desktopRow, optimisticActive ? '' : styles.desktopRowPaused].join(' ')}
+      onClick={() => onNavigate(item.id)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === 'Enter' && onNavigate(item.id)}
+    >
+      {!optimisticActive && <span className={styles.drPauseOverlay} aria-hidden>⏸</span>}
       <div className={styles.drIcon}>{item.icon || '💳'}</div>
       <div className={styles.drInfo}>
         <span className={styles.drName}>{item.name}</span>
@@ -128,9 +141,7 @@ function DesktopRow({ item, categories, cards, onNavigate, showModeBadge }: Desk
           )}
           <span className={styles.drBadgeFreq}>{freqLabel}</span>
         </div>
-        <span className={styles.drMeta}>
-          {catLabels || 'Sin categoría'}{cardLabel ? ` · ${cardLabel}` : ''}
-        </span>
+        <span className={styles.drMeta}>{cardLabel || '—'}</span>
       </div>
       <div className={styles.drAmount}>
         <span className={styles.drAmtNum}>
@@ -143,23 +154,9 @@ function DesktopRow({ item, categories, cards, onNavigate, showModeBadge }: Desk
         <span className={styles.drNextLabel}>Vencimiento:</span>
         <span className={styles.drNextDate}>{nextLabel}</span>
       </div>
-      <button
-        className={[styles.drToggle, optimisticActive ? styles.drToggleOn : styles.drToggleOff].join(' ')}
-        onClick={handleToggle}
-        disabled={isPending}
-        aria-label={optimisticActive ? 'Pausar' : 'Activar'}
-        type="button"
-      >
-        <span className={styles.drToggleKnob} style={{ transform: optimisticActive ? 'translateX(16px)' : 'translateX(0)' }} />
-      </button>
-      <button
-        className={styles.drEditBtn}
-        onClick={(e) => { e.stopPropagation(); onNavigate(item.id) }}
-        aria-label="Editar"
-        type="button"
-      >
-        ✏️
-      </button>
+      <div className={styles.drMenuCell} onClick={(e) => e.stopPropagation()}>
+        <KebabMenu items={menuItems} />
+      </div>
     </div>
   )
 }
@@ -172,7 +169,17 @@ export default function RecurringPage(): React.ReactElement {
   const { mutateAsync: createRecurring } = useCreateRecurring()
   const [showForm, setShowForm] = useState(false)
   const [activeTab, setActiveTab] = useState<'all' | 'auto' | 'manual'>('all')
-  const [freqTab, setFreqTab] = useState<'all' | 'monthly' | 'annual'>('all')
+  const [freqTab, setFreqTab] = useState<'all' | RecurringFrequency>('all')
+  const [collapsedCats, setCollapsedCats] = useState<Set<string>>(new Set())
+
+  function toggleCat(catId: string): void {
+    setCollapsedCats((prev) => {
+      const next = new Set(prev)
+      if (next.has(catId)) next.delete(catId)
+      else next.add(catId)
+      return next
+    })
+  }
 
   const cardOptions = cards.map((c) => ({
     value: c.id,
@@ -186,33 +193,33 @@ export default function RecurringPage(): React.ReactElement {
     return acc
   }, {})
 
-  // Totals for active recurring
+  // Totals for active recurring — monthly equivalent prorates every interval.
   const active = recurring.filter((r) => r.status === RecurringStatus.Active)
-  const monthlyUsd = active.filter((r) => r.currency === Currency.USD && r.frequency === RecurringFrequency.Monthly).reduce((s, r) => s + r.amount, 0)
-  const monthlyUyu = active.filter((r) => r.currency === Currency.UYU && r.frequency === RecurringFrequency.Monthly).reduce((s, r) => s + r.amount, 0)
   const annualUsd = active.filter((r) => r.currency === Currency.USD && r.frequency === RecurringFrequency.Annual).reduce((s, r) => s + r.amount, 0)
   const annualUyu = active.filter((r) => r.currency === Currency.UYU && r.frequency === RecurringFrequency.Annual).reduce((s, r) => s + r.amount, 0)
-  const equivMonthlyUsd = monthlyUsd + annualUsd / 12
-  const equivMonthlyUyu = monthlyUyu + annualUyu / 12
+  const equivMonthlyUsd = active.filter((r) => r.currency === Currency.USD).reduce((s, r) => s + monthlyEquivalent(r), 0)
+  const equivMonthlyUyu = active.filter((r) => r.currency === Currency.UYU).reduce((s, r) => s + monthlyEquivalent(r), 0)
 
 
   const overdueItems = getOverdueItems(recurring)
   const currentYear = new Date().getFullYear()
 
-  // Próximos vencimientos: active items with dueDayOfMonth, sorted by day
-  const upcoming = [...active]
-    .filter((r) => r.dueDayOfMonth != null)
-    .sort((a, b) => (a.dueDayOfMonth ?? 99) - (b.dueDayOfMonth ?? 99))
-    .slice(0, 4)
-
   // Desktop filtered list
   const filteredList = recurring.filter((r) => {
     if (activeTab === 'auto' && r.mode !== RecurringMode.Auto) return false
     if (activeTab === 'manual' && r.mode !== RecurringMode.Manual) return false
-    if (freqTab === 'monthly' && r.frequency !== RecurringFrequency.Monthly) return false
-    if (freqTab === 'annual' && r.frequency !== RecurringFrequency.Annual) return false
+    if (freqTab !== 'all' && (r.frequency ?? RecurringFrequency.Monthly) !== freqTab) return false
     return true
   })
+
+  // Group filtered list by first categoryId, preserving encounter order
+  const groupedFiltered = filteredList.reduce<Array<{ catId: string; items: RecurringExpense[] }>>((acc, item) => {
+    const key = item.categoryIds[0] ?? '__none__'
+    const existing = acc.find((g) => g.catId === key)
+    if (existing) existing.items.push(item)
+    else acc.push({ catId: key, items: [item] })
+    return acc
+  }, [])
 
   if (isLoading) return <LoadingSpinner fullPage />
   if (error) return <ErrorMessage onRetry={() => void refetch()} />
@@ -234,6 +241,8 @@ export default function RecurringPage(): React.ReactElement {
         frequency: values.frequency,
         status: RecurringStatus.Active,
         dueDayOfMonth: values.dueDayOfMonth,
+        startMonth: values.frequency === RecurringFrequency.Monthly ? undefined : Number(values.startMonth),
+        startYear: values.frequency === RecurringFrequency.Monthly ? undefined : Number(values.startYear),
       })
       setShowForm(false)
     } catch (err) {
@@ -247,7 +256,7 @@ export default function RecurringPage(): React.ReactElement {
     const cardLabel = card ? `${card.type === CardType.Credit ? 'Crédito' : card.type === CardType.Debit ? 'Débito' : 'Transf.'} ${card.bank}` : ''
     const dayLabel = item.dueDayOfMonth ? `Día ${item.dueDayOfMonth}` : null
     const subtitle = [cardLabel, dayLabel].filter(Boolean).join(' · ')
-    const freqLabel = `${item.frequency === RecurringFrequency.Annual ? 'año' : 'mes'}`
+    const freqLabel = frequencyPeriodLabel(item.frequency)
     const symbol = item.currency === Currency.USD ? 'U$S' : '$'
 
     return (
@@ -277,132 +286,7 @@ export default function RecurringPage(): React.ReactElement {
     )
   }
 
-  const desktopForm = showForm && (
-    <Formik<RecurringFormValues>
-      key={cards[0]?.id ?? 'no-cards'}
-      initialValues={{
-        name: '',
-        icon: '',
-        description: '',
-        amount: '' as unknown as number,
-        currency: Currency.UYU,
-        categoryIds: [],
-        cardId: cards[0]?.id ?? '',
-        mode: RecurringMode.Auto,
-        frequency: RecurringFrequency.Monthly,
-        status: RecurringStatus.Active,
-        dueDayOfMonth: '' as unknown as number,
-      }}
-      validationSchema={recurringSchema}
-      onSubmit={handleSubmit}
-    >
-      {({ isSubmitting, values, setFieldValue, status }) => {
-        const [showCategoryModal, setShowCategoryModal] = React.useState(false)
-        return (
-          <Form className={styles.desktopForm} noValidate>
-            <h2 className={styles.desktopFormTitle}>＋ Agregar pago recurrente</h2>
-
-            <div className={styles.desktopFormBody}>
-              <FormField name="name" label="Nombre del servicio">
-                <TextInput name="name" placeholder="Ej: Netflix, Internet..." />
-              </FormField>
-
-              <FormField
-                name="categoryIds"
-                label={values.categoryIds.length > 0 ? `Categorías (${values.categoryIds.length} seleccionadas)` : 'Categorías'}
-                labelRight={
-                  <button type="button" className={styles.labelRightBtn} onClick={() => setShowCategoryModal(true)}>
-                    Ver todas
-                  </button>
-                }
-              >
-                <CategoryChips
-                  categories={categories}
-                  selected={values.categoryIds as string[]}
-                  onChange={(ids) => void setFieldValue('categoryIds', ids)}
-                  maxVisible={5}
-                />
-              </FormField>
-
-              {/* Monto + Moneda inline */}
-              <div className={styles.desktopAmountRow}>
-                <div style={{ flex: 1 }}>
-                  <FormField name="amount" label="Monto">
-                    <TextInput name="amount" type="number" min="0" step="any" placeholder="0.00" />
-                  </FormField>
-                </div>
-                <div className={styles.desktopCurrencyCol}>
-                  <FormField name="currency" label="Moneda">
-                    <SelectInput name="currency" options={CURRENCY_OPTIONS} />
-                  </FormField>
-                </div>
-              </div>
-
-              <FormField name="frequency" label="Frecuencia">
-                <div className={styles.desktopToggle}>
-                  {([RecurringFrequency.Monthly, RecurringFrequency.Annual] as const).map((f) => (
-                    <button
-                      key={f}
-                      type="button"
-                      className={[styles.desktopToggleOpt, values.frequency === f ? styles.desktopToggleOptActive : ''].join(' ')}
-                      onClick={() => void setFieldValue('frequency', f)}
-                    >
-                      {f === RecurringFrequency.Monthly ? '📅 Mensual' : '📆 Anual'}
-                    </button>
-                  ))}
-                </div>
-              </FormField>
-
-              <FormField name="mode" label="Naturaleza">
-                <div className={styles.desktopToggle}>
-                  {([RecurringMode.Auto, RecurringMode.Manual] as const).map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      className={[styles.desktopToggleOpt, values.mode === m ? styles.desktopToggleOptActive : ''].join(' ')}
-                      onClick={() => void setFieldValue('mode', m)}
-                    >
-                      {m === RecurringMode.Auto ? '⚡ Automático' : '✋ Manual'}
-                    </button>
-                  ))}
-                </div>
-              </FormField>
-
-              <FormField name="cardId" label="Método de pago">
-                <SelectInput name="cardId" options={cardOptions} placeholder={cardOptions.length === 0 ? 'Sin tarjetas' : undefined} />
-              </FormField>
-
-              <FormField name="dueDayOfMonth" label="Día de cobro">
-                <TextInput name="dueDayOfMonth" type="number" min="1" max="31" placeholder="15" />
-              </FormField>
-            </div>
-
-            {status && <p className={styles.formError}>{status}</p>}
-
-            <div className={styles.desktopFormActions}>
-              <Button type="button" variant="ghost" onClick={() => setShowForm(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit" loading={isSubmitting}>
-                Guardar pago recurrente
-              </Button>
-            </div>
-
-            {showCategoryModal && (
-              <CategoryPickerModal
-                selected={values.categoryIds as string[]}
-                onConfirm={(ids) => {
-                  void setFieldValue('categoryIds', ids)
-                  setShowCategoryModal(false)
-                }}
-                onClose={() => setShowCategoryModal(false)}
-              />
-            )}
-          </Form>
-        )
-      }}
-    </Formik>
-  )
+  const desktopForm = showForm && <RecurringFormModal onClose={() => setShowForm(false)} />
 
   return (
     <div>
@@ -498,19 +382,22 @@ export default function RecurringPage(): React.ReactElement {
                     </div>
                   </FormField>
                   <FormField name="frequency" label="Frecuencia">
-                    <div className={styles.modeSelector}>
-                      {([RecurringFrequency.Monthly, RecurringFrequency.Annual] as const).map((f) => (
-                        <button
-                          key={f}
-                          type="button"
-                          className={[styles.modeOpt, values.frequency === f ? styles.modeOptActive : ''].join(' ')}
-                          onClick={() => void setFieldValue('frequency', f)}
-                        >
-                          {f === RecurringFrequency.Monthly ? '📅 Mensual' : '📆 Anual'}
-                        </button>
-                      ))}
-                    </div>
+                    <SelectInput name="frequency" options={FREQ_SELECT_OPTIONS} />
                   </FormField>
+                  {values.frequency !== RecurringFrequency.Monthly && (
+                    <div className={styles.formRow}>
+                      <div style={{ flex: 1 }}>
+                        <FormField name="startMonth" label="Mes de inicio">
+                          <SelectInput name="startMonth" options={MONTH_SELECT_OPTIONS} />
+                        </FormField>
+                      </div>
+                      <div style={{ width: 100 }}>
+                        <FormField name="startYear" label="Año">
+                          <TextInput name="startYear" type="number" min="2000" max="2100" />
+                        </FormField>
+                      </div>
+                    </div>
+                  )}
                   <FormField name="dueDayOfMonth" label="Día de vencimiento">
                     <TextInput name="dueDayOfMonth" type="number" min="1" max="31" placeholder="ej. 15" />
                   </FormField>
@@ -572,7 +459,7 @@ export default function RecurringPage(): React.ReactElement {
                 )}
               </div>
               {(annualUsd > 0 || annualUyu > 0) && (
-                <p className={styles.totalsNote}>Equiv. mensual incluye anuales ÷ 12</p>
+                <p className={styles.totalsNote}>Equiv. mensual prorratea anuales y otros períodos</p>
               )}
             </div>
           )}
@@ -629,53 +516,6 @@ export default function RecurringPage(): React.ReactElement {
           </div>
         )}
 
-        {/* Stat cards */}
-        <div className={styles.desktopStats}>
-          <div className={styles.desktopStatCard}>
-            <p className={styles.desktopStatLabel}>💳 Total mensual · UYU</p>
-            <p className={styles.desktopStatValue}>{equivMonthlyUyu > 0 ? formatCurrency(equivMonthlyUyu, Currency.UYU) : '—'}</p>
-            <div className={styles.desktopStatSub}>
-              <span>{active.filter(r => r.currency === Currency.UYU).length} pagos activos</span>
-            </div>
-          </div>
-          <div className={styles.desktopStatCard}>
-            <p className={styles.desktopStatLabel}>💳 Total mensual · USD</p>
-            <p className={styles.desktopStatValue}>{equivMonthlyUsd > 0 ? `U$S ${formatCurrency(equivMonthlyUsd, Currency.USD).replace(/^[^0-9]+/, '')}` : '—'}</p>
-            <div className={styles.desktopStatSub}>
-              <span>{active.filter(r => r.currency === Currency.USD).length} pagos activos</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Próximos vencimientos */}
-        {upcoming.length > 0 && (
-          <div className={styles.upcomingCard}>
-            <p className={styles.upcomingTitle}>🔔 Próximos vencimientos</p>
-            <div className={styles.upcomingPills}>
-              {upcoming.map((item) => {
-                const symbol = item.currency === Currency.USD ? 'U$S' : '$'
-                return (
-                  <div key={item.id} className={styles.upcomingPill}>
-                    <div className={styles.upcomingPillTop}>
-                      <span className={styles.upcomingPillIcon}>{item.icon || '💳'}</span>
-                      <span className={styles.upcomingPillName}>{item.name}</span>
-                    </div>
-                    <span className={styles.upcomingPillAmt}>
-                      {symbol} {formatCurrency(item.amount, item.currency).replace(/^[^0-9]+/, '')}
-                    </span>
-                    <div className={styles.upcomingPillBottom}>
-                      <span className={styles.upcomingPillDate}>{item.dueDayOfMonth ? getNextDueDate(item.dueDayOfMonth) : '—'}</span>
-                      <span className={[styles.upcomingPillBadge, item.mode === RecurringMode.Auto ? styles.upcomingPillBadgeAuto : styles.upcomingPillBadgeManual].join(' ')}>
-                        {item.mode === RecurringMode.Auto ? 'AUTO' : 'MANUAL'}
-                      </span>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
-
         {/* List with tabs */}
         <div className={styles.desktopListCard}>
           <div className={styles.desktopListHeader}>
@@ -694,14 +534,14 @@ export default function RecurringPage(): React.ReactElement {
                 ))}
               </div>
               <div className={styles.desktopTabs}>
-                {(['all', 'monthly', 'annual'] as const).map((tab) => (
+                {FREQ_TAB_OPTIONS.map((tab) => (
                   <button
-                    key={tab}
+                    key={tab.value}
                     type="button"
-                    className={[styles.desktopTab, freqTab === tab ? styles.desktopTabActive : ''].join(' ')}
-                    onClick={() => setFreqTab(tab)}
+                    className={[styles.desktopTab, freqTab === tab.value ? styles.desktopTabActive : ''].join(' ')}
+                    onClick={() => setFreqTab(tab.value)}
                   >
-                    {tab === 'all' ? 'Todos' : tab === 'monthly' ? 'Mensual' : 'Anual'}
+                    {tab.label}
                   </button>
                 ))}
               </div>
@@ -712,18 +552,66 @@ export default function RecurringPage(): React.ReactElement {
             <p className={styles.empty}>No hay pagos recurrentes.</p>
           ) : (
             <div className={styles.desktopList}>
-              {filteredList.map((item) => (
-                <DesktopRow
-                  key={item.id}
-                  item={item}
-                  categories={categories}
-                  cards={cards}
-                  onNavigate={(id) => navigate(`/settings/recurring/${id}`)}
-                  showModeBadge={activeTab === 'all'}
-                />
-              ))}
+              {groupedFiltered.map(({ catId, items }) => {
+                const cat = categories.find((c) => c.id === catId)
+                const collapsed = collapsedCats.has(catId)
+                const activeItems = items.filter((i) => i.status === RecurringStatus.Active)
+                const groupUyu = activeItems.filter((i) => i.currency === Currency.UYU).reduce((s, i) => s + monthlyEquivalent(i), 0)
+                const groupUsd = activeItems.filter((i) => i.currency === Currency.USD).reduce((s, i) => s + monthlyEquivalent(i), 0)
+                return (
+                  <div key={catId} className={styles.desktopGroup}>
+                    <button
+                      type="button"
+                      className={styles.desktopGroupHeader}
+                      onClick={() => toggleCat(catId)}
+                      aria-expanded={!collapsed}
+                    >
+                      <span className={[styles.desktopGroupChevron, collapsed ? styles.desktopGroupChevronCollapsed : ''].join(' ')}>
+                        ▾
+                      </span>
+                      <span className={styles.desktopGroupName}>{cat ? cat.name : 'Sin categoría'}</span>
+                      <span className={styles.desktopGroupTotals}>
+                        {groupUyu > 0 && (
+                          <span className={styles.desktopGroupTotal}>{formatCurrency(groupUyu, Currency.UYU)}<span className={styles.desktopGroupTotalUnit}>/mes</span></span>
+                        )}
+                        {groupUsd > 0 && (
+                          <span className={styles.desktopGroupTotal}>U$S {formatCurrency(groupUsd, Currency.USD).replace(/^[^0-9]+/, '')}<span className={styles.desktopGroupTotalUnit}>/mes</span></span>
+                        )}
+                      </span>
+                      <span className={styles.desktopGroupCount}>{items.length}</span>
+                    </button>
+                    {!collapsed && items.map((item) => (
+                      <DesktopRow
+                        key={item.id}
+                        item={item}
+                        cards={cards}
+                        onNavigate={(id) => navigate(`/settings/recurring/${id}`)}
+                        showModeBadge={activeTab === 'all'}
+                      />
+                    ))}
+                  </div>
+                )
+              })}
             </div>
           )}
+        </div>
+
+        {/* Stat cards */}
+        <div className={styles.desktopStats}>
+          <div className={styles.desktopStatCard}>
+            <p className={styles.desktopStatLabel}>💳 Total mensual · UYU</p>
+            <p className={styles.desktopStatValue}>{equivMonthlyUyu > 0 ? formatCurrency(equivMonthlyUyu, Currency.UYU) : '—'}</p>
+            <div className={styles.desktopStatSub}>
+              <span>{active.filter(r => r.currency === Currency.UYU).length} pagos activos</span>
+            </div>
+          </div>
+          <div className={styles.desktopStatCard}>
+            <p className={styles.desktopStatLabel}>💳 Total mensual · USD</p>
+            <p className={styles.desktopStatValue}>{equivMonthlyUsd > 0 ? `U$S ${formatCurrency(equivMonthlyUsd, Currency.USD).replace(/^[^0-9]+/, '')}` : '—'}</p>
+            <div className={styles.desktopStatSub}>
+              <span>{active.filter(r => r.currency === Currency.USD).length} pagos activos</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

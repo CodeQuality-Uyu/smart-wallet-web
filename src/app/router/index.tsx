@@ -69,6 +69,8 @@ const ExpenseDetailPage = lazy(() => import('@/pages/ExpenseDetailPage/ExpenseDe
 const NewExpensePage = lazy(() => import('@/pages/NewExpensePage/NewExpensePage'))
 const EditExpensePage = lazy(() => import('@/pages/EditExpensePage/EditExpensePage'))
 const MetricsPage = lazy(() => import('@/pages/MetricsPage/MetricsPage'))
+const SummaryPage = lazy(() => import('@/pages/SummaryPage/SummaryPage'))
+const RecortesPage = lazy(() => import('@/pages/RecortesPage/RecortesPage'))
 const RecurringPage = lazy(() => import('@/pages/RecurringPage/RecurringPage'))
 const RecurringDetailPage = lazy(() => import('@/pages/RecurringDetailPage/RecurringDetailPage'))
 const CategoriesPage = lazy(() => import('@/pages/CategoriesPage/CategoriesPage'))
@@ -89,6 +91,7 @@ const NewProductPage = lazy(() => import('@/pages/NewProductPage/NewProductPage'
 const ProductDetailPage = lazy(() => import('@/pages/ProductDetailPage/ProductDetailPage'))
 const ProfilePage = lazy(() => import('@/pages/ProfilePage/ProfilePage'))
 const NotificationsPage = lazy(() => import('@/pages/NotificationsPage/NotificationsPage'))
+const IntegrationsPage = lazy(() => import('@/pages/IntegrationsPage/IntegrationsPage'))
 const ExportDataPage = lazy(() => import('@/pages/ExportDataPage/ExportDataPage'))
 const SecurityPage = lazy(() => import('@/pages/SecurityPage/SecurityPage'))
 const SavingsGoalsPage = lazy(() => import('@/pages/SavingsGoalsPage/SavingsGoalsPage'))
@@ -176,6 +179,14 @@ const router = createBrowserRouter([
         element: <SuspenseWrapper><MetricsPage /></SuspenseWrapper>,
       },
       {
+        path: '/summary',
+        element: <SuspenseWrapper><SummaryPage /></SuspenseWrapper>,
+      },
+      {
+        path: '/recortes',
+        element: <SuspenseWrapper><RecortesPage /></SuspenseWrapper>,
+      },
+      {
         path: '/settings',
         element: <SettingsLayout />,
         children: [
@@ -195,6 +206,7 @@ const router = createBrowserRouter([
           { path: 'products/:id', element: <SuspenseWrapper><ProductDetailPage /></SuspenseWrapper> },
           { path: 'profile', element: <SuspenseWrapper><ProfilePage /></SuspenseWrapper> },
           { path: 'notifications', element: <SuspenseWrapper><NotificationsPage /></SuspenseWrapper> },
+          { path: 'integrations', element: <SuspenseWrapper><IntegrationsPage /></SuspenseWrapper> },
           { path: 'export', element: <SuspenseWrapper><ExportDataPage /></SuspenseWrapper> },
           { path: 'security', element: <SuspenseWrapper><SecurityPage /></SuspenseWrapper> },
           { path: 'savings-goals', element: <SuspenseWrapper><SavingsGoalsPage /></SuspenseWrapper> },

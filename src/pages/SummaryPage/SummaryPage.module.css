@@ -1,0 +1,15 @@
+/* src/pages/SummaryPage/SummaryPage.module.css */
+
+.page { display: flex; flex-direction: column; }
+
+.header { display: flex; align-items: center; justify-content: space-between; padding: 0 0 24px; }
+.headerLeft { flex: 1; min-width: 0; }
+.title {
+  font-family: var(--font-head); font-size: 20px; font-weight: 700; color: var(--ink);
+}
+.subtitle { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+.chips {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-bottom: 16px;
+}

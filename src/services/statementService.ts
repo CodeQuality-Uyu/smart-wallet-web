@@ -97,6 +97,38 @@ function levenshteinSimilarity(a: string, b: string): number {
   return matches.length / Math.max(words.length, bWords.length)
 }
 
+/**
+ * Busca el gasto existente que mejor matchea una línea (mismo monto+moneda,
+ * fecha ±2 días y descripción difusa). Devuelve null si no supera el umbral.
+ * Compartido por el import de PDF y el de Gmail.
+ */
+export function findBestDuplicate(
+  line: StatementLine,
+  existingExpenses: Expense[],
+): { expenseId: string; score: number } | null {
+  let bestMatch: { expenseId: string; score: number } | null = null
+
+  for (const expense of existingExpenses) {
+    if (expense.amount !== line.amount) continue
+    if (expense.currency !== line.currency) continue
+
+    const lineDate = new Date(line.date)
+    const expDate = new Date(expense.date)
+    const daysDiff = Math.abs((lineDate.getTime() - expDate.getTime()) / 86_400_000)
+    if (daysDiff > 2) continue
+
+    const datScore = daysDiff === 0 ? 0.3 : daysDiff === 1 ? 0.2 : 0.1
+    const descScore = levenshteinSimilarity(line.description, expense.description) * 0.2
+    const score = 0.5 + datScore + descScore
+
+    if (!bestMatch || score > bestMatch.score) {
+      bestMatch = { expenseId: expense.id, score }
+    }
+  }
+
+  return bestMatch && bestMatch.score > 0.6 ? bestMatch : null
+}
+
 export function detectDuplicates(
   lines: StatementLine[],
   existingExpenses: Expense[],
@@ -104,25 +136,7 @@ export function detectDuplicates(
   categories: Category[],
 ): StatementImportRow[] {
   return lines.map((line): StatementImportRow => {
-    let bestMatch: { expenseId: string; score: number } | null = null
-
-    for (const expense of existingExpenses) {
-      if (expense.amount !== line.amount) continue
-      if (expense.currency !== line.currency) continue
-
-      const lineDate = new Date(line.date)
-      const expDate = new Date(expense.date)
-      const daysDiff = Math.abs((lineDate.getTime() - expDate.getTime()) / 86_400_000)
-      if (daysDiff > 2) continue
-
-      const datScore = daysDiff === 0 ? 0.3 : daysDiff === 1 ? 0.2 : 0.1
-      const descScore = levenshteinSimilarity(line.description, expense.description) * 0.2
-      const score = 0.5 + datScore + descScore
-
-      if (!bestMatch || score > bestMatch.score) {
-        bestMatch = { expenseId: expense.id, score }
-      }
-    }
+    const bestMatch = findBestDuplicate(line, existingExpenses)
 
     const matchedCategory = line.suggestedCategoryName
       ? categories.find((c) =>
@@ -137,7 +151,7 @@ export function detectDuplicates(
       action: StatementImportAction.Import,
       cardId: defaultCardId,
       categoryId: matchedCategory?.id,
-      ...(bestMatch && bestMatch.score > 0.6
+      ...(bestMatch
         ? { matchedExpenseId: bestMatch.expenseId, matchScore: bestMatch.score }
         : {}),
     }

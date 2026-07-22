@@ -44,6 +44,11 @@ export function PeriodDescription({ period }: PeriodDescriptionProps): React.Rea
         from.setDate(from.getDate() - 6)
         return `${fmt(from)} – ${fmt(now)}`
       }
+      case PeriodFilter.LastMonth: {
+        const from = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+        const to = new Date(now.getFullYear(), now.getMonth(), 0)
+        return `${fmt(from)} – ${fmt(to)}`
+      }
       case PeriodFilter.ThreeMonths: {
         const from = new Date(now)
         from.setMonth(from.getMonth() - 3)

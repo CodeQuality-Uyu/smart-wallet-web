@@ -272,13 +272,18 @@ export default function MonthClosingPage(): React.ReactElement {
         mode: r.mode,
         frequency: r.frequency,
       }))
-    const topCategories = metrics.byCategory.slice(0, 5).map((c) => ({
-      categoryId: c.categoryId,
-      categoryName: c.categoryName,
-      categoryIcon: c.categoryIcon,
-      usd: c.usd,
-      uyu: c.uyu,
-    }))
+    // Solo categorías raíz: sus totales ya incluyen a las hijas (rollup), así que
+    // incluir también las hijas duplicaría el gasto en el top del cierre.
+    const topCategories = metrics.byCategory
+      .filter((c) => !c.parentId)
+      .slice(0, 5)
+      .map((c) => ({
+        categoryId: c.categoryId,
+        categoryName: c.categoryName,
+        categoryIcon: c.categoryIcon,
+        usd: c.usd,
+        uyu: c.uyu,
+      }))
     const fixedUsd = recurringPaid
       .filter((r) => r.currency === Currency.USD)
       .reduce((s, r) => s + r.amount, 0)
@@ -363,11 +368,14 @@ export default function MonthClosingPage(): React.ReactElement {
         {/* Categories */}
         <div className={styles.card}>
           <h2 className={styles.cardTitle}>Por categoría</h2>
-          {metrics.byCategory.length === 0 ? (
+          {metrics.byCategory.filter((c) => !c.parentId).length === 0 ? (
             <p className={styles.emptySection}>No se registraron gastos variables este mes.</p>
           ) : (
             <>
-              {metrics.byCategory.slice(0, 5).map((cat) => (
+              {metrics.byCategory
+                .filter((c) => !c.parentId)
+                .slice(0, 5)
+                .map((cat) => (
                 <div key={cat.categoryId} className={styles.catRow}>
                   <span className={styles.catIcon}>{cat.categoryIcon}</span>
                   <span className={styles.catName}>{cat.categoryName}</span>

@@ -15,6 +15,7 @@ import { useCategories } from '@/features/categories/hooks/useCategories'
 import { useCards } from '@/features/cards/hooks/useCards'
 import { usePlaces } from '@/features/places/hooks/usePlaces'
 import { useAddPriceRecord, PRICE_HISTORY_KEYS } from '@/features/products/hooks/usePriceHistory'
+import { useReportAttachment } from '@/hooks/useReportAttachments'
 import { ProductLineAutocomplete } from '@/features/products/components/ProductLineAutocomplete'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
@@ -67,6 +68,9 @@ export default function ExpenseDetailPage(): React.ReactElement {
     id ?? ''
   )
   const { mutateAsync: addPriceRecord } = useAddPriceRecord()
+  const { data: reportAttachment } = useReportAttachment(
+    expense?.importedFrom === 'statement' ? expense.statementAttachmentId : undefined,
+  )
   const receiptInputRef = useRef<HTMLInputElement>(null)
 
   const [newLineName, setNewLineName] = useState('')
@@ -262,6 +266,24 @@ export default function ExpenseDetailPage(): React.ReactElement {
               )}
             </div>
           </div>
+          {expense.importedFrom === 'statement' && (
+            <div className={styles.row}>
+              <span className={styles.rowLabel}>Origen</span>
+              {reportAttachment?.url ? (
+                <a
+                  href={reportAttachment.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.reportLink}
+                  title={reportAttachment.name}
+                >
+                  📄 Importado desde reporte
+                </a>
+              ) : (
+                <span className={styles.rowValue}>📄 Importado desde reporte</span>
+              )}
+            </div>
+          )}
           {expense.ticketLines.length > 0 && (
             <div className={styles.row}>
               <span className={styles.rowLabel}>Total ítems</span>

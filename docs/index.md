@@ -9,6 +9,7 @@
 | Documento | Descripción |
 |---|---|
 | [gemini.md](gemini.md) | Integración con Gemini AI: configuración, capacidades y uso |
+| [gmail-integration.md](gmail-integration.md) | Integración con Gmail: importar gastos desde el correo — OAuth, arquitectura, seguridad y roadmap |
 
 ---
 

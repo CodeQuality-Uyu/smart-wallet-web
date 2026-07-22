@@ -11,6 +11,15 @@ export const mswReportAttachmentsBackend: IReportAttachmentsBackend = {
     return data
   },
 
+  async getById(id: string): Promise<ReportAttachment | null> {
+    try {
+      const { data } = await httpClient.get<ReportAttachment>(`/report-attachments/${id}`)
+      return data
+    } catch {
+      return null
+    }
+  },
+
   async upload(yearMonth: string, file: File, options?: { cardId?: string }): Promise<ReportAttachment> {
     const form = new FormData()
     form.append('yearMonth', yearMonth)

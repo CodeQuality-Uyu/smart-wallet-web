@@ -1,0 +1,83 @@
+/* src/features/metrics/components/SavingsSuggestionsCard.module.css */
+
+.card {
+  background: #fff; border: 1px solid var(--border); border-radius: 24px;
+  padding: 24px; margin-bottom: 24px;
+}
+.header {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 12px; margin-bottom: 14px; flex-wrap: wrap;
+}
+.cardTitle {
+  font-family: var(--font-head);
+  font-size: 16px; font-weight: 700; color: var(--ink);
+}
+.scope { font-size: 11px; color: var(--muted); font-weight: 600; }
+
+.loading { font-size: 13px; color: var(--muted); font-style: italic; }
+
+.empty {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 16px; border-radius: 14px;
+  background: var(--g50, #f0fdf4); border: 1px solid var(--g500, #22c55e);
+}
+.emptyTitle { font-size: 14px; font-weight: 700; color: var(--g700, #15803d); }
+.emptyText { font-size: 12px; color: var(--muted); line-height: 1.45; }
+
+.list { display: flex; flex-direction: column; gap: 10px; }
+
+.item {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 12px 14px; border-radius: 14px;
+  border: 1px solid var(--border);
+  border-left-width: 4px;
+  background: var(--cream, #faf8f5);
+}
+.high { border-left-color: var(--rose, #e11d48); }
+.medium { border-left-color: var(--amb, #f5b732); }
+.info { border-left-color: var(--g500, #22c55e); }
+
+.icon {
+  font-size: 20px; line-height: 1; flex-shrink: 0;
+  width: 34px; height: 34px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  background: #fff; border: 1px solid var(--border);
+}
+.body { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.title { font-size: 13px; font-weight: 700; color: var(--ink); }
+.detail { font-size: 12px; color: var(--muted); line-height: 1.45; }
+.estimate {
+  align-self: flex-start; margin-top: 4px;
+  font-family: var(--font-num); font-size: 11px; font-weight: 700;
+  color: var(--g700, #15803d); background: var(--g50, #f0fdf4);
+  border-radius: 20px; padding: 3px 10px;
+}
+
+/* ─── Diagnóstico (toggle con el estado de cada heurística) ─── */
+.diag { margin-top: 14px; }
+.diagToggle {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: transparent; border: none; cursor: pointer; padding: 4px 0;
+  font-family: inherit; font-size: 12px; font-weight: 600; color: var(--muted);
+}
+.diagToggle:hover { color: var(--ink); }
+.diagList {
+  display: flex; flex-direction: column; gap: 6px;
+  margin-top: 8px;
+}
+.diagItem {
+  display: flex; gap: 8px; align-items: flex-start;
+  padding: 8px 10px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--cream, #faf8f5);
+}
+.diagOff { opacity: 0.7; }
+.diagMark {
+  flex-shrink: 0; width: 16px; text-align: center;
+  font-size: 11px; font-weight: 700; line-height: 1.4;
+}
+.diagFired .diagMark { color: var(--g600, #16a34a); }
+.diagOff .diagMark { color: var(--muted); }
+.diagBody { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.diagName { font-size: 12px; font-weight: 700; color: var(--ink); }
+.diagCur { font-weight: 500; color: var(--muted); }
+.diagReason { font-size: 11px; color: var(--muted); line-height: 1.4; }

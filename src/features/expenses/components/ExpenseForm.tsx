@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button'
 import { CategoryChips } from '@/components/shared/CategoryChips'
 import { NewCardModal } from './NewCardModal'
 import { CategoryPickerModal } from './CategoryPickerModal'
+import { stripRedundantParents } from '@/features/categories/categoryHierarchy'
 import { NewPlaceModal } from './NewPlaceModal'
 import { CategorySuggestionBanner } from './CategorySuggestionBanner'
 import suggestionStyles from './CategorySuggestionBanner.module.css'
@@ -78,7 +79,7 @@ function CategorySuggestion({ categories }: { categories: Category[] }): React.R
   const handleAcceptMatch = (categoryId: string) => {
     const current = values.categoryIds
     if (!current.includes(categoryId)) {
-      void setFieldValue('categoryIds', [...current, categoryId])
+      void setFieldValue('categoryIds', stripRedundantParents([...current, categoryId], categories))
     }
     handleDismiss()
   }
@@ -94,7 +95,7 @@ function CategorySuggestion({ categories }: { categories: Category[] }): React.R
       })
       const current = values.categoryIds
       if (!current.includes(created.id)) {
-        void setFieldValue('categoryIds', [...current, created.id])
+        void setFieldValue('categoryIds', stripRedundantParents([...current, created.id], categories))
       }
     } finally {
       handleDismiss()
@@ -245,7 +246,9 @@ export function ExpenseForm({
               <CategoryChips
                 categories={categories}
                 selected={values.categoryIds}
-                onChange={(ids) => void setFieldValue('categoryIds', ids)}
+                onChange={(ids) =>
+                  void setFieldValue('categoryIds', stripRedundantParents(ids, categories))
+                }
                 maxVisible={5}
               />
             </FormField>
@@ -347,7 +350,7 @@ export function ExpenseForm({
             <CategoryPickerModal
               selected={values.categoryIds}
               onConfirm={(ids) => {
-                void setFieldValue('categoryIds', ids)
+                void setFieldValue('categoryIds', stripRedundantParents(ids, categories))
                 setActiveModal(null)
               }}
               onClose={() => setActiveModal(null)}

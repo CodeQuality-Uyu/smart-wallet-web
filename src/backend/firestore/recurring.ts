@@ -21,6 +21,7 @@ import {
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { firebaseAuth, firestore, firebaseStorage } from './config'
 import { RecurringMode, RecurringPaymentStatus } from '@/types/enums'
+import { isDueMonth, historyFor } from '@/utils/recurringSchedule'
 import type {
   IRecurringBackend,
   RecurringExpense,
@@ -28,6 +29,7 @@ import type {
   UpdateRecurringPayload,
   ConfirmRecurringPaymentPayload,
   UpdateRecurringPaymentPayload,
+  SkipRecurringMonthPayload,
   RecurringPaymentHistory,
   RecurringStatus,
 } from '../types'
@@ -46,10 +48,11 @@ function resolveCurrentMonthStatus(rec: RecurringExpense): RecurringPaymentStatu
   const now = new Date()
   const month = now.getMonth() + 1
   const year = now.getFullYear()
-  const paidThisMonth = rec.paymentHistory.some(
-    (h) => h.month === month && h.year === year && h.status === RecurringPaymentStatus.Paid,
-  )
-  if (paidThisMonth) return RecurringPaymentStatus.Paid
+  // Interval frequencies (bimonthly, quarterly…) only fall due on cycle months.
+  if (!isDueMonth(rec, month, year)) return RecurringPaymentStatus.NotDue
+  const entry = historyFor(rec, month, year)
+  if (entry?.status === RecurringPaymentStatus.Paid) return RecurringPaymentStatus.Paid
+  if (entry?.status === RecurringPaymentStatus.Skipped) return RecurringPaymentStatus.Skipped
   if (rec.mode === RecurringMode.Auto) return RecurringPaymentStatus.Paid
   return RecurringPaymentStatus.Pending
 }
@@ -160,13 +163,61 @@ export const firestoreRecurringBackend: IRecurringBackend = {
       status: RecurringPaymentStatus.Paid,
     }) as unknown as RecurringPaymentHistory
 
-    const existing = (snap.data()['paymentHistory'] ?? []) as RecurringPaymentHistory[]
+    // Drop a prior "skipped" mark for the same period — a real payment supersedes it.
+    const existing = ((snap.data()['paymentHistory'] ?? []) as RecurringPaymentHistory[]).filter(
+      (h) => !(h.month === entryMonth && h.year === entryYear && h.status === RecurringPaymentStatus.Skipped),
+    )
     await updateDoc(docRef, {
       paymentHistory: [...existing, entry],
       updatedAt: now.toISOString(),
     })
 
     return entry
+  },
+
+  async skipMonth(id: string, payload: SkipRecurringMonthPayload): Promise<RecurringExpense> {
+    const uid = requireUid()
+    const docRef = doc(firestore, 'users', uid, 'recurring', id)
+    const snap = await getDoc(docRef)
+    if (!snap.exists()) throw { message: 'No encontrado', statusCode: 404 }
+
+    const existing = (snap.data()['paymentHistory'] ?? []) as RecurringPaymentHistory[]
+    const already = existing.find((h) => h.month === payload.month && h.year === payload.year)
+    if (already?.status === RecurringPaymentStatus.Paid) {
+      throw { message: 'Este mes ya está pagado', statusCode: 409 }
+    }
+    // Idempotent — if already skipped, leave as-is.
+    if (!already || already.status !== RecurringPaymentStatus.Skipped) {
+      const entry: RecurringPaymentHistory = {
+        id: crypto.randomUUID(),
+        month: payload.month,
+        year: payload.year,
+        amount: 0,
+        currency: snap.data()['currency'] as RecurringPaymentHistory['currency'],
+        status: RecurringPaymentStatus.Skipped,
+      }
+      await updateDoc(docRef, {
+        paymentHistory: [...existing, entry],
+        updatedAt: new Date().toISOString(),
+      })
+    }
+    const updated = await getDoc(docRef)
+    return toRecurring(updated.id, updated.data() as Record<string, unknown>)
+  },
+
+  async unskipMonth(id: string, payload: SkipRecurringMonthPayload): Promise<RecurringExpense> {
+    const uid = requireUid()
+    const docRef = doc(firestore, 'users', uid, 'recurring', id)
+    const snap = await getDoc(docRef)
+    if (!snap.exists()) throw { message: 'No encontrado', statusCode: 404 }
+
+    const existing = (snap.data()['paymentHistory'] ?? []) as RecurringPaymentHistory[]
+    const filtered = existing.filter(
+      (h) => !(h.month === payload.month && h.year === payload.year && h.status === RecurringPaymentStatus.Skipped),
+    )
+    await updateDoc(docRef, { paymentHistory: filtered, updatedAt: new Date().toISOString() })
+    const updated = await getDoc(docRef)
+    return toRecurring(updated.id, updated.data() as Record<string, unknown>)
   },
 
   async updatePayment(

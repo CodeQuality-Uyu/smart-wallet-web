@@ -7,7 +7,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 200;
+  /* El Modal genérico es un diálogo primitivo y debe quedar siempre encima,
+     incluso cuando se abre anidado desde modales ad-hoc con z-index alto
+     (StatementImportModal 1000, RecurringFormModal 3000). */
+  z-index: 4000;
   padding: 24px;
 }
 

@@ -180,6 +180,11 @@
   font-size: 13px; font-weight: 500; color: var(--ink); font-family: var(--font-num);
 }
 
+.reportLink {
+  font-size: 13px; font-weight: 600; color: #2563eb; text-decoration: none;
+}
+.reportLink:hover { text-decoration: underline; }
+
 .cats { display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end; }
 .catPill {
   background: var(--g50); color: var(--g700);

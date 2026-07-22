@@ -12,8 +12,10 @@ import {
   categorySchema,
   type CategoryFormValues,
 } from '@/features/categories/schemas/categorySchema'
-import { FormField, TextInput } from '@/components/ui/FormField'
+import { FormField, TextInput, SelectInput } from '@/components/ui/FormField'
+import { Modal } from '@/components/ui/Modal'
 import { PageHeader } from '@/components/shared/PageHeader'
+import { KebabMenu } from '@/components/shared/KebabMenu'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { PeriodControl } from '@/components/ui/PeriodControl'
 import { useMetrics } from '@/hooks/useMetrics'
@@ -102,6 +104,38 @@ export default function CategoriesPage(): React.ReactElement {
     return categories.filter((c) => c.name.toLowerCase().includes(q))
   }, [categories, search])
 
+  // Árbol de 2 niveles: raíces + hijas por parentId (sobre el set filtrado)
+  const { roots, childrenByParent } = useMemo(() => {
+    const byId = new Map(filteredCategories.map((c) => [c.id, c]))
+    const childrenByParent = new Map<string, Category[]>()
+    const roots: Category[] = []
+    for (const c of filteredCategories) {
+      if (c.parentId && byId.has(c.parentId)) {
+        const arr = childrenByParent.get(c.parentId) ?? []
+        arr.push(c)
+        childrenByParent.set(c.parentId, arr)
+      } else {
+        // raíz o huérfana (su padre no está en el set filtrado)
+        roots.push(c)
+      }
+    }
+    // Primero las categorías padre (con hijas), luego las que no tienen hijas.
+    // sort() es estable, así que dentro de cada grupo se mantiene el orden por nombre.
+    roots.sort((a, b) => Number(childrenByParent.has(b.id)) - Number(childrenByParent.has(a.id)))
+    return { roots, childrenByParent }
+  }, [filteredCategories])
+
+  // Opciones de padre para el form (solo raíces; excluye la propia categoría).
+  // Si la categoría editada ya tiene hijas, no puede volverse hija (rompería los 2 niveles).
+  const editingHasChildren = useMemo(
+    () => (editing ? categories.some((c) => c.parentId === editing.id) : false),
+    [categories, editing]
+  )
+  const parentOptions = useMemo(
+    () => categories.filter((c) => !c.parentId && c.id !== editing?.id),
+    [categories, editing]
+  )
+
   if (isLoading) return <LoadingSpinner fullPage />
 
   async function handleSubmit(
@@ -115,6 +149,7 @@ export default function CategoriesPage(): React.ReactElement {
         color: values.color,
         limitUYU: values.limitUYU && values.limitUYU > 0 ? values.limitUYU : undefined,
         limitUSD: values.limitUSD && values.limitUSD > 0 ? values.limitUSD : undefined,
+        parentId: values.parentId || undefined,
       }
       if (editing) {
         await updateCat(payload)
@@ -137,15 +172,61 @@ export default function CategoriesPage(): React.ReactElement {
     setShowForm(true)
   }
 
+  async function handleDelete(cat: Category): Promise<void> {
+    if (!window.confirm(`¿Eliminar la categoría "${cat.name}"?`)) return
+    await deleteCat(cat.id)
+    if (editing?.id === cat.id) {
+      setShowForm(false)
+      setEditing(null)
+    }
+  }
+
   const initialValues: CategoryFormValues = {
     name: editing?.name ?? '',
     icon: editing?.icon ?? '',
     color: editing?.color ?? '',
     limitUYU: editing?.limitUYU ?? undefined,
     limitUSD: editing?.limitUSD ?? undefined,
+    parentId: editing?.parentId ?? '',
   }
 
   const periodControl = <PeriodControl value={period} onChange={setPeriod} />
+
+  function renderTile(cat: Category, isChild: boolean, childCount: number): React.ReactElement {
+    return (
+      <div
+        key={cat.id}
+        className={[styles.tile, isChild ? styles.childTile : ''].join(' ')}
+        style={cat.color ? { borderColor: cat.color } : undefined}
+      >
+        <div className={styles.tileIconWrap}>
+          <span className={styles.tileIcon}>{cat.icon}</span>
+        </div>
+        <div className={styles.tileInfo}>
+          <span className={styles.tileName}>{cat.name}</span>
+          {childCount > 0 && (
+            <span className={styles.tileChildBadge}>
+              {childCount} subcategoría{childCount !== 1 ? 's' : ''}
+            </span>
+          )}
+        </div>
+        <span className={styles.tileMenu}>
+          <KebabMenu
+            ariaLabel={`Opciones de ${cat.name}`}
+            items={[
+              { label: 'Editar', icon: '✏', onClick: () => startEdit(cat) },
+              {
+                label: 'Eliminar',
+                icon: '🗑',
+                danger: true,
+                onClick: () => void handleDelete(cat),
+              },
+            ]}
+          />
+        </span>
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -205,73 +286,97 @@ export default function CategoriesPage(): React.ReactElement {
           {periodControl}
         </div>
 
-        {/* Inline edit/create form */}
+        {/* Create/edit form in a modal */}
         {showForm && (
-          <div className={styles.form}>
-            <h2 className={styles.formTitle}>{editing ? 'Editar categoría' : 'Nueva categoría'}</h2>
-            <Formik
-              initialValues={initialValues}
-              validationSchema={categorySchema}
-              onSubmit={handleSubmit}
-              enableReinitialize
-            >
-              {({ isSubmitting, values, setFieldValue, status }) => (
-                <Form>
-                  {/* Ícono + Color en fila */}
-                  <div className={styles.formPickersRow}>
-                    <div className={styles.formPickerGroup}>
-                      <p className={styles.formPickerLabel}>Ícono</p>
-                      <div
-                        className={styles.iconPicker}
-                        role="group"
-                        aria-label="Seleccionar ícono"
-                      >
-                        {ICON_OPTIONS.map((ico) => (
-                          <button
-                            key={ico}
-                            type="button"
-                            className={[
-                              styles.icoBtn,
-                              values.icon === ico ? styles.icoBtnActive : '',
-                            ].join(' ')}
-                            onClick={() => void setFieldValue('icon', ico)}
-                            aria-label={ico}
-                            aria-pressed={values.icon === ico}
-                          >
-                            {ico}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className={styles.formPickerGroup}>
-                      <p className={styles.formPickerLabel}>Color</p>
-                      <div
-                        className={styles.colorPicker}
-                        role="group"
-                        aria-label="Seleccionar color"
-                      >
-                        {COLOR_OPTIONS.map((col) => (
-                          <button
-                            key={col}
-                            type="button"
-                            className={[
-                              styles.colorBtn,
-                              values.color === col ? styles.colorBtnActive : '',
-                            ].join(' ')}
-                            style={{ background: col, '--swatch-color': col } as React.CSSProperties}
-                            onClick={() => void setFieldValue('color', col)}
-                            aria-label={col}
-                            aria-pressed={values.color === col}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
+          <Modal
+            title={editing ? 'Editar categoría' : 'Nueva categoría'}
+            onClose={() => {
+              setShowForm(false)
+              setEditing(null)
+            }}
+          >
+            <div className={styles.formBody}>
+              <Formik
+                initialValues={initialValues}
+                validationSchema={categorySchema}
+                onSubmit={handleSubmit}
+                enableReinitialize
+              >
+                {({ isSubmitting, values, setFieldValue, status }) => (
+                  <Form>
                   {/* Nombre */}
                   <FormField name="name" label="Nombre">
                     <TextInput name="name" placeholder="ej. Comida" />
                   </FormField>
+
+                  {/* Ícono */}
+                  <div className={styles.formPickerGroup}>
+                    <p className={styles.formPickerLabel}>Ícono</p>
+                    <div
+                      className={styles.iconPicker}
+                      role="group"
+                      aria-label="Seleccionar ícono"
+                    >
+                      {ICON_OPTIONS.map((ico) => (
+                        <button
+                          key={ico}
+                          type="button"
+                          className={[
+                            styles.icoBtn,
+                            values.icon === ico ? styles.icoBtnActive : '',
+                          ].join(' ')}
+                          onClick={() => void setFieldValue('icon', ico)}
+                          aria-label={ico}
+                          aria-pressed={values.icon === ico}
+                        >
+                          {ico}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Color (debajo de los íconos) */}
+                  <div className={styles.formPickerGroup}>
+                    <p className={styles.formPickerLabel}>Color</p>
+                    <div
+                      className={styles.colorPicker}
+                      role="group"
+                      aria-label="Seleccionar color"
+                    >
+                      {COLOR_OPTIONS.map((col) => (
+                        <button
+                          key={col}
+                          type="button"
+                          className={[
+                            styles.colorBtn,
+                            values.color === col ? styles.colorBtnActive : '',
+                          ].join(' ')}
+                          style={{ background: col, '--swatch-color': col } as React.CSSProperties}
+                          onClick={() => void setFieldValue('color', col)}
+                          aria-label={col}
+                          aria-pressed={values.color === col}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Categoría padre */}
+                  {editingHasChildren ? (
+                    <p className={styles.parentHint}>
+                      Esta categoría tiene subcategorías, por eso no puede depender de otra.
+                    </p>
+                  ) : (
+                    <FormField name="parentId" label="Categoría padre (opcional)">
+                      <SelectInput
+                        name="parentId"
+                        placeholder="Ninguna (categoría raíz)"
+                        options={parentOptions.map((p) => ({
+                          value: p.id,
+                          label: `${p.icon} ${p.name}`,
+                        }))}
+                      />
+                    </FormField>
+                  )}
 
                   {/* Límites */}
                   <FormField name="limitUYU" label="Límite UYU">
@@ -298,67 +403,25 @@ export default function CategoriesPage(): React.ReactElement {
                       {isSubmitting ? 'Guardando…' : editing ? 'Guardar' : 'Crear categoría'}
                     </button>
                   </div>
-                  {editing && (
-                    <button
-                      type="button"
-                      className={styles.formDeleteBtn}
-                      onClick={async () => {
-                        if (!window.confirm(`¿Eliminar la categoría "${editing.name}"?`)) return
-                        await deleteCat(editing.id)
-                        setShowForm(false)
-                        setEditing(null)
-                      }}
-                    >
-                      Eliminar categoría
-                    </button>
-                  )}
                 </Form>
               )}
             </Formik>
-          </div>
+            </div>
+          </Modal>
         )}
 
         <p className={styles.sectionLabel}>Tus categorías</p>
 
         <div className={styles.grid}>
-          {filteredCategories.map((cat) => {
-            const spend = spendMap.get(cat.id)
+          {roots.map((root) => {
+            const kids = childrenByParent.get(root.id) ?? []
+            if (kids.length === 0) return renderTile(root, false, 0)
             return (
-              <div key={cat.id} className={styles.tile} style={cat.color ? { borderColor: cat.color } : undefined}>
-                <div className={styles.tileIconWrap}>
-                  <span className={styles.tileIcon}>{cat.icon}</span>
+              <div key={root.id} className={styles.treeGroup}>
+                {renderTile(root, false, kids.length)}
+                <div className={styles.childrenGrid}>
+                  {kids.map((ch) => renderTile(ch, true, 0))}
                 </div>
-                <div className={styles.tileInfo}>
-                  <span className={styles.tileName}>{cat.name}</span>
-                  {spend ? (
-                    <div className={styles.tileSpend}>
-                      <span>
-                        {spend.expenseCount} gasto{spend.expenseCount !== 1 ? 's' : ''}
-                      </span>
-                      {(spend.uyu > 0 || spend.usd > 0) && <span>·</span>}
-                      {spend.uyu > 0 && (
-                        <span className={styles.tileSpendAmount}>
-                          {formatCurrency(spend.uyu, Currency.UYU)}
-                        </span>
-                      )}
-                      {spend.uyu > 0 && spend.usd > 0 && <span>·</span>}
-                      {spend.usd > 0 && (
-                        <span className={styles.tileSpendAmount}>
-                          {formatCurrency(spend.usd, Currency.USD)}
-                        </span>
-                      )}
-                    </div>
-                  ) : (
-                    <span className={styles.tileEmpty}>Sin gastos</span>
-                  )}
-                </div>
-                <button
-                  className={styles.editBtn}
-                  onClick={() => startEdit(cat)}
-                  aria-label={`Editar ${cat.name}`}
-                >
-                  ✏
-                </button>
               </div>
             )
           })}

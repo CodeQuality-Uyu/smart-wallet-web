@@ -31,6 +31,13 @@ export const firestoreReportAttachmentsBackend: IReportAttachmentsBackend = {
     return snap.docs.map((d) => ({ id: d.id, ...d.data() } as ReportAttachment))
   },
 
+  async getById(id: string): Promise<ReportAttachment | null> {
+    const uid = requireUid()
+    const snap = await getDoc(doc(firestore, 'users', uid, 'reportAttachments', id))
+    if (!snap.exists()) return null
+    return { id: snap.id, ...snap.data() } as ReportAttachment
+  },
+
   async upload(yearMonth: string, file: File, options?: { cardId?: string }): Promise<ReportAttachment> {
     const uid = requireUid()
     const ext = file.name.split('.').pop() ?? 'bin'

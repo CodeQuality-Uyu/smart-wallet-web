@@ -1,0 +1,40 @@
+/* src/features/dashboard/components/WidgetShell.module.css */
+/* Marco común de la card de un widget (guiado o query). */
+
+.card {
+  border-radius: 14px;
+  border: 1.5px solid var(--border);
+  background: #fff;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.cardIcon { font-size: 15px; flex-shrink: 0; line-height: 1; }
+.cardTitle {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cardPeriod {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--g50);
+  padding: 2px 7px;
+  border-radius: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.cardMenu { flex-shrink: 0; margin: -4px -6px -4px 0; }

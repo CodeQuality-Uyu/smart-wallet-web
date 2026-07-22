@@ -1,0 +1,38 @@
+/* src/components/shared/Breadcrumbs.module.css */
+
+.breadcrumbs { margin-bottom: 4px; }
+
+.list {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  margin: 0;
+}
+
+.item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.link {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color .15s;
+}
+.link:hover { color: var(--g600, #10b981); text-decoration: underline; }
+
+.plain { font-size: 13px; color: var(--muted); }
+
+.current { font-size: 13px; font-weight: 600; color: var(--ink); }
+
+.separator { font-size: 14px; color: var(--muted); line-height: 1; }

@@ -7,14 +7,18 @@ import type { FormikHelpers } from 'formik'
 import {
   useRecurring,
   useUpdateRecurring,
+  useDeleteRecurring,
   useToggleRecurringStatus,
   useConfirmRecurringPayment,
   useUpdateRecurringPayment,
   useUploadRecurringPaymentReceipt,
+  useSkipRecurringMonth,
+  useUnskipRecurringMonth,
 } from '@/features/recurring/hooks/useRecurring'
 import { useCategories } from '@/features/categories/hooks/useCategories'
 import { useCards } from '@/features/cards/hooks/useCards'
 import { CategoryChips } from '@/features/expenses/components/CategoryChips'
+import { CategoryPickerModal } from '@/features/expenses/components/CategoryPickerModal'
 import { recurringSchema, type RecurringFormValues } from '@/features/recurring/schemas/recurringSchema'
 import { FormField, TextInput, SelectInput } from '@/components/ui/FormField'
 import { Button } from '@/components/ui/Button'
@@ -22,7 +26,14 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { confirmPaymentSchema, type ConfirmPaymentFormValues } from '@/features/recurring/schemas/confirmPaymentSchema'
 import { formatCurrency } from '@/utils/formatCurrency'
+import {
+  frequencyLabel,
+  frequencyPeriodLabel,
+  computeOverdueMonths,
+  FREQUENCY_OPTIONS,
+} from '@/utils/recurringSchedule'
 import { RecurringMode, RecurringFrequency, RecurringStatus, RecurringPaymentStatus, Currency, CardType } from '@/types/enums'
+import type { RecurringPaymentHistory } from '@/types/models'
 import styles from './RecurringDetailPage.module.css'
 
 const ICON_OPTIONS = ['📺', '🎵', '☁️', '💡', '🌊', '📱', '🎮', '🏠', '💊', '🔒', '📰', '🚗']
@@ -32,15 +43,22 @@ const CURRENCY_OPTIONS = [
   { value: Currency.USD, label: 'USD' },
 ]
 
+const FREQ_SELECT_OPTIONS = FREQUENCY_OPTIONS.map((o) => ({ value: o.value, label: o.label }))
+const MONTH_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
+const MONTH_SELECT_OPTIONS = MONTH_SHORT.map((n, i) => ({ value: String(i + 1), label: n }))
+
 export default function RecurringDetailPage(): React.ReactElement {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { data: rec, isLoading, error } = useRecurring(id ?? '')
   const { mutateAsync: updateRecurring } = useUpdateRecurring(id ?? '')
   const { mutateAsync: toggleStatus } = useToggleRecurringStatus(id ?? '')
+  const { mutateAsync: deleteRecurring, isPending: isDeleting } = useDeleteRecurring()
   const { mutateAsync: confirmPayment } = useConfirmRecurringPayment(id ?? '')
   const { mutateAsync: uploadReceipt, isPending: isUploadingReceipt } = useUploadRecurringPaymentReceipt(id ?? '')
   const { mutateAsync: updatePayment } = useUpdateRecurringPayment(id ?? '')
+  const { mutateAsync: skipMonth, isPending: isSkipping } = useSkipRecurringMonth(id ?? '')
+  const { mutateAsync: unskipMonth } = useUnskipRecurringMonth(id ?? '')
   const [uploadingPaymentId, setUploadingPaymentId] = useState<string | null>(null)
   const [editingPaymentId, setEditingPaymentId] = useState<string | null>(null)
   const { data: categories = [] } = useCategories()
@@ -56,44 +74,41 @@ export default function RecurringDetailPage(): React.ReactElement {
 
   const isPaused = rec.status === RecurringStatus.Paused
   const isPending = rec.currentMonthStatus === RecurringPaymentStatus.Pending
+  const isSkippedThisMonth = rec.currentMonthStatus === RecurringPaymentStatus.Skipped
   const isManual = rec.mode === RecurringMode.Manual
+  const now = new Date()
+  const curMonth = now.getMonth() + 1
+  const curYear = now.getFullYear()
   const categoryLabels = rec.categoryIds
     .map((id) => categories.find((c) => c.id === id))
     .filter(Boolean)
     .map((c) => `${c!.icon ?? ''} ${c!.name}`.trim())
     .join(', ')
   const card = cards.find((c) => c.id === rec.cardId)
-  const freqLabel = rec.frequency === RecurringFrequency.Annual ? 'año' : 'mes'
+  const freqLabel = frequencyPeriodLabel(rec.frequency)
 
-  // ── Overdue months (last 3, not yet paid) ─────────────────
+  // ── Overdue months (due, not paid and not skipped) ────────
   const MONTH_NAMES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
-  const overdueMonths: Array<{ month: number; year: number; label: string }> = (() => {
-    if (!isManual || rec.frequency !== RecurringFrequency.Monthly) return []
-    const now = new Date()
-    const currentMonth = now.getMonth() + 1
-    const currentYear = now.getFullYear()
-    const result: Array<{ month: number; year: number; label: string }> = []
-    for (let i = 1; i <= 3; i++) {
-      let m = currentMonth - i
-      let y = currentYear
-      if (m <= 0) { m += 12; y -= 1 }
-      const createdDate = new Date(rec.createdAt)
-      const checkEnd = new Date(y, m, 0)
-      if (checkEnd < createdDate) break
-      const wasPaid = rec.paymentHistory.some(
-        (h) => h.month === m && h.year === y && h.status === RecurringPaymentStatus.Paid
-      )
-      if (!wasPaid) {
-        const label = y === currentYear ? (MONTH_NAMES[m - 1] ?? '') : `${MONTH_NAMES[m - 1] ?? ''} ${y}`
-        result.push({ month: m, year: y, label })
-      }
-    }
-    return result
-  })()
+  const overdueMonths: Array<{ month: number; year: number; label: string }> = isManual
+    ? computeOverdueMonths(rec, now).map(({ month, year }) => ({
+        month,
+        year,
+        label: year === curYear ? (MONTH_NAMES[month - 1] ?? '') : `${MONTH_NAMES[month - 1] ?? ''} ${year}`,
+      }))
+    : []
 
   async function handleConfirmOverduePayment(values: ConfirmPaymentFormValues, month: number, year: number): Promise<void> {
     await confirmPayment({ amount: values.amount, receiptFile: values.receiptFile ?? undefined, month, year })
     setOverdueFormKey(null)
+  }
+
+  async function handleSkipMonth(month: number, year: number): Promise<void> {
+    await skipMonth({ month, year })
+    setOverdueFormKey(null)
+  }
+
+  async function handleUnskipMonth(month: number, year: number): Promise<void> {
+    await unskipMonth({ month, year })
   }
 
   const cardOptions = cards.map((c) => ({
@@ -103,6 +118,12 @@ export default function RecurringDetailPage(): React.ReactElement {
 
   async function handleToggle(): Promise<void> {
     await toggleStatus(isPaused ? RecurringStatus.Active : RecurringStatus.Paused)
+  }
+
+  async function handleDelete(): Promise<void> {
+    if (!rec || !window.confirm(`¿Eliminar "${rec.name}"? Esta acción no se puede deshacer.`)) return
+    await deleteRecurring(rec.id)
+    navigate('/settings/recurring')
   }
 
   async function handleConfirmPayment(values: ConfirmPaymentFormValues): Promise<void> {
@@ -126,6 +147,8 @@ export default function RecurringDetailPage(): React.ReactElement {
         mode: values.mode,
         frequency: values.frequency,
         dueDayOfMonth: values.dueDayOfMonth,
+        startMonth: values.frequency === RecurringFrequency.Monthly ? undefined : Number(values.startMonth),
+        startYear: values.frequency === RecurringFrequency.Monthly ? undefined : Number(values.startYear),
       })
       setIsEditing(false)
     } catch (err) {
@@ -149,11 +172,15 @@ export default function RecurringDetailPage(): React.ReactElement {
         frequency: rec.frequency ?? RecurringFrequency.Monthly,
         status: rec.status,
         dueDayOfMonth: rec.dueDayOfMonth ?? ('' as unknown as number),
+        startMonth: rec.startMonth ?? new Date(rec.createdAt).getMonth() + 1,
+        startYear: rec.startYear ?? new Date(rec.createdAt).getFullYear(),
       }}
       validationSchema={recurringSchema}
       onSubmit={handleUpdate}
     >
-      {({ isSubmitting, values, setFieldValue, status }) => (
+      {({ isSubmitting, values, setFieldValue, status }) => {
+        const [showCategoryModal, setShowCategoryModal] = React.useState(false)
+        return (
         <Form noValidate>
           {/* Mobile form layout */}
           <div className={styles.mobileFormFields}>
@@ -226,19 +253,23 @@ export default function RecurringDetailPage(): React.ReactElement {
             </FormField>
 
             <FormField name="frequency" label="Frecuencia">
-              <div className={styles.modeSelector}>
-                {([RecurringFrequency.Monthly, RecurringFrequency.Annual] as const).map((f) => (
-                  <button
-                    key={f}
-                    type="button"
-                    className={[styles.modeOpt, values.frequency === f ? styles.modeOptActive : ''].join(' ')}
-                    onClick={() => void setFieldValue('frequency', f)}
-                  >
-                    {f === RecurringFrequency.Monthly ? '📅 Mensual' : '📆 Anual'}
-                  </button>
-                ))}
-              </div>
+              <SelectInput name="frequency" options={FREQ_SELECT_OPTIONS} />
             </FormField>
+
+            {values.frequency !== RecurringFrequency.Monthly && (
+              <div className={styles.formRow}>
+                <div style={{ flex: 1 }}>
+                  <FormField name="startMonth" label="Mes de inicio">
+                    <SelectInput name="startMonth" options={MONTH_SELECT_OPTIONS} />
+                  </FormField>
+                </div>
+                <div style={{ width: 100 }}>
+                  <FormField name="startYear" label="Año">
+                    <TextInput name="startYear" type="number" min="2000" max="2100" />
+                  </FormField>
+                </div>
+              </div>
+            )}
 
             <FormField name="dueDayOfMonth" label="Día de vencimiento">
               <TextInput name="dueDayOfMonth" type="number" min="1" max="31" placeholder="ej. 15" />
@@ -278,19 +309,18 @@ export default function RecurringDetailPage(): React.ReactElement {
                 <SelectInput name="currency" options={CURRENCY_OPTIONS} />
               </FormField>
               <FormField name="frequency" label="Frecuencia">
-                <div className={styles.dkToggle}>
-                  {([RecurringFrequency.Monthly, RecurringFrequency.Annual] as const).map((f) => (
-                    <button
-                      key={f}
-                      type="button"
-                      className={[styles.dkToggleOpt, values.frequency === f ? styles.dkToggleOptActive : ''].join(' ')}
-                      onClick={() => void setFieldValue('frequency', f)}
-                    >
-                      {f === RecurringFrequency.Monthly ? '📅 Mensual' : '📆 Anual'}
-                    </button>
-                  ))}
-                </div>
+                <SelectInput name="frequency" options={FREQ_SELECT_OPTIONS} />
               </FormField>
+              {values.frequency !== RecurringFrequency.Monthly && (
+                <>
+                  <FormField name="startMonth" label="Mes de inicio del ciclo">
+                    <SelectInput name="startMonth" options={MONTH_SELECT_OPTIONS} />
+                  </FormField>
+                  <FormField name="startYear" label="Año de inicio">
+                    <TextInput name="startYear" type="number" min="2000" max="2100" />
+                  </FormField>
+                </>
+              )}
               <FormField name="mode" label="Naturaleza">
                 <div className={styles.dkToggle}>
                   {([RecurringMode.Auto, RecurringMode.Manual] as const).map((m) => (
@@ -305,7 +335,15 @@ export default function RecurringDetailPage(): React.ReactElement {
                   ))}
                 </div>
               </FormField>
-              <FormField name="categoryIds" label="Categorías">
+              <FormField
+                name="categoryIds"
+                label={values.categoryIds.length > 0 ? `Categorías (${values.categoryIds.length} seleccionadas)` : 'Categorías'}
+                labelRight={
+                  <button type="button" className={styles.labelRightBtn} onClick={() => setShowCategoryModal(true)}>
+                    Ver todas
+                  </button>
+                }
+              >
                 <CategoryChips
                   categories={categories}
                   selected={values.categoryIds as string[]}
@@ -332,8 +370,20 @@ export default function RecurringDetailPage(): React.ReactElement {
               Guardar cambios
             </Button>
           </div>
+
+          {showCategoryModal && (
+            <CategoryPickerModal
+              selected={values.categoryIds as string[]}
+              onConfirm={(ids) => {
+                void setFieldValue('categoryIds', ids)
+                setShowCategoryModal(false)
+              }}
+              onClose={() => setShowCategoryModal(false)}
+            />
+          )}
         </Form>
-      )}
+        )
+      }}
     </Formik>
   )
 
@@ -402,6 +452,25 @@ export default function RecurringDetailPage(): React.ReactElement {
       return d.toLocaleDateString('es-UY', { month: 'short', year: 'numeric' })
     }
     return '—'
+  }
+
+  function skippedHistRow(h: RecurringPaymentHistory): React.ReactElement {
+    return (
+      <div className={styles.skippedRow}>
+        <span className={styles.skippedIcon}>⊘</span>
+        <div className={styles.histInfo}>
+          <span className={styles.histDate}>{formatPaidAt(undefined, h.month, h.year)}</span>
+          <span className={styles.skippedTag}>Omitido — sin pago este período</span>
+        </div>
+        <button
+          type="button"
+          className={styles.skipUndoBtn}
+          onClick={() => void handleUnskipMonth(h.month, h.year)}
+        >
+          ↩ Deshacer
+        </button>
+      </div>
+    )
   }
 
   async function handleUpdatePayment(paymentId: string, amount: number, paidAt?: string): Promise<void> {
@@ -485,7 +554,9 @@ export default function RecurringDetailPage(): React.ReactElement {
     <>
       {sortedHistory.map((h) => (
         <div key={h.id} className={styles.histEntry}>
-          {editingPaymentId === h.id ? (
+          {h.status === RecurringPaymentStatus.Skipped ? (
+            skippedHistRow(h)
+          ) : editingPaymentId === h.id ? (
             <Formik
               initialValues={{ amount: h.amount }}
               onSubmit={async (v, { setSubmitting }) => {
@@ -618,7 +689,7 @@ export default function RecurringDetailPage(): React.ReactElement {
               {isManual ? 'Manual' : 'Auto'}
             </span>
             <span className={styles.payBadge}>
-              {rec.frequency === RecurringFrequency.Annual ? '📆 Anual' : '📅 Mensual'}
+              📆 {frequencyLabel(rec.frequency)}
             </span>
           </div>
         </header>
@@ -646,7 +717,7 @@ export default function RecurringDetailPage(): React.ReactElement {
           </div>
           <div className={styles.row}>
             <span className={styles.lbl}>📅 Vencimiento</span>
-            <span className={styles.val}>{rec.dueDayOfMonth ? `Día ${rec.dueDayOfMonth} de cada mes` : '—'}</span>
+            <span className={styles.val}>{rec.dueDayOfMonth ? `Día ${rec.dueDayOfMonth} de cada ${freqLabel}` : '—'}</span>
           </div>
           <div className={styles.row}><span className={styles.lbl}>💱 Moneda</span><span className={styles.val}>{rec.currency}</span></div>
           <div className={styles.row}>
@@ -661,16 +732,37 @@ export default function RecurringDetailPage(): React.ReactElement {
           <div className={styles.historyHeader}>
             <h2 className={styles.historyTitle}>Historial</h2>
             {isManual && (
-              <button
-                className={styles.addPaymentBtn}
-                onClick={() => setShowPaymentForm((v) => !v)}
-                disabled={!isPending}
-                title={isPending ? 'Registrar pago del mes' : 'El mes ya está pagado'}
-              >
-                {isPending ? '+ Registrar pago' : '✓ Pagado'}
-              </button>
+              <div className={styles.histHeaderActions}>
+                {isPending && (
+                  <button
+                    type="button"
+                    className={styles.skipBtn}
+                    onClick={() => void handleSkipMonth(curMonth, curYear)}
+                    disabled={isSkipping}
+                    title="Omitir el pago de este mes"
+                  >
+                    ⊘ Omitir mes
+                  </button>
+                )}
+                <button
+                  className={styles.addPaymentBtn}
+                  onClick={() => setShowPaymentForm((v) => !v)}
+                  disabled={!isPending}
+                  title={isPending ? 'Registrar pago del mes' : isSkippedThisMonth ? 'Mes omitido' : 'El mes ya está pagado'}
+                >
+                  {isPending ? '+ Registrar pago' : isSkippedThisMonth ? '⊘ Omitido' : '✓ Pagado'}
+                </button>
+              </div>
             )}
           </div>
+          {isManual && isSkippedThisMonth && (
+            <div className={styles.skippedBanner}>
+              <span>⊘ Omitiste este mes — no hace falta pagarlo.</span>
+              <button type="button" className={styles.skipUndoBtn} onClick={() => void handleUnskipMonth(curMonth, curYear)}>
+                ↩ Deshacer
+              </button>
+            </div>
+          )}
           {isManual && showPaymentForm && paymentFormContent}
           {overdueMonths.length > 0 && (
             <div className={styles.overdueSection}>
@@ -683,12 +775,21 @@ export default function RecurringDetailPage(): React.ReactElement {
                     {overdueFormKey === key ? (
                       overduePaymentForm(month, year)
                     ) : (
-                      <button
-                        className={styles.overdueRegisterBtn}
-                        onClick={() => setOverdueFormKey(key)}
-                      >
-                        Registrar pago
-                      </button>
+                      <span className={styles.overdueActions}>
+                        <button
+                          className={styles.overdueRegisterBtn}
+                          onClick={() => setOverdueFormKey(key)}
+                        >
+                          Registrar pago
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.skipBtn}
+                          onClick={() => void handleSkipMonth(month, year)}
+                        >
+                          Omitir
+                        </button>
+                      </span>
                     )}
                   </div>
                 )
@@ -698,10 +799,15 @@ export default function RecurringDetailPage(): React.ReactElement {
           {historyContent}
         </div>
 
-        <div style={{ padding: '0 20px 32px' }}>
+        <div style={{ padding: '0 20px 32px', display: 'flex', flexDirection: 'column', gap: 10 }}>
           <Button variant="ghost" fullWidth onClick={() => void handleToggle()}>
             {isPaused ? '▶ Activar servicio' : '⏸ Pausar servicio'}
           </Button>
+          {isPaused && (
+            <Button variant="danger" fullWidth loading={isDeleting} onClick={() => void handleDelete()}>
+              🗑 Eliminar pago recurrente
+            </Button>
+          )}
         </div>
       </div>
 
@@ -764,7 +870,7 @@ export default function RecurringDetailPage(): React.ReactElement {
               </div>
               <div className={styles.dkInfoItem}>
                 <span className={styles.dkInfoLabel}>Día de vencimiento</span>
-                <span className={styles.dkInfoValue}>Día {rec.dueDayOfMonth} de cada mes</span>
+                <span className={styles.dkInfoValue}>Día {rec.dueDayOfMonth} de cada {freqLabel}</span>
               </div>
             </div>
           </div>
@@ -774,15 +880,37 @@ export default function RecurringDetailPage(): React.ReactElement {
             <div className={styles.dkHistHeader}>
               <h3 className={styles.dkHistTitle}>Historial de pagos</h3>
               {isManual && (
-                <button
-                  className={styles.dkConfirmBtn}
-                  onClick={() => setShowPaymentForm((v) => !v)}
-                  disabled={!isPending}
-                >
-                  {isPending ? '+ Registrar pago' : '✓ Al día'}
-                </button>
+                <div className={styles.histHeaderActions}>
+                  {isPending && (
+                    <button
+                      type="button"
+                      className={styles.skipBtn}
+                      onClick={() => void handleSkipMonth(curMonth, curYear)}
+                      disabled={isSkipping}
+                      title="Omitir el pago de este mes"
+                    >
+                      ⊘ Omitir mes
+                    </button>
+                  )}
+                  <button
+                    className={styles.dkConfirmBtn}
+                    onClick={() => setShowPaymentForm((v) => !v)}
+                    disabled={!isPending}
+                  >
+                    {isPending ? '+ Registrar pago' : isSkippedThisMonth ? '⊘ Omitido' : '✓ Al día'}
+                  </button>
+                </div>
               )}
             </div>
+
+            {isManual && isSkippedThisMonth && (
+              <div className={styles.skippedBanner}>
+                <span>⊘ Omitiste este mes — no hace falta pagarlo.</span>
+                <button type="button" className={styles.skipUndoBtn} onClick={() => void handleUnskipMonth(curMonth, curYear)}>
+                  ↩ Deshacer
+                </button>
+              </div>
+            )}
 
             {isManual && showPaymentForm && paymentFormContent}
 
@@ -796,12 +924,21 @@ export default function RecurringDetailPage(): React.ReactElement {
                       <div className={styles.overdueMonthRow}>
                         <span className={styles.overdueMonthLabel}>{label}</span>
                         {overdueFormKey !== key && (
-                          <button
-                            className={styles.overdueRegisterBtn}
-                            onClick={() => setOverdueFormKey(key)}
-                          >
-                            Registrar pago
-                          </button>
+                          <span className={styles.overdueActions}>
+                            <button
+                              className={styles.overdueRegisterBtn}
+                              onClick={() => setOverdueFormKey(key)}
+                            >
+                              Registrar pago
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.skipBtn}
+                              onClick={() => void handleSkipMonth(month, year)}
+                            >
+                              Omitir
+                            </button>
+                          </span>
                         )}
                       </div>
                       {overdueFormKey === key && overduePaymentForm(month, year)}
@@ -817,7 +954,9 @@ export default function RecurringDetailPage(): React.ReactElement {
               ) : (
                 sortedHistory.map((h) => (
                   <div key={h.id} className={styles.histEntry}>
-                    {editingPaymentId === h.id ? (
+                    {h.status === RecurringPaymentStatus.Skipped ? (
+                      skippedHistRow(h)
+                    ) : editingPaymentId === h.id ? (
                       <Formik
                         initialValues={{ amount: h.amount }}
                         onSubmit={async (v, { setSubmitting }) => {
@@ -896,12 +1035,23 @@ export default function RecurringDetailPage(): React.ReactElement {
           </div>
 
           {/* Pause / activate — full width */}
-          <button
-            className={[styles.dkPauseBtn, isPaused ? styles.dkPauseBtnActivate : ''].join(' ')}
-            onClick={() => void handleToggle()}
-          >
-            {isPaused ? '▶ Activar servicio' : '⏸ Pausar servicio'}
-          </button>
+          <div className={styles.dkFooterActions}>
+            <button
+              className={[styles.dkPauseBtn, isPaused ? styles.dkPauseBtnActivate : ''].join(' ')}
+              onClick={() => void handleToggle()}
+            >
+              {isPaused ? '▶ Activar servicio' : '⏸ Pausar servicio'}
+            </button>
+            {isPaused && (
+              <button
+                className={styles.dkDeleteBtn}
+                onClick={() => void handleDelete()}
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Eliminando…' : '🗑 Eliminar'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

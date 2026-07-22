@@ -7,6 +7,7 @@ import type {
   UpdateRecurringPayload,
   ConfirmRecurringPaymentPayload,
   UpdateRecurringPaymentPayload,
+  SkipRecurringMonthPayload,
 } from '@/types/models'
 import { RecurringStatus } from '@/types/enums'
 
@@ -47,6 +48,14 @@ export function useUpdateRecurring(id: string) {
   })
 }
 
+export function useDeleteRecurring() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => recurringService.remove(id),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: RECURRING_KEYS.all }),
+  })
+}
+
 export function useToggleRecurringStatus(id: string) {
   const qc = useQueryClient()
   return useMutation({
@@ -60,6 +69,22 @@ export function useConfirmRecurringPayment(id: string) {
   return useMutation({
     mutationFn: (payload: ConfirmRecurringPaymentPayload) =>
       recurringService.confirmPayment(id, payload),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: RECURRING_KEYS.all }),
+  })
+}
+
+export function useSkipRecurringMonth(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: SkipRecurringMonthPayload) => recurringService.skipMonth(id, payload),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: RECURRING_KEYS.all }),
+  })
+}
+
+export function useUnskipRecurringMonth(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: SkipRecurringMonthPayload) => recurringService.unskipMonth(id, payload),
     onSuccess: () => void qc.invalidateQueries({ queryKey: RECURRING_KEYS.all }),
   })
 }

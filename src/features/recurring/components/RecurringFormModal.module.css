@@ -1,0 +1,108 @@
+/* src/features/recurring/components/RecurringFormModal.module.css */
+
+/* Self-contained overlay (portaled to body) — sits above the statement import
+   modal (z-index 1000) so it can be opened from within it. */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .48);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+  padding: 24px;
+}
+
+.panel {
+  width: 100%;
+  max-width: 560px;
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .2);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 48px);
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-bottom: 1.5px solid var(--border);
+  flex-shrink: 0;
+}
+
+.title {
+  font-family: var(--font-head);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.closeBtn {
+  width: 30px; height: 30px;
+  background: var(--cream);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: background .15s, color .15s;
+}
+.closeBtn:hover { background: var(--border); color: var(--ink); }
+
+/* ── Form ── */
+.modalForm {
+  display: flex; flex-direction: column;
+  min-height: 0; overflow: hidden;
+}
+.desktopFormBody {
+  padding: 20px 24px; display: flex; flex-direction: column; gap: 4px;
+  overflow-y: auto; min-height: 0; flex: 1;
+}
+
+.iconPicker { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.icoBtn {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: #fff; border: 1.5px solid var(--border);
+  font-size: 17px; display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.icoBtnActive {
+  border-color: var(--gold); background: var(--gold-lt);
+  box-shadow: 0 0 0 2px rgba(196, 125, 16, .18);
+}
+
+/* Monto + Moneda inline */
+.desktopAmountRow { display: flex; gap: 10px; align-items: flex-start; }
+.desktopCurrencyCol { width: 90px; flex-shrink: 0; }
+
+.labelRightBtn {
+  background: none; border: none; cursor: pointer;
+  font-size: 11px; font-weight: 600; color: var(--g600);
+  font-family: inherit; padding: 0;
+}
+.labelRightBtn:hover { text-decoration: underline; }
+
+.desktopToggle { display: flex; gap: 8px; }
+.desktopToggleOpt {
+  flex: 1; padding: 8px 12px; border-radius: 10px;
+  border: 1.5px solid var(--border); text-align: center;
+  cursor: pointer; font-size: 13px; font-weight: 600; color: var(--muted);
+  font-family: inherit; transition: all .15s;
+}
+.desktopToggleOptActive {
+  border-color: #f5b732; background: rgba(245, 183, 50, .1); color: #b45309;
+}
+
+.formError { font-size: 12px; color: var(--rose); margin: 0 24px 10px; }
+
+.desktopFormActions {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 12px; padding: 16px 24px;
+  border-top: 1.5px solid var(--border);
+  flex-shrink: 0;
+}

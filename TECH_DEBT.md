@@ -10,6 +10,42 @@ Decisiones conocidas que quedaron pendientes por complejidad o prioridad.
 Sin bugs detectados
 ---
 
+### Migrar heurísticas de recorte a "recortes dinámicos"
+
+`src/features/metrics/savingsSuggestions.ts` contiene heurísticas hardcodeadas
+(crecimiento vs período anterior, concentración, costos fijos, gasto hormiga).
+El feature de **recortes** (`src/features/recortes/`, `src/services/recorteAnalysisService.ts`)
+generaliza esa idea: el usuario define el indicador con un prompt y Gemini lo calcula
+sobre los mismos datos. Cuando los recortes cubran los casos que hoy resuelven las
+heurísticas de forma confiable, eliminar `savingsSuggestions.ts` y su card, dejando
+que los recortes (con plantillas seed en `recorteConstants.ts`) los reemplacen.
+
+---
+
+### Recortes: `spend_by_product_category` ignora el acote por categoría de gasto
+
+En el function calling de recortes (`src/services/recorteTools.ts`) conviven dos
+taxonomías distintas: **categorías de gasto** (etiqueta del gasto entero, con las que
+el usuario acota un recorte vía `categoryIds`) y **categorías de producto** (etiqueta
+de cada línea de ticket, ej. Lácteos/Limpieza).
+
+La función `spend_by_product_category` sale de `metrics.byProductCategory`, que es un
+agregado del **período completo**: **NO** respeta el acote por categoría de gasto del
+recorte. En cambio, `list_ticket_lines` sí lo respeta (se arma desde `inRange`, ya
+filtrado por scope). Resultado: en un recorte acotado por categoría de gasto, el total
+por categoría de producto es "de todo el período" mientras los ejemplos de líneas son
+"solo del scope" — incoherente.
+
+- **Impacto**: bajo. Solo se nota si el usuario combina las dos cosas (acotar por
+  categoría de gasto *y* preguntar por categoría de producto); ahí el monto sale más
+  alto de lo esperado. En el caso normal (recorte de productos sin acote de gasto) es correcto.
+- **Fix**: calcular `byProductCategory` desde las líneas de ticket acotadas (`inRange`)
+  en vez de `metrics.byProductCategory`. Queda coherente con el scope, pero pierde las
+  líneas sin `productId` o sin categoría de producto asignada (solo suma lo bien clasificado).
+- **Decisión actual**: se dejó period-wide (más completo) a favor de la cobertura.
+
+---
+
 ## Cloud Function: historial de pagos automáticos
 
 **Contexto**
@@ -85,6 +121,27 @@ Pasar todos los filtros activos a `useExpenses(filters)` y procesarlos en cada b
 **Impacto estimado**: medio — afecta `ExpensesPage`, `useExpenses`, ambos backends y potencialmente requiere migración de índices en Firestore.
 
 ---
+
+## `pendingLines` de los documentos se cargan enteras en el listado de Reportes
+
+**Contexto**
+Las líneas extraídas de cada estado de cuenta (`ReportAttachment.pendingLines`) se guardan como un array **dentro del mismo documento** `users/{uid}/reportAttachments/{id}`. `useReportAttachments(mes)` hace un `getDocs` de todos los documentos del mes, así que el listado de "Documentos del mes" en `ReportsPage` trae **todas las líneas de todos los documentos**, aunque solo se usen para:
+- Derivar el contador del badge **"✓ Procesado (N gastos)"** (`pendingLines.filter(l => l.imported).length`).
+- Derivar el contador **"Revisar (N)"** (`pendingLines.filter(l => !l.imported).length`).
+
+El modal (`StatementImportModal`) reusa ese mismo objeto, no hace un fetch aparte.
+
+Con uso familiar (pocos documentos por mes, ~40 líneas c/u) el payload es chico y no se nota. Pero escala mal: cada documento puede cargar decenas de líneas con descripción, montos, categoría, etc. solo para mostrar dos números en el feed.
+
+**Por qué quedó así**
+El `importedExpenseCount` original era un contador guardado, pero se calculaba mal (usaba un snapshot desactualizado de `existingExpenses` en `handleSave`), quedando congelado (ej. mostraba `5` cuando había ~40 líneas importadas). Se resolvió derivando el número en vivo de `pendingLines`, que ya venía en la lista — correcto pero pesado.
+
+**Solución propuesta**
+1. Mantener contadores livianos y **bien calculados** en el documento (ej. `importedLineCount` y `pendingLineCount`), actualizados en cada guardado contando `pendingLines` en el momento del `savePendingLines`/`markProcessed`.
+2. **No** traer `pendingLines` en `useReportAttachments` (proyección de campos o subcolección) — cargarlas solo al abrir el modal.
+   - Opción: mover las líneas a subcolección `reportAttachments/{id}/lines` y dejar solo contadores en el doc padre.
+
+**Impacto estimado**: bajo-medio — afecta `ReportsPage`, `useReportAttachments`, `reportAttachmentsService`, ambos backends (`firestore/reportAttachments`, `msw/reportAttachments` + handlers) y el modelo. Requiere mantener los contadores en sincronía en todos los caminos de escritura (guardar, importar, eliminar línea, reprocesar).
 
 ---
 

@@ -1,7 +1,7 @@
 // src/backend/index.ts
 // Factory: returns the correct backend implementation based on VITE_BACKEND
 
-import type { IAuthBackend, IBudgetBackend, ICardsBackend, ICategoriesBackend, IExpensesBackend, IMetricsBackend, IPlacesBackend, IRecurringBackend, ISalariesBackend, IMonthClosingsBackend, IProductCategoriesBackend, IBrandsBackend, IProductsBackend, ICategoryLimitsBackend, INotificationsBackend, IReportAttachmentsBackend, IUserPrefsBackend, IMonthAnalysisBackend, IPendingReceiptsBackend } from './types'
+import type { IAuthBackend, IBudgetBackend, ICardsBackend, ICategoriesBackend, IExpensesBackend, IMetricsBackend, IPlacesBackend, IRecurringBackend, ISalariesBackend, IMonthClosingsBackend, IProductCategoriesBackend, IBrandsBackend, IProductsBackend, ICategoryLimitsBackend, INotificationsBackend, IReportAttachmentsBackend, IUserPrefsBackend, IMonthAnalysisBackend, IPendingReceiptsBackend, IDashboardWidgetsBackend, IRecortesBackend, IIntegrationsBackend, IGmailBackend } from './types'
 
 type BackendType = 'msw' | 'firestore' | 'aws'
 
@@ -27,6 +27,10 @@ let _reportAttachmentsBackend: IReportAttachmentsBackend | null = null
 let _userPrefsBackend: IUserPrefsBackend | null = null
 let _monthAnalysisBackend: IMonthAnalysisBackend | null = null
 let _pendingReceiptsBackend: IPendingReceiptsBackend | null = null
+let _dashboardWidgetsBackend: IDashboardWidgetsBackend | null = null
+let _recortesBackend: IRecortesBackend | null = null
+let _integrationsBackend: IIntegrationsBackend | null = null
+let _gmailBackend: IGmailBackend | null = null
 
 export async function getAuthBackend(): Promise<IAuthBackend> {
   if (_authBackend) return _authBackend
@@ -255,6 +259,54 @@ export async function getPendingReceiptsBackend(): Promise<IPendingReceiptsBacke
     _pendingReceiptsBackend = mswPendingReceiptsBackend
   }
   return _pendingReceiptsBackend
+}
+
+export async function getDashboardWidgetsBackend(): Promise<IDashboardWidgetsBackend> {
+  if (_dashboardWidgetsBackend) return _dashboardWidgetsBackend
+  if (backend === 'firestore') {
+    const { firestoreDashboardWidgetsBackend } = await import('./firestore/dashboardWidgets')
+    _dashboardWidgetsBackend = firestoreDashboardWidgetsBackend
+  } else {
+    const { mswDashboardWidgetsBackend } = await import('./msw/dashboardWidgets')
+    _dashboardWidgetsBackend = mswDashboardWidgetsBackend
+  }
+  return _dashboardWidgetsBackend
+}
+
+export async function getRecortesBackend(): Promise<IRecortesBackend> {
+  if (_recortesBackend) return _recortesBackend
+  if (backend === 'firestore') {
+    const { firestoreRecortesBackend } = await import('./firestore/recortes')
+    _recortesBackend = firestoreRecortesBackend
+  } else {
+    const { mswRecortesBackend } = await import('./msw/recortes')
+    _recortesBackend = mswRecortesBackend
+  }
+  return _recortesBackend
+}
+
+export async function getIntegrationsBackend(): Promise<IIntegrationsBackend> {
+  if (_integrationsBackend) return _integrationsBackend
+  if (backend === 'firestore') {
+    const { firestoreIntegrationsBackend } = await import('./firestore/integrations')
+    _integrationsBackend = firestoreIntegrationsBackend
+  } else {
+    const { mswIntegrationsBackend } = await import('./msw/integrations')
+    _integrationsBackend = mswIntegrationsBackend
+  }
+  return _integrationsBackend
+}
+
+export async function getGmailBackend(): Promise<IGmailBackend> {
+  if (_gmailBackend) return _gmailBackend
+  if (backend === 'firestore') {
+    const { firestoreGmailBackend } = await import('./firestore/gmail')
+    _gmailBackend = firestoreGmailBackend
+  } else {
+    const { mswGmailBackend } = await import('./msw/gmail')
+    _gmailBackend = mswGmailBackend
+  }
+  return _gmailBackend
 }
 
 export { backend as activeBackend }

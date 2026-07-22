@@ -58,7 +58,19 @@ export function CategoryPickerModal({
   }, [filtered.length])
 
   function toggle(id: string): void {
-    setSelected((prev) => prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id])
+    setSelected((prev) => {
+      if (prev.includes(id)) return prev.filter((s) => s !== id)
+      // Al seleccionar mantenemos el invariante "nunca padre + hija" (gana el
+      // último clickeado): elegir una hija saca a su padre, y elegir un padre
+      // saca a sus hijas. Evita el tag redundante (el rollup ya suma la hija al padre).
+      const cat = categories.find((c) => c.id === id)
+      const next = prev.filter((s) => {
+        if (cat?.parentId && s === cat.parentId) return false
+        if (categories.find((c) => c.id === s)?.parentId === id) return false
+        return true
+      })
+      return [...next, id]
+    })
   }
 
   async function handleCreate(

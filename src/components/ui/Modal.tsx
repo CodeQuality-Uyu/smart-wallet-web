@@ -10,25 +10,40 @@ interface ModalProps {
   children: React.ReactNode
   width?: number
   titleAction?: React.ReactNode
+  /** Si es false, no se puede cerrar (sin ✕, sin overlay/Escape). Default true. */
+  dismissible?: boolean
 }
 
-export function Modal({ title, onClose, children, width = 520, titleAction }: ModalProps): React.ReactElement {
+export function Modal({
+  title,
+  onClose,
+  children,
+  width = 520,
+  titleAction,
+  dismissible = true,
+}: ModalProps): React.ReactElement {
   useEffect(() => {
+    if (!dismissible) return
     function onKey(e: KeyboardEvent): void {
       if (e.key === 'Escape') onClose()
     }
     document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [onClose])
+    return (): void => document.removeEventListener('keydown', onKey)
+  }, [onClose, dismissible])
 
   useEffect(() => {
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = prev }
+    return (): void => { document.body.style.overflow = prev }
   }, [])
 
   return ReactDOM.createPortal(
-    <div className={styles.overlay} onClick={onClose} role="dialog" aria-modal>
+    <div
+      className={styles.overlay}
+      onClick={dismissible ? onClose : undefined}
+      role="dialog"
+      aria-modal
+    >
       <div
         className={styles.panel}
         style={{ maxWidth: width }}
@@ -39,7 +54,9 @@ export function Modal({ title, onClose, children, width = 520, titleAction }: Mo
             <h2 className={styles.title}>{title}</h2>
             {titleAction && <span className={styles.titleAction}>{titleAction}</span>}
           </div>
-          <button className={styles.closeBtn} onClick={onClose} aria-label="Cerrar">✕</button>
+          {dismissible && (
+            <button className={styles.closeBtn} onClick={onClose} aria-label="Cerrar">✕</button>
+          )}
         </div>
         {children}
       </div>

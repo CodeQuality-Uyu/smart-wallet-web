@@ -3,6 +3,11 @@
 
 import type {
   UserPrefs,
+  GmailIntegration,
+  GmailLabel,
+  GmailRawMessage,
+  GmailPendingItem,
+  GmailQueue,
   MonthAnalysis,
   PendingReceipt,
   CreatePendingReceiptPayload,
@@ -22,6 +27,7 @@ import type {
   UpdateRecurringPayload,
   ConfirmRecurringPaymentPayload,
   UpdateRecurringPaymentPayload,
+  SkipRecurringMonthPayload,
   RecurringPaymentHistory,
   Expense,
   CreateExpensePayload,
@@ -49,6 +55,13 @@ import type {
   CreateProductPriceRecordPayload,
   Notification,
   NotificationPrefs,
+  DashboardWidget,
+  CreateDashboardWidgetPayload,
+  UpdateDashboardWidgetPayload,
+  Recorte,
+  RecorteResult,
+  CreateRecortePayload,
+  UpdateRecortePayload,
 } from '@/types/models'
 import type { Currency, PeriodFilter, RecurringStatus } from '@/types/enums'
 
@@ -73,6 +86,7 @@ export type {
   UpdateRecurringPayload,
   ConfirmRecurringPaymentPayload,
   UpdateRecurringPaymentPayload,
+  SkipRecurringMonthPayload,
   RecurringPaymentHistory,
   RecurringStatus,
   Expense,
@@ -101,6 +115,13 @@ export type {
   CreateProductPriceRecordPayload,
   Notification,
   NotificationPrefs,
+  DashboardWidget,
+  CreateDashboardWidgetPayload,
+  UpdateDashboardWidgetPayload,
+  Recorte,
+  RecorteResult,
+  CreateRecortePayload,
+  UpdateRecortePayload,
 }
 
 // ─── Auth ──────────────────────────────────────────────────
@@ -182,6 +203,8 @@ export interface IRecurringBackend {
     id: string,
     payload: ConfirmRecurringPaymentPayload
   ): Promise<RecurringPaymentHistory>
+  skipMonth(id: string, payload: SkipRecurringMonthPayload): Promise<RecurringExpense>
+  unskipMonth(id: string, payload: SkipRecurringMonthPayload): Promise<RecurringExpense>
   updatePayment(
     recurringId: string,
     paymentId: string,
@@ -343,6 +366,29 @@ export interface INotificationsBackend {
   setPrefs(prefs: NotificationPrefs): Promise<NotificationPrefs>
 }
 
+// ─── Dashboard widgets ────────────────────────────────────
+
+export interface IDashboardWidgetsBackend {
+  list(): Promise<DashboardWidget[]>
+  create(payload: CreateDashboardWidgetPayload): Promise<DashboardWidget>
+  update(id: string, payload: UpdateDashboardWidgetPayload): Promise<DashboardWidget>
+  remove(id: string): Promise<void>
+}
+
+// ─── Recortes (indicadores de recorte dinámicos) ──────────
+
+export interface IRecortesBackend {
+  list(): Promise<Recorte[]>
+  getById(id: string): Promise<Recorte>
+  create(payload: CreateRecortePayload): Promise<Recorte>
+  update(id: string, payload: UpdateRecortePayload): Promise<Recorte>
+  remove(id: string): Promise<void>
+  /** Historial de resultados (más reciente primero). */
+  listResults(id: string): Promise<RecorteResult[]>
+  /** Persiste un nuevo resultado y actualiza `lastResult` del recorte padre. */
+  addResult(id: string, result: Omit<RecorteResult, 'id'>): Promise<RecorteResult>
+}
+
 // ─── Month analysis ───────────────────────────────────────
 
 export interface IMonthAnalysisBackend {
@@ -355,6 +401,36 @@ export interface IMonthAnalysisBackend {
 export interface IUserPrefsBackend {
   get(): Promise<UserPrefs>
   set(prefs: Partial<UserPrefs>): Promise<UserPrefs>
+}
+
+// ─── Integraciones ────────────────────────────────────────
+
+export interface IIntegrationsBackend {
+  getGmail(): Promise<GmailIntegration>
+  setGmail(patch: Partial<GmailIntegration>): Promise<GmailIntegration>
+
+  // Cola de import (pendientes + vistos)
+  getGmailQueue(): Promise<GmailQueue>
+  /** Marca ids de mails como vistos (no reprocesar). Devuelve la cola actualizada. */
+  appendGmailSeen(ids: string[]): Promise<GmailQueue>
+  /** Agrega candidatos a la cola de pendientes (dedupe por gmailMessageId). */
+  appendGmailPending(items: GmailPendingItem[]): Promise<GmailQueue>
+  /** Saca items de la cola (al confirmar o descartar), por gmailMessageId. */
+  removeGmailPending(messageIds: string[]): Promise<GmailQueue>
+}
+
+/** Parámetros para buscar mails: se buscan los de estos remitentes O con estas etiquetas. */
+export interface GmailFetchParams {
+  senders: string[]
+  labels: string[]
+  windowDays: number
+}
+
+export interface IGmailBackend {
+  /** Lista las etiquetas de la cuenta (para el selector de dónde buscar). */
+  listLabels(): Promise<GmailLabel[]>
+  /** Trae los mails que matchean remitentes/etiquetas dentro de la ventana. */
+  fetchMessages(params: GmailFetchParams): Promise<GmailRawMessage[]>
 }
 
 // ─── Pending receipts ─────────────────────────────────────
@@ -386,6 +462,7 @@ export interface ReportAttachment {
 
 export interface IReportAttachmentsBackend {
   list(yearMonth: string): Promise<ReportAttachment[]>
+  getById(id: string): Promise<ReportAttachment | null>
   upload(yearMonth: string, file: File, options?: { cardId?: string }): Promise<ReportAttachment>
   savePendingLines(id: string, lines: StatementImportRow[]): Promise<ReportAttachment>
   markProcessed(id: string, data: { importedExpenseCount: number }): Promise<ReportAttachment>
