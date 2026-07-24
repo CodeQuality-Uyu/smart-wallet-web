@@ -85,6 +85,8 @@ export default function CategoriesPage(): React.ReactElement {
 
   const [editing, setEditing] = useState<Category | null>(null)
   const [showForm, setShowForm] = useState(false)
+  // Al crear una subcategoría desde el menú de un padre, precargamos su parentId.
+  const [presetParentId, setPresetParentId] = useState<string | null>(null)
   const [period, setPeriod] = useState(PeriodFilter.Month)
   const [search, setSearch] = useState('')
   const { mutateAsync: updateCat } = useUpdateCategory(editing?.id ?? '')
@@ -156,8 +158,7 @@ export default function CategoriesPage(): React.ReactElement {
       } else {
         await createCat({ ...payload, active: true })
       }
-      setShowForm(false)
-      setEditing(null)
+      closeForm()
     } catch (err) {
       const msg =
         err instanceof Error
@@ -169,7 +170,20 @@ export default function CategoriesPage(): React.ReactElement {
 
   function startEdit(cat: Category): void {
     setEditing(cat)
+    setPresetParentId(null)
     setShowForm(true)
+  }
+
+  function startAddChild(parent: Category): void {
+    setEditing(null)
+    setPresetParentId(parent.id)
+    setShowForm(true)
+  }
+
+  function closeForm(): void {
+    setShowForm(false)
+    setEditing(null)
+    setPresetParentId(null)
   }
 
   async function handleDelete(cat: Category): Promise<void> {
@@ -187,7 +201,7 @@ export default function CategoriesPage(): React.ReactElement {
     color: editing?.color ?? '',
     limitUYU: editing?.limitUYU ?? undefined,
     limitUSD: editing?.limitUSD ?? undefined,
-    parentId: editing?.parentId ?? '',
+    parentId: editing?.parentId ?? presetParentId ?? '',
   }
 
   const periodControl = <PeriodControl value={period} onChange={setPeriod} />
@@ -215,6 +229,10 @@ export default function CategoriesPage(): React.ReactElement {
             ariaLabel={`Opciones de ${cat.name}`}
             items={[
               { label: 'Editar', icon: '✏', onClick: () => startEdit(cat) },
+              // Solo las categorías raíz pueden tener hijas (jerarquía de 2 niveles).
+              ...(!isChild
+                ? [{ label: 'Agregar subcategoría', icon: '➕', onClick: () => startAddChild(cat) }]
+                : []),
               {
                 label: 'Eliminar',
                 icon: '🗑',
@@ -238,6 +256,7 @@ export default function CategoriesPage(): React.ReactElement {
             className={styles.newBtn}
             onClick={() => {
               setEditing(null)
+              setPresetParentId(null)
               setShowForm(true)
             }}
           >
@@ -289,11 +308,8 @@ export default function CategoriesPage(): React.ReactElement {
         {/* Create/edit form in a modal */}
         {showForm && (
           <Modal
-            title={editing ? 'Editar categoría' : 'Nueva categoría'}
-            onClose={() => {
-              setShowForm(false)
-              setEditing(null)
-            }}
+            title={editing ? 'Editar categoría' : presetParentId ? 'Nueva subcategoría' : 'Nueva categoría'}
+            onClose={closeForm}
           >
             <div className={styles.formBody}>
               <Formik
@@ -389,18 +405,17 @@ export default function CategoriesPage(): React.ReactElement {
                   {status && <p className={styles.formError}>{status}</p>}
 
                   <div className={styles.formActions}>
-                    <button
-                      type="button"
-                      className={styles.formCancelBtn}
-                      onClick={() => {
-                        setShowForm(false)
-                        setEditing(null)
-                      }}
-                    >
+                    <button type="button" className={styles.formCancelBtn} onClick={closeForm}>
                       Cancelar
                     </button>
                     <button type="submit" className={styles.formSaveBtn} disabled={isSubmitting}>
-                      {isSubmitting ? 'Guardando…' : editing ? 'Guardar' : 'Crear categoría'}
+                      {isSubmitting
+                        ? 'Guardando…'
+                        : editing
+                          ? 'Guardar'
+                          : presetParentId
+                            ? 'Crear subcategoría'
+                            : 'Crear categoría'}
                     </button>
                   </div>
                 </Form>

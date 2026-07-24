@@ -8,19 +8,11 @@ export function BottomNav(): React.ReactElement {
   return (
     <nav className={styles.nav}>
       <NavLink
-        to="/expenses/new"
+        to="/home"
         className={({ isActive }) => [styles.tab, isActive ? styles.tabActive : ''].join(' ')}
       >
-        <span className={styles.tabIcon}>＋</span>
-        <span className={styles.tabLabel}>Nuevo gasto</span>
-      </NavLink>
-
-      <NavLink
-        to="/expenses"
-        className={({ isActive }) => [styles.tab, isActive ? styles.tabActive : ''].join(' ')}
-      >
-        <span className={styles.tabIcon}>📋</span>
-        <span className={styles.tabLabel}>Gastos</span>
+        <span className={styles.tabIcon}>🏠</span>
+        <span className={styles.tabLabel}>Inicio</span>
       </NavLink>
     </nav>
   )

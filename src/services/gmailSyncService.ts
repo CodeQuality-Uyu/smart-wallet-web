@@ -33,7 +33,9 @@ export interface GmailSyncResult {
 export async function syncGmail(params: GmailSyncParams): Promise<GmailSyncResult> {
   const { senders, labels, windowDays, seenIds, now } = params
 
-  const messages = await gmailService.fetchMessages({ senders, labels, windowDays })
+  // Se pasan los vistos para no bajar sus cuerpos; igual se filtra defensivamente
+  // acá por si el backend no los excluyó (ej. el mock de MSW).
+  const messages = await gmailService.fetchMessages({ senders, labels, windowDays, seenIds })
 
   const seen = new Set(seenIds)
   const fresh = messages.filter((m) => !seen.has(m.id))

@@ -64,6 +64,21 @@
   min-width: 0;
 }
 
+.backBtn {
+  width: 30px; height: 30px;
+  background: var(--cream);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: background .15s, color .15s;
+}
+.backBtn:hover { background: var(--border); color: var(--ink); }
+
 .titleAction {
   flex-shrink: 0;
 }

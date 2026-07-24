@@ -140,14 +140,17 @@ export const firestoreGmailBackend: IGmailBackend = {
       .map((l) => ({ id: l.id, name: l.name }))
   },
 
-  async fetchMessages({ senders, labels, windowDays }: GmailFetchParams): Promise<GmailRawMessage[]> {
+  async fetchMessages({ senders, labels, windowDays, seenIds }: GmailFetchParams): Promise<GmailRawMessage[]> {
     const query = buildGmailQuery(senders, labels, windowDays)
     if (!query) return [] // sin fuentes → no traer nada (evita bajar toda la bandeja)
 
     const list = await gmailGet<{ messages?: { id: string }[] }>(
       `/messages?q=${encodeURIComponent(query)}&maxResults=${MAX_RESULTS}`,
     )
-    const ids = (list.messages ?? []).map((m) => m.id)
+    // Se excluyen los ya vistos ANTES de bajar los cuerpos: solo se descarga el
+    // contenido de los mails nuevos (menos llamadas a la API).
+    const seen = new Set(seenIds)
+    const ids = (list.messages ?? []).map((m) => m.id).filter((id) => !seen.has(id))
 
     const messages = await Promise.all(
       ids.map((id) => gmailGet<GmailApiMessage>(`/messages/${id}?format=full`)),

@@ -50,6 +50,8 @@ export function DashboardWidgetModal({
   widget,
 }: DashboardWidgetModalProps): React.ReactElement {
   const [engine, setEngine] = React.useState<WidgetEngine | null>(widget ? widget.engine : null)
+  // Volver al selector de tipo — solo al crear (al editar no hay selector previo).
+  const onBack = widget ? undefined : (): void => setEngine(null)
 
   if (engine === null) {
     return <EngineChooser onClose={onClose} onPick={setEngine} />
@@ -58,6 +60,7 @@ export function DashboardWidgetModal({
     return (
       <QueryWidgetEditor
         onClose={onClose}
+        onBack={onBack}
         widget={widget}
         categories={categories}
         cards={cards}
@@ -66,7 +69,15 @@ export function DashboardWidgetModal({
       />
     )
   }
-  return <GuidedWidgetEditor onClose={onClose} widget={widget} categories={categories} recurring={recurring} />
+  return (
+    <GuidedWidgetEditor
+      onClose={onClose}
+      onBack={onBack}
+      widget={widget}
+      categories={categories}
+      recurring={recurring}
+    />
+  )
 }
 
 const SIZE_OPTIONS: SelectOption[] = [
@@ -228,6 +239,7 @@ const HELP: Record<string, HelpContent> = {
 
 interface GuidedWidgetEditorProps {
   onClose: () => void
+  onBack?: () => void
   categories: Category[]
   recurring: RecurringExpense[]
   widget?: DashboardWidget
@@ -235,6 +247,7 @@ interface GuidedWidgetEditorProps {
 
 function GuidedWidgetEditor({
   onClose,
+  onBack,
   categories,
   recurring,
   widget,
@@ -382,7 +395,12 @@ function GuidedWidgetEditor({
   }
 
   return (
-    <Modal title={isEdit ? 'Editar visualizador' : 'Nuevo visualizador'} onClose={onClose} width={940}>
+    <Modal
+      title={isEdit ? 'Editar visualizador' : 'Nuevo visualizador · KPI'}
+      onClose={onClose}
+      onBack={onBack}
+      width={940}
+    >
       <div className={styles.layout}>
         <div className={styles.formCol}>
         {/* Cabecera del widget */}

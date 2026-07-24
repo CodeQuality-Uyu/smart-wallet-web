@@ -31,7 +31,7 @@ export function AppLayout(): React.ReactElement {
 
   React.useEffect(() => {
     if (window.innerWidth < MOBILE_BREAKPOINT && pathname === '/') {
-      void navigate('/expenses/new', { replace: true })
+      void navigate('/home', { replace: true })
     }
   }, [pathname, navigate])
 

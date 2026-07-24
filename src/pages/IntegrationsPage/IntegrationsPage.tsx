@@ -142,6 +142,16 @@ function GmailPanel(): React.ReactElement {
     patch({ senders: config!.senders.filter((s) => s !== sender) })
   }
 
+  function moveSender(index: number, dir: -1 | 1): void {
+    const next = [...config!.senders]
+    const j = index + dir
+    if (j < 0 || j >= next.length) return
+    const tmp = next[index]!
+    next[index] = next[j]!
+    next[j] = tmp
+    patch({ senders: next })
+  }
+
   function addLabelValue(value: string): void {
     const clean = value.trim()
     if (!clean || config!.labels.includes(clean)) return
@@ -277,21 +287,51 @@ function GmailPanel(): React.ReactElement {
         {config.senders.length === 0 ? (
           <p className={styles.empty}>Todavía no agregaste remitentes.</p>
         ) : (
-          <ul className={styles.senderList}>
-            {config.senders.map((sender) => (
-              <li key={sender} className={styles.senderChip}>
-                <span className={styles.senderEmail}>{sender}</span>
-                <button
-                  className={styles.chipRemove}
-                  onClick={() => handleRemoveSender(sender)}
-                  aria-label={`Quitar ${sender}`}
-                  type="button"
-                >
-                  ×
-                </button>
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className={styles.senderList}>
+              {config.senders.map((sender, index) => (
+                <li key={sender} className={styles.senderChip}>
+                  <span className={styles.senderEmail}>{sender}</span>
+                  <div className={styles.chipControls}>
+                    <button
+                      className={styles.chipMove}
+                      onClick={() => moveSender(index, -1)}
+                      disabled={index === 0}
+                      aria-label={`Subir prioridad de ${sender}`}
+                      title="Más prioridad"
+                      type="button"
+                    >
+                      ▲
+                    </button>
+                    <button
+                      className={styles.chipMove}
+                      onClick={() => moveSender(index, 1)}
+                      disabled={index === config.senders.length - 1}
+                      aria-label={`Bajar prioridad de ${sender}`}
+                      title="Menos prioridad"
+                      type="button"
+                    >
+                      ▼
+                    </button>
+                    <button
+                      className={styles.chipRemove}
+                      onClick={() => handleRemoveSender(sender)}
+                      aria-label={`Quitar ${sender}`}
+                      type="button"
+                    >
+                      ×
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            {config.senders.length > 1 && (
+              <p className={styles.cardHint}>
+                El orden define la prioridad: si un mismo gasto llega en dos mails (ej. MercadoPago
+                e Itaú), se conserva el del remitente que esté más arriba.
+              </p>
+            )}
+          </>
         )}
       </section>
 

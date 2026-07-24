@@ -14,12 +14,13 @@ import { useQueryClient } from '@tanstack/react-query'
 import { expensesService } from '@/services/expensesService'
 import { integrationsService } from '@/services/integrationsService'
 import { findBestDuplicate } from '@/services/statementService'
+import { findBatchDuplicates } from '@/features/integrations/gmailImportDedup'
 import { useCards } from '@/features/cards/hooks/useCards'
 import { useCategories, useCreateCategory } from '@/features/categories/hooks/useCategories'
 import { usePlaces } from '@/features/places/hooks/usePlaces'
 import { useExpenses } from '@/features/expenses/hooks/useExpenses'
 import { useUserPrefs } from '@/hooks/useUserPrefs'
-import { useGmailQueue, GMAIL_QUEUE_KEY } from '@/features/integrations/hooks/useGmailIntegration'
+import { useGmailQueue, useGmailIntegration, GMAIL_QUEUE_KEY } from '@/features/integrations/hooks/useGmailIntegration'
 import { ImportReviewTable } from '@/features/statements/components/ImportReviewTable'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
@@ -35,7 +36,10 @@ function buildRows(
   defaultCardId: string,
   categories: Category[],
   existingExpenses: Expense[],
+  senders: string[],
 ): StatementImportRow[] {
+  const batchLosers = findBatchDuplicates(pending, senders)
+
   return pending.map((p) => {
     const matched = p.suggestedCategoryName
       ? categories.find(
@@ -46,6 +50,7 @@ function buildRows(
       : undefined
     // Dedup contra gastos ya registrados (mismo monto+moneda, fecha ±2d, desc difusa).
     const dup = findBestDuplicate(p, existingExpenses)
+    const isBatchLoser = batchLosers.has(p.gmailMessageId)
     return {
       date: p.date,
       description: p.description,
@@ -53,11 +58,12 @@ function buildRows(
       currency: p.currency,
       suggestedCategoryName: p.suggestedCategoryName,
       rowId: p.gmailMessageId, // el rowId ES el id del mail → sirve para sacarlo de la cola
-      // Un posible duplicado arranca SIN tildar para no re-crear el gasto por accidente.
-      action: dup ? StatementImportAction.Skip : StatementImportAction.Import,
+      // Un duplicado (de gasto existente o de otro mail del lote) arranca SIN tildar.
+      action: dup || isBatchLoser ? StatementImportAction.Skip : StatementImportAction.Import,
       cardId: defaultCardId,
       categoryId: matched?.id,
       ...(dup ? { matchedExpenseId: dup.expenseId, matchScore: dup.score } : {}),
+      ...(isBatchLoser && !dup ? { batchDuplicate: true } : {}),
     }
   })
 }
@@ -72,6 +78,7 @@ interface Props {
 export function GmailImportModal({ isOpen, onClose, syncing = false }: Props): React.ReactElement | null {
   const qc = useQueryClient()
   const queue = useGmailQueue()
+  const { data: gmailConfig } = useGmailIntegration()
   const { data: cards = [] } = useCards()
   const { data: categories = [] } = useCategories()
   const { data: places = [] } = usePlaces()
@@ -80,6 +87,7 @@ export function GmailImportModal({ isOpen, onClose, syncing = false }: Props): R
   const createCategory = useCreateCategory()
 
   const existingExpenses = expensesPage?.data ?? []
+  const senders = gmailConfig?.senders ?? []
 
   const defaultCardId = userPrefs?.defaultCardId ?? cards[0]?.id ?? ''
   const [selectedCardId, setSelectedCardId] = useState('')
@@ -94,7 +102,7 @@ export function GmailImportModal({ isOpen, onClose, syncing = false }: Props): R
   useEffect(() => {
     if (!isOpen || !pending) return
     const card = selectedCardId || defaultCardId
-    setRows(buildRows(pending, card, categories, existingExpenses))
+    setRows(buildRows(pending, card, categories, existingExpenses, senders))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, pending, expensesReady])
 

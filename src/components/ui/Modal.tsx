@@ -10,6 +10,8 @@ interface ModalProps {
   children: React.ReactNode
   width?: number
   titleAction?: React.ReactNode
+  /** Si se provee, muestra una flecha de "volver" a la izquierda del título. */
+  onBack?: () => void
   /** Si es false, no se puede cerrar (sin ✕, sin overlay/Escape). Default true. */
   dismissible?: boolean
 }
@@ -20,6 +22,7 @@ export function Modal({
   children,
   width = 520,
   titleAction,
+  onBack,
   dismissible = true,
 }: ModalProps): React.ReactElement {
   useEffect(() => {
@@ -51,6 +54,11 @@ export function Modal({
       >
         <div className={styles.header}>
           <div className={styles.titleGroup}>
+            {onBack && (
+              <button className={styles.backBtn} onClick={onBack} aria-label="Volver" type="button">
+                ←
+              </button>
+            )}
             <h2 className={styles.title}>{title}</h2>
             {titleAction && <span className={styles.titleAction}>{titleAction}</span>}
           </div>

@@ -424,6 +424,8 @@ export interface GmailFetchParams {
   senders: string[]
   labels: string[]
   windowDays: number
+  /** Ids ya vistos: se excluyen antes de bajar los cuerpos (evita re-descargarlos). */
+  seenIds: string[]
 }
 
 export interface IGmailBackend {

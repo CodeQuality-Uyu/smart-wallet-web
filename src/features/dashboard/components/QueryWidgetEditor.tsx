@@ -133,6 +133,7 @@ function isGrouped(d: QueryDisplay): boolean {
 
 interface QueryWidgetEditorProps {
   onClose: () => void
+  onBack?: () => void
   categories: Category[]
   cards: Card[]
   places: Place[]
@@ -142,6 +143,7 @@ interface QueryWidgetEditorProps {
 
 export function QueryWidgetEditor({
   onClose,
+  onBack,
   categories,
   cards,
   places,
@@ -258,7 +260,12 @@ export function QueryWidgetEditor({
   }
 
   return (
-    <Modal title={isEdit ? 'Editar visualizador' : 'Nuevo visualizador (query)'} onClose={onClose} width={940}>
+    <Modal
+      title={isEdit ? 'Editar visualizador' : 'Nuevo visualizador · Query'}
+      onClose={onClose}
+      onBack={onBack}
+      width={940}
+    >
       <div className={styles.layout}>
         <div className={styles.formCol}>
           {/* Cabecera */}

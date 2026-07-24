@@ -19,12 +19,12 @@ export function EngineChooser({ onClose, onPick }: EngineChooserProps): React.Re
         <p className={styles.intro}>Elegí cómo querés construirlo:</p>
 
         <button type="button" className={styles.card} onClick={() => onPick(WidgetEngine.Guided)}>
-          <span className={styles.icon}>🧭</span>
+          <span className={styles.icon}>📌</span>
           <span className={styles.text}>
-            <span className={styles.title}>Guiado</span>
+            <span className={styles.title}>KPI</span>
             <span className={styles.desc}>
-              Elegí una métrica de una lista (total, categoría, presupuesto, recurrente…) con comparaciones.
-              Simple y rápido.
+              Un indicador de un valor: elegí una métrica de una lista (total, categoría, presupuesto, recurrente…)
+              con comparaciones. Simple y rápido.
             </span>
           </span>
           <span className={styles.arrow}>→</span>

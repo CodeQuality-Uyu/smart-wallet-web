@@ -12,6 +12,7 @@ function item(id: string, description = 'X'): GmailPendingItem {
     description,
     amount: 100,
     currency: Currency.UYU,
+    from: 'Banco <avisos@banco.com>',
     addedAt: '2026-07-21T00:00:00.000Z',
   }
 }

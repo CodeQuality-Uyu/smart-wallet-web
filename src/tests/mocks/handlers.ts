@@ -1046,15 +1046,23 @@ export const handlers = [
   http.get(`${BASE}/gmail/labels`, () => HttpResponse.json(mockGmailLabels)),
 
   http.post(`${BASE}/gmail/messages`, async ({ request }) => {
-    const { senders } = (await request.json()) as { senders?: string[]; labels?: string[]; windowDays?: number }
+    const { senders, seenIds } = (await request.json()) as {
+      senders?: string[]
+      labels?: string[]
+      windowDays?: number
+      seenIds?: string[]
+    }
     // Filtro liviano por remitente para simular la búsqueda; si no matchea nada
     // (o no hay remitentes configurados) devuelve todos para que dev vea datos.
-    const filtered = senders?.length
+    const bySender = senders?.length
       ? mockGmailMessages.filter((m) =>
           senders.some((s) => m.from.toLowerCase().includes(s.toLowerCase())),
         )
       : mockGmailMessages
-    return HttpResponse.json(filtered.length ? filtered : mockGmailMessages)
+    const base = bySender.length ? bySender : mockGmailMessages
+    // Excluye los ya vistos, como haría Gmail al filtrar por IDs antes de bajar cuerpos.
+    const seen = new Set(seenIds ?? [])
+    return HttpResponse.json(base.filter((m) => !seen.has(m.id)))
   }),
 
   // ─── Gemini AI (category suggestion + statement parsing mock) ─
@@ -1104,6 +1112,9 @@ export const handlers = [
         { gmailMessageId: 'gmail-msg-1', date: '2026-07-19', description: 'TIENDA INGLESA', amount: 1234, currency: 'UYU', suggestedCategoryName: 'Supermercado' },
         { gmailMessageId: 'gmail-msg-2', date: '2026-07-17', description: 'NETFLIX.COM', amount: 29.99, currency: 'USD', suggestedCategoryName: 'Entretenimiento' },
         { gmailMessageId: 'gmail-msg-3', date: '2026-07-15', description: 'DEVOTO EXPRESS', amount: 560, currency: 'UYU', suggestedCategoryName: 'Supermercado' },
+        // Duplicados en lote (mismo monto+moneda+fecha, distinto remitente).
+        { gmailMessageId: 'gmail-msg-4', date: '2026-07-16', description: 'PEDIDOSYA', amount: 850, currency: 'UYU', suggestedCategoryName: 'Restaurantes' },
+        { gmailMessageId: 'gmail-msg-5', date: '2026-07-16', description: 'MERPAGO*PEDIDOSYA', amount: 850, currency: 'UYU', suggestedCategoryName: 'Restaurantes' },
       ]
       return HttpResponse.json({
         candidates: [{ content: { parts: [{ text: JSON.stringify({ lines }) }] } }],

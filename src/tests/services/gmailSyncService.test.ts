@@ -33,7 +33,7 @@ describe('syncGmail', () => {
     const finalQueue: GmailQueue = { pending: [], seenIds: ['a', 'b'] }
     vi.mocked(gmailService.fetchMessages).mockResolvedValue([msg('a'), msg('b')])
     vi.mocked(parseEmails).mockResolvedValue([
-      { gmailMessageId: 'b', date: '2026-07-19', description: 'X', amount: 100, currency: Currency.UYU },
+      { gmailMessageId: 'b', date: '2026-07-19', description: 'X', amount: 100, currency: Currency.UYU, from: 'Banco' },
     ])
     vi.mocked(integrationsService.appendGmailSeen).mockResolvedValue(emptyQueue)
     vi.mocked(integrationsService.appendGmailPending).mockResolvedValue(finalQueue)

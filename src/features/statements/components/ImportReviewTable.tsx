@@ -136,6 +136,9 @@ export function ImportReviewTable({
                     {row.matchedExpenseId && !row.imported && (
                       <div className={styles.dupBadge}>⚠️ Posible duplicado</div>
                     )}
+                    {row.batchDuplicate && !row.matchedExpenseId && !row.imported && (
+                      <div className={styles.dupBadge}>⚠️ Mismo gasto en otro mail</div>
+                    )}
                   </div>
                 </td>
                 <td>

@@ -612,6 +612,8 @@ export interface GmailRawMessage {
  */
 export interface GmailParsedLine extends StatementLine {
   gmailMessageId: string
+  /** Header "From" del mail de origen; sirve para priorizar ante duplicados en lote. */
+  from: string
 }
 
 /** Gasto candidato guardado en la cola de pendientes (parseado, sin confirmar aún). */
@@ -748,6 +750,8 @@ export interface StatementImportRow extends StatementLine {
   matchedExpenseId?: string
   matchScore?: number
   imported?: boolean   // ya se creó el gasto para esta línea (no re-importar)
+  /** Otra fila del mismo lote parece el mismo gasto (mismo monto+moneda+fecha). */
+  batchDuplicate?: boolean
 }
 
 // ─── Dashboard widgets (visualizadores del inicio) ────────

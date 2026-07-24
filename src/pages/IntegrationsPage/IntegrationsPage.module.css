@@ -204,6 +204,21 @@
 
 .senderEmail { font-size: 13px; color: var(--ink); word-break: break-all; }
 
+.chipControls { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+
+.chipMove {
+  width: 22px; height: 22px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 6px;
+}
+.chipMove:hover:not(:disabled) { background: var(--g100, rgba(16, 185, 129, 0.1)); color: var(--g700, #059669); }
+.chipMove:disabled { opacity: 0.3; cursor: default; }
+
 .chipRemove {
   width: 24px; height: 24px;
   flex-shrink: 0;

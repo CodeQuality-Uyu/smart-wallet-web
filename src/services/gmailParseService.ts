@@ -47,8 +47,11 @@ Reglas:
 - suggestedCategoryName: categoría de gasto personal en español (ej: Transporte, Supermercado, Restaurantes, Salud, Servicios, Entretenimiento, Ropa, Otros).`
 }
 
+/** Línea parseada por Gemini, antes de adjuntarle el remitente (`from`). */
+type ParsedLineCore = Omit<GmailParsedLine, 'from'>
+
 /** Parsea la respuesta de Gemini a líneas válidas. Descarta lo que no cierra. Exportado para tests. */
-export function parseGeminiEmailResponse(text: string): GmailParsedLine[] {
+export function parseGeminiEmailResponse(text: string): ParsedLineCore[] {
   const clean = text.replace(/```json|```/g, '').trim()
 
   let parsed: { lines?: unknown }
@@ -59,7 +62,7 @@ export function parseGeminiEmailResponse(text: string): GmailParsedLine[] {
   }
 
   const raw = Array.isArray(parsed.lines) ? parsed.lines : []
-  const lines: GmailParsedLine[] = []
+  const lines: ParsedLineCore[] = []
 
   for (const item of raw) {
     if (typeof item !== 'object' || item === null) continue
@@ -112,5 +115,9 @@ export async function parseEmails(messages: GmailRawMessage[]): Promise<GmailPar
     candidates?: { content?: { parts?: { text?: string }[] } }[]
   }
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
-  return parseGeminiEmailResponse(text)
+  const core = parseGeminiEmailResponse(text)
+
+  // Adjunta el remitente (`from`) de cada mail de origen, por gmailMessageId.
+  const fromById = new Map(messages.map((m) => [m.id, m.from]))
+  return core.map((line) => ({ ...line, from: fromById.get(line.gmailMessageId) ?? '' }))
 }
