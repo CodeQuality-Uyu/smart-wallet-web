@@ -7,10 +7,16 @@ import {
   useExpenses,
   useExpense,
   useDeleteExpense,
+  useDeleteInstallmentGroup,
   useAddTicketLine,
   useRemoveTicketLine,
   useUploadExpenseReceipt,
 } from '@/features/expenses/hooks/useExpenses'
+import {
+  InstallmentScopeChoice,
+  type InstallmentScope,
+} from '@/features/expenses/components/InstallmentScopeChoice'
+import { Modal } from '@/components/ui/Modal'
 import { useCategories } from '@/features/categories/hooks/useCategories'
 import { useCards } from '@/features/cards/hooks/useCards'
 import { usePlaces } from '@/features/places/hooks/usePlaces'
@@ -62,6 +68,7 @@ export default function ExpenseDetailPage(): React.ReactElement {
   const { data: cards = [] } = useCards()
   const { data: places = [] } = usePlaces()
   const { mutateAsync: deleteExpense } = useDeleteExpense()
+  const { mutateAsync: deleteGroup } = useDeleteInstallmentGroup()
   const { mutateAsync: addLine, isPending: addingLine } = useAddTicketLine(id ?? '')
   const { mutateAsync: removeLine } = useRemoveTicketLine(id ?? '')
   const { mutateAsync: uploadReceipt, isPending: uploadingReceipt } = useUploadExpenseReceipt(
@@ -80,6 +87,10 @@ export default function ExpenseDetailPage(): React.ReactElement {
   // ByWeight product: weight input + price paid
   const [newLineWeight, setNewLineWeight] = useState('')
   const [newLinePricePaid, setNewLinePricePaid] = useState('')
+  // Eliminación de una compra en cuotas: elegir solo esta cuota o toda la serie.
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteScope, setDeleteScope] = useState<InstallmentScope>('one')
+  const [deleting, setDeleting] = useState(false)
 
   const allExpenses = useMemo(() => {
     let list = expensesPage?.data ?? []
@@ -169,10 +180,29 @@ export default function ExpenseDetailPage(): React.ReactElement {
     setNewLinePricePaid('')
   }
 
-  async function handleDelete(): Promise<void> {
-    if (!expense || !window.confirm('¿Eliminar este gasto?')) return
-    await deleteExpense(expense.id)
-    navigate('/expenses')
+  function requestDelete(): void {
+    if (!expense) return
+    if (expense.installmentGroupId) {
+      setDeleteScope('one')
+      setShowDeleteModal(true)
+      return
+    }
+    if (window.confirm('¿Eliminar este gasto?')) void performDelete('one')
+  }
+
+  async function performDelete(scope: InstallmentScope): Promise<void> {
+    if (!expense) return
+    setDeleting(true)
+    try {
+      if (expense.installmentGroupId && scope === 'all') {
+        await deleteGroup(expense.installmentGroupId)
+      } else {
+        await deleteExpense(expense.id)
+      }
+      navigate('/expenses')
+    } finally {
+      setDeleting(false)
+    }
   }
 
   return (
@@ -266,6 +296,20 @@ export default function ExpenseDetailPage(): React.ReactElement {
               )}
             </div>
           </div>
+          {expense.installmentCount != null && expense.installmentCount > 1 && (
+            <div className={styles.row}>
+              <span className={styles.rowLabel}>Cuota</span>
+              <span className={styles.rowValue}>
+                💳 {expense.installmentNumber}/{expense.installmentCount}
+                {expense.installmentTotalAmount != null && (
+                  <>
+                    {' · '}
+                    Total {formatCurrency(expense.installmentTotalAmount, expense.currency as Currency)}
+                  </>
+                )}
+              </span>
+            </div>
+          )}
           {expense.importedFrom === 'statement' && (
             <div className={styles.row}>
               <span className={styles.rowLabel}>Origen</span>
@@ -487,12 +531,40 @@ export default function ExpenseDetailPage(): React.ReactElement {
 
         {/* Delete */}
         <div className={styles.deleteArea}>
-          <Button variant="danger" fullWidth onClick={() => void handleDelete()}>
+          <Button variant="danger" fullWidth onClick={requestDelete}>
             Eliminar gasto
           </Button>
         </div>
       </div>
       {/* end .page */}
+
+      {showDeleteModal && (
+        <Modal title="Eliminar gasto" onClose={() => setShowDeleteModal(false)} width={420}>
+          <p style={{ marginBottom: 12 }}>
+            ¿Seguro que querés eliminar <strong>{expense.description}</strong>?
+          </p>
+          <InstallmentScopeChoice
+            scope={deleteScope}
+            onChange={setDeleteScope}
+            count={expense.installmentCount ?? 0}
+            number={expense.installmentNumber}
+            action="delete"
+          />
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 16 }}>
+            <Button variant="ghost" size="sm" onClick={() => setShowDeleteModal(false)} disabled={deleting}>
+              Cancelar
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              loading={deleting}
+              onClick={() => void performDelete(deleteScope)}
+            >
+              {deleteScope === 'all' ? 'Eliminar serie' : 'Eliminar cuota'}
+            </Button>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }

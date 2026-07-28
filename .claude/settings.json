@@ -15,7 +15,8 @@
       "WebFetch(domain:ai.google.dev)",
       "WebSearch",
       "Bash(node -e \"console.log\\(require\\('@dnd-kit/sortable/package.json'\\).version\\)\")",
-      "Bash(node -e \"const p=require\\('./package.json'\\); const all={...p.dependencies,...p.devDependencies}; const charts=Object.keys\\(all\\).filter\\(k=>/chart|recharts|victory|visx|nivo|d3|apexcharts|echarts|plot/i.test\\(k\\)\\); console.log\\('CHART LIBS:', charts.length?charts.map\\(k=>k+'@'+all[k]\\).join\\(', '\\):'NINGUNA'\\); console.log\\('---ALL DEPS---'\\); console.log\\(Object.keys\\(p.dependencies\\).join\\(', '\\)\\)\")"
+      "Bash(node -e \"const p=require\\('./package.json'\\); const all={...p.dependencies,...p.devDependencies}; const charts=Object.keys\\(all\\).filter\\(k=>/chart|recharts|victory|visx|nivo|d3|apexcharts|echarts|plot/i.test\\(k\\)\\); console.log\\('CHART LIBS:', charts.length?charts.map\\(k=>k+'@'+all[k]\\).join\\(', '\\):'NINGUNA'\\); console.log\\('---ALL DEPS---'\\); console.log\\(Object.keys\\(p.dependencies\\).join\\(', '\\)\\)\")",
+      "Bash(node -e \"const p=require\\('./package.json'\\);console.log\\(JSON.stringify\\(p.scripts,null,2\\)\\)\")"
     ]
   }
 }

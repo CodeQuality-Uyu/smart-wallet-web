@@ -2,6 +2,7 @@
 
 import * as Yup from 'yup'
 import { Currency } from '@/types/enums'
+import { MAX_INSTALLMENTS } from '@/features/expenses/installments'
 
 export const expenseSchema = Yup.object({
   description: Yup.string()
@@ -32,6 +33,14 @@ export const expenseSchema = Yup.object({
     .required('La fecha es requerida'),
 
   receiptFile: Yup.mixed<File>().optional(),
+
+  // Cantidad de cuotas. 1 = gasto normal. Cuando > 1, `amount` es el TOTAL a dividir.
+  installments: Yup.number()
+    .typeError('Ingresá un número de cuotas válido')
+    .integer('Debe ser un número entero de cuotas')
+    .min(1, 'Mínimo 1 cuota')
+    .max(MAX_INSTALLMENTS, `Máximo ${MAX_INSTALLMENTS} cuotas`)
+    .default(1),
 })
 
 export type ExpenseFormValues = Yup.InferType<typeof expenseSchema>

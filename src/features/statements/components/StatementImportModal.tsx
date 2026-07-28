@@ -4,6 +4,7 @@ import React, { useState, useCallback, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { parsePdf, parsePdfFromUrl, detectDuplicates } from '@/services/statementService'
 import { expensesService } from '@/services/expensesService'
+import { buildInstallmentPayloads } from '@/features/expenses/installments'
 import { reportAttachmentsService } from '@/services/reportAttachmentsService'
 import { useCreateCategory } from '@/features/categories/hooks/useCategories'
 import { RecurringFormModal } from '@/features/recurring/components/RecurringFormModal'
@@ -210,17 +211,21 @@ export function StatementImportModal({
 
     setStep('saving')
     try {
-      const payloads = toImport.map((r) => ({
-        description: r.description,
-        amount: r.amount,
-        currency: r.currency,
-        cardId: r.cardId ?? selectedCardId,
-        categoryIds: r.categoryId ? [r.categoryId] : [],
-        placeId: r.placeId,
-        date: r.date,
-        importedFrom: 'statement' as const,
-        ...(currentAttachmentId ? { statementAttachmentId: currentAttachmentId } : {}),
-      }))
+      const payloads = toImport.flatMap((r) => {
+        const base = {
+          description: r.description,
+          amount: r.amount,
+          currency: r.currency,
+          cardId: r.cardId ?? selectedCardId,
+          categoryIds: r.categoryId ? [r.categoryId] : [],
+          placeId: r.placeId,
+          date: r.date,
+          importedFrom: 'statement' as const,
+          ...(currentAttachmentId ? { statementAttachmentId: currentAttachmentId } : {}),
+        }
+        const n = r.installments ?? 1
+        return n > 1 ? buildInstallmentPayloads(base, n, crypto.randomUUID()) : [base]
+      })
 
       await expensesService.createBatch(payloads)
 

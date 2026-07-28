@@ -19,6 +19,12 @@ export const expensesService = {
     return (await getExpensesBackend()).getById(id)
   },
 
+  /** Todas las cuotas de una misma compra (mismo installmentGroupId). */
+  async listInstallmentGroup(groupId: string): Promise<Expense[]> {
+    const { data } = await (await getExpensesBackend()).list()
+    return data.filter((e) => e.installmentGroupId === groupId)
+  },
+
   async create(payload: CreateExpensePayload): Promise<Expense> {
     return (await getExpensesBackend()).create(payload)
   },

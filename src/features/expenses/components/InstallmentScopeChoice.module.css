@@ -1,0 +1,33 @@
+/* src/features/expenses/components/InstallmentScopeChoice.module.css */
+
+.wrap {
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin: 0 0 4px;
+  background: var(--cream);
+}
+
+.legend {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+  padding: 0 4px;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 2px;
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.option input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--ind);
+  cursor: pointer;
+}

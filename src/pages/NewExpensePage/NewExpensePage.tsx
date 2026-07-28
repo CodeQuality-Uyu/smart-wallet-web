@@ -3,7 +3,8 @@
 import React, { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { ExpenseForm } from '@/features/expenses/components/ExpenseForm'
-import { useCreateExpense } from '@/features/expenses/hooks/useExpenses'
+import { useCreateExpense, useCreateExpenseBatch } from '@/features/expenses/hooks/useExpenses'
+import { buildInstallmentPayloads } from '@/features/expenses/installments'
 import { expensesService } from '@/services/expensesService'
 import { useUserPrefs } from '@/hooks/useUserPrefs'
 import { ReceiptUploader } from '@/features/pendingReceipts/components/ReceiptUploader'
@@ -23,6 +24,7 @@ export default function NewExpensePage(): React.ReactElement {
   const location = useLocation()
   const locationState = (location.state ?? {}) as LocationState
   const { mutateAsync: createExpense } = useCreateExpense()
+  const { mutateAsync: createExpenseBatch } = useCreateExpenseBatch()
   const { data: userPrefs } = useUserPrefs()
   const defaultCardId = userPrefs?.defaultCardId
   const [activeTab, setActiveTab] = useState<Tab>('manual')
@@ -48,9 +50,23 @@ export default function NewExpensePage(): React.ReactElement {
       placeId: values.placeId || undefined,
       date: values.date,
     }
-    const expense = await createExpense(payload)
-    if (values.receiptFile) {
-      await expensesService.uploadReceipt(expense.id, values.receiptFile)
+
+    const installments = values.installments ?? 1
+    if (installments > 1) {
+      // Compra en cuotas: se materializan N gastos (uno por mes). El comprobante se
+      // adjunta a la primera cuota.
+      const groupId = crypto.randomUUID()
+      const created = await createExpenseBatch(
+        buildInstallmentPayloads(payload, installments, groupId),
+      )
+      if (values.receiptFile && created[0]) {
+        await expensesService.uploadReceipt(created[0].id, values.receiptFile)
+      }
+    } else {
+      const expense = await createExpense(payload)
+      if (values.receiptFile) {
+        await expensesService.uploadReceipt(expense.id, values.receiptFile)
+      }
     }
     navigate('/expenses')
   }

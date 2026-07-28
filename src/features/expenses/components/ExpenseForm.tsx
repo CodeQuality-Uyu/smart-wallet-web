@@ -18,6 +18,8 @@ import { usePlaces } from '@/features/places/hooks/usePlaces'
 import { useCategorySuggestion } from '../hooks/useCategorySuggestion'
 import { Currency } from '@/types/enums'
 import { cardOptions } from '@/features/cards/cardUtils'
+import { splitInstallmentAmounts, MAX_INSTALLMENTS } from '@/features/expenses/installments'
+import { formatCurrency } from '@/utils/formatCurrency'
 import type { Category } from '@/types/models'
 import type { NewCategorySuggestion } from '@/services/geminiService'
 import styles from './ExpenseForm.module.css'
@@ -28,6 +30,8 @@ interface ExpenseFormProps {
   submitLabel?: string
   variant?: 'mobile' | 'desktop'
   onCancel?: () => void
+  /** Muestra la opción "pagar en cuotas". Solo al crear; en edición se oculta. */
+  allowInstallments?: boolean
 }
 
 
@@ -40,6 +44,62 @@ const DEFAULT_VALUES: ExpenseFormValues = {
   placeId: '',
   date: new Date().toISOString().split('T')[0] ?? '',
   receiptFile: undefined,
+  installments: 1,
+}
+
+// Bloque "pagar en cuotas". El monto ingresado arriba es el TOTAL; acá se elige en
+// cuántas cuotas se divide y se previsualiza el monto mensual.
+function InstallmentsField(): React.ReactElement {
+  const { values, setFieldValue } = useFormikContext<ExpenseFormValues>()
+  const enabled = (values.installments ?? 1) > 1
+  const count = values.installments ?? 1
+  const perAmounts =
+    enabled && values.amount > 0 && count > 1
+      ? splitInstallmentAmounts(Number(values.amount), count)
+      : null
+
+  return (
+    <div className={styles.installmentField}>
+      <label className={styles.installmentToggle}>
+        <input
+          type="checkbox"
+          checked={enabled}
+          onChange={(e) => void setFieldValue('installments', e.target.checked ? 3 : 1)}
+        />
+        💳 Pagar en cuotas
+      </label>
+
+      {enabled && (
+        <>
+          <div className={styles.installmentRow}>
+            <input
+              className={styles.installmentInput}
+              type="number"
+              inputMode="numeric"
+              min={2}
+              max={MAX_INSTALLMENTS}
+              value={count}
+              onChange={(e) => {
+                const n = Math.max(1, Math.min(MAX_INSTALLMENTS, Math.floor(Number(e.target.value) || 1)))
+                void setFieldValue('installments', n)
+              }}
+              aria-label="Cantidad de cuotas"
+            />
+            <span className={styles.installmentRowLabel}>cuotas</span>
+          </div>
+          {perAmounts && (
+            <p className={styles.installmentPreview}>
+              {count} cuotas de {formatCurrency(perAmounts[0] ?? 0, values.currency)}
+              {' '}
+              <span className={styles.installmentPreviewTotal}>
+                · Total {formatCurrency(Number(values.amount), values.currency)}
+              </span>
+            </p>
+          )}
+        </>
+      )}
+    </div>
+  )
 }
 
 type ActiveModal = 'card' | 'categories' | 'place' | null
@@ -119,6 +179,7 @@ export function ExpenseForm({
   submitLabel = 'Guardar gasto',
   variant = 'mobile',
   onCancel,
+  allowInstallments = true,
 }: ExpenseFormProps): React.ReactElement {
   const isDesktop = variant === 'desktop'
   const [activeModal, setActiveModal] = useState<ActiveModal>(null)
@@ -316,6 +377,8 @@ export function ExpenseForm({
                 </div>
               )}
             </div>
+
+            {allowInstallments && <InstallmentsField />}
           </div>
 
           <div className={isDesktop ? styles.actionsDesktop : styles.actions}>

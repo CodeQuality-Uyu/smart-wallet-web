@@ -43,14 +43,12 @@ export function Modal({
   return ReactDOM.createPortal(
     <div
       className={styles.overlay}
-      onClick={dismissible ? onClose : undefined}
       role="dialog"
       aria-modal
     >
       <div
         className={styles.panel}
         style={{ maxWidth: width }}
-        onClick={(e) => e.stopPropagation()}
       >
         <div className={styles.header}>
           <div className={styles.titleGroup}>

@@ -5,9 +5,15 @@
 
 import React, { useRef } from 'react'
 import { ControlledSelectInput } from '@/components/ui/FormField'
+import { cardLabel } from '@/features/cards/cardUtils'
 import { StatementImportAction, Currency } from '@/types/enums'
-import type { Category, Place, StatementImportRow } from '@/types/models'
+import { MAX_INSTALLMENTS } from '@/features/expenses/installments'
+import type { Card, Category, Place, StatementImportRow } from '@/types/models'
 import styles from './StatementImportModal.module.css'
+
+// Valores centinela para las opciones "＋ Crear …" de los dropdowns.
+const CREATE_CATEGORY = '__create_category__'
+const CREATE_PLACE = '__create_place__'
 
 // Checkbox de cabecera con estado indeterminado (parcial) pintado en azul.
 function SelectAllCheckbox({
@@ -47,6 +53,12 @@ interface Props {
   onUpdateRow: (rowId: string, patch: Partial<StatementImportRow>) => void
   onRemoveRow: (rowId: string) => void
   onApplySuggestion: (rowId: string, suggestedName: string) => void
+  /** Si se provee, muestra una columna de tarjeta por línea (para gastos de distintas tarjetas). */
+  cards?: Card[]
+  /** Si se provee, agrega la opción "＋ Crear categoría" al dropdown. */
+  onCreateCategory?: (rowId: string) => void
+  /** Si se provee, agrega la opción "＋ Crear local" al dropdown. */
+  onCreatePlace?: (rowId: string) => void
   /** Si se provee, muestra el botón 🔁 para convertir la fila en pago recurrente. */
   onOpenRecurring?: (row: StatementImportRow) => void
   /** Título/tooltip del botón de quitar fila (ej. "Eliminar línea" o "Descartar"). */
@@ -64,9 +76,20 @@ export function ImportReviewTable({
   onUpdateRow,
   onRemoveRow,
   onApplySuggestion,
+  cards,
+  onCreateCategory,
+  onCreatePlace,
   onOpenRecurring,
   removeTitle = 'Eliminar línea',
 }: Props): React.ReactElement {
+  const categoryOptions = [
+    ...categories.map((c) => ({ value: c.id, label: `${c.icon} ${c.name}` })),
+    ...(onCreateCategory ? [{ value: CREATE_CATEGORY, label: '＋ Crear categoría' }] : []),
+  ]
+  const placeOptions = [
+    ...places.map((p) => ({ value: p.id, label: p.icon ? `${p.icon} ${p.name}` : p.name })),
+    ...(onCreatePlace ? [{ value: CREATE_PLACE, label: '＋ Crear local' }] : []),
+  ]
   return (
     <div className={styles.tableWrapper}>
       <table className={styles.table}>
@@ -83,6 +106,8 @@ export function ImportReviewTable({
             <th>Descripción</th>
             <th>Moneda</th>
             <th>Monto</th>
+            <th title="Dividir el monto en cuotas (uno por mes)">Cuotas</th>
+            {cards && <th>Tarjeta</th>}
             <th>Categoría</th>
             <th>Local</th>
             <th></th>
@@ -167,11 +192,48 @@ export function ImportReviewTable({
                   />
                 </td>
                 <td>
+                  <input
+                    type="number"
+                    className={styles.tableInput}
+                    value={row.installments ?? 1}
+                    min={1}
+                    max={MAX_INSTALLMENTS}
+                    style={{ width: 56 }}
+                    title="1 = pago único; más de 1 divide el monto en cuotas mensuales"
+                    onChange={(e) => {
+                      const n = Math.max(
+                        1,
+                        Math.min(MAX_INSTALLMENTS, Math.floor(Number(e.target.value) || 1)),
+                      )
+                      onUpdateRow(row.rowId, { installments: n })
+                    }}
+                  />
+                </td>
+                {cards && (
+                  <td>
+                    <div style={{ minWidth: 170 }}>
+                      <ControlledSelectInput
+                        value={row.cardId ?? ''}
+                        onChange={(v) => onUpdateRow(row.rowId, { cardId: v || undefined })}
+                        options={cards.map((c) => ({ value: c.id, label: cardLabel(c) }))}
+                        placeholder="Sin tarjeta"
+                        icon="💳"
+                      />
+                    </div>
+                  </td>
+                )}
+                <td>
                   <div className={styles.stackCell} style={{ minWidth: 190 }}>
                     <ControlledSelectInput
                       value={row.categoryId ?? ''}
-                      onChange={(v) => onUpdateRow(row.rowId, { categoryId: v || undefined })}
-                      options={categories.map((c) => ({ value: c.id, label: `${c.icon} ${c.name}` }))}
+                      onChange={(v) => {
+                        if (v === CREATE_CATEGORY) {
+                          onCreateCategory?.(row.rowId)
+                          return
+                        }
+                        onUpdateRow(row.rowId, { categoryId: v || undefined })
+                      }}
+                      options={categoryOptions}
                       placeholder="Sin categoría"
                       icon={row.categoryId ? undefined : '🏷️'}
                     />
@@ -191,11 +253,14 @@ export function ImportReviewTable({
                   <div style={{ minWidth: 190 }}>
                     <ControlledSelectInput
                       value={row.placeId ?? ''}
-                      onChange={(v) => onUpdateRow(row.rowId, { placeId: v || undefined })}
-                      options={places.map((p) => ({
-                        value: p.id,
-                        label: p.icon ? `${p.icon} ${p.name}` : p.name,
-                      }))}
+                      onChange={(v) => {
+                        if (v === CREATE_PLACE) {
+                          onCreatePlace?.(row.rowId)
+                          return
+                        }
+                        onUpdateRow(row.rowId, { placeId: v || undefined })
+                      }}
+                      options={placeOptions}
                       placeholder="Sin local"
                       icon="📍"
                     />

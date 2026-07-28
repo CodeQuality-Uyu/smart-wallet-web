@@ -124,6 +124,71 @@
   font-family: inherit;
 }
 
+/* ── Cuotas (installments) ── */
+.installmentField {
+  margin-top: 4px;
+}
+
+.installmentToggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  user-select: none;
+}
+
+.installmentToggle input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--ind);
+  cursor: pointer;
+}
+
+.installmentRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.installmentInput {
+  width: 92px;
+  flex-shrink: 0;
+  font-family: var(--font-num);
+  font-size: 15px;
+  font-weight: 600;
+  padding: 9px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+}
+
+.installmentInput:focus {
+  outline: none;
+  border-color: var(--ind);
+}
+
+.installmentRowLabel {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.installmentPreview {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--g700);
+  font-weight: 600;
+}
+
+.installmentPreview .installmentPreviewTotal {
+  color: var(--muted);
+  font-weight: 500;
+}
+
 /* ── Receipt upload ── */
 .receiptField {
   margin-top: 4px;

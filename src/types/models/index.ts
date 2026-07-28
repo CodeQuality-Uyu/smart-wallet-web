@@ -125,6 +125,17 @@ export interface Expense extends Timestamps {
   statementAttachmentId?: string
   /** Id del mail de origen cuando importedFrom === 'gmail' (trazabilidad + anti-duplicado). */
   gmailMessageId?: string
+  // ─── Cuotas ──────────────────────────────────────────────
+  // Una compra en cuotas se materializa como N gastos (uno por mes) que comparten
+  // installmentGroupId. Cada gasto lleva el monto de su cuota; el mes lo determina `date`.
+  /** Agrupa todas las cuotas de una misma compra. Ausente = gasto normal (una sola vez). */
+  installmentGroupId?: string
+  /** Número de esta cuota dentro de la serie (1-based). */
+  installmentNumber?: number
+  /** Cantidad total de cuotas de la serie. */
+  installmentCount?: number
+  /** Monto total original de la compra (suma de todas las cuotas), para referencia/UI. */
+  installmentTotalAmount?: number
 }
 
 export type CreateExpensePayload = Omit<Expense, 'id' | 'createdAt' | 'updatedAt' | 'ticketLines'> & {
@@ -752,6 +763,11 @@ export interface StatementImportRow extends StatementLine {
   imported?: boolean   // ya se creó el gasto para esta línea (no re-importar)
   /** Otra fila del mismo lote parece el mismo gasto (mismo monto+moneda+fecha). */
   batchDuplicate?: boolean
+  /**
+   * Cantidad de cuotas. 1/ausente = gasto normal. Cuando > 1, `amount` es el TOTAL
+   * de la compra y al guardar se materializa como N gastos (uno por mes).
+   */
+  installments?: number
 }
 
 // ─── Dashboard widgets (visualizadores del inicio) ────────

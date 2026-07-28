@@ -12,6 +12,7 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { expensesService } from '@/services/expensesService'
+import { buildInstallmentPayloads } from '@/features/expenses/installments'
 import { integrationsService } from '@/services/integrationsService'
 import { findBestDuplicate } from '@/services/statementService'
 import { findBatchDuplicates } from '@/features/integrations/gmailImportDedup'
@@ -22,9 +23,10 @@ import { useExpenses } from '@/features/expenses/hooks/useExpenses'
 import { useUserPrefs } from '@/hooks/useUserPrefs'
 import { useGmailQueue, useGmailIntegration, GMAIL_QUEUE_KEY } from '@/features/integrations/hooks/useGmailIntegration'
 import { ImportReviewTable } from '@/features/statements/components/ImportReviewTable'
+import { NewCategoryModal } from '@/features/categories/components/NewCategoryModal'
+import { NewPlaceModal } from '@/features/expenses/components/NewPlaceModal'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
-import { cardLabel } from '@/features/cards/cardUtils'
 import { StatementImportAction, Currency } from '@/types/enums'
 import type { Category, Expense, GmailPendingItem, GmailQueue, StatementImportRow } from '@/types/models'
 import { formatAmount } from '@/utils/formatCurrency'
@@ -90,10 +92,12 @@ export function GmailImportModal({ isOpen, onClose, syncing = false }: Props): R
   const senders = gmailConfig?.senders ?? []
 
   const defaultCardId = userPrefs?.defaultCardId ?? cards[0]?.id ?? ''
-  const [selectedCardId, setSelectedCardId] = useState('')
   const [rows, setRows] = useState<StatementImportRow[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // rowId para el que se está creando categoría/local (null = modal cerrado).
+  const [creatingCategoryFor, setCreatingCategoryFor] = useState<string | null>(null)
+  const [creatingPlaceFor, setCreatingPlaceFor] = useState<string | null>(null)
 
   const pending = queue.data?.pending
 
@@ -101,8 +105,7 @@ export function GmailImportModal({ isOpen, onClose, syncing = false }: Props): R
   // (para aplicar el dedup una vez que existingExpenses está disponible).
   useEffect(() => {
     if (!isOpen || !pending) return
-    const card = selectedCardId || defaultCardId
-    setRows(buildRows(pending, card, categories, existingExpenses, senders))
+    setRows(buildRows(pending, defaultCardId, categories, existingExpenses, senders))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, pending, expensesReady])
 
@@ -173,17 +176,21 @@ export function GmailImportModal({ isOpen, onClose, syncing = false }: Props): R
     setSaving(true)
     setError(null)
     try {
-      const payloads = toImport.map((r) => ({
-        description: r.description,
-        amount: r.amount,
-        currency: r.currency,
-        cardId: r.cardId ?? selectedCardId ?? defaultCardId,
-        categoryIds: r.categoryId ? [r.categoryId] : [],
-        placeId: r.placeId,
-        date: r.date,
-        importedFrom: 'gmail' as const,
-        gmailMessageId: r.rowId,
-      }))
+      const payloads = toImport.flatMap((r) => {
+        const base = {
+          description: r.description,
+          amount: r.amount,
+          currency: r.currency,
+          cardId: r.cardId ?? defaultCardId,
+          categoryIds: r.categoryId ? [r.categoryId] : [],
+          placeId: r.placeId,
+          date: r.date,
+          importedFrom: 'gmail' as const,
+          gmailMessageId: r.rowId,
+        }
+        const n = r.installments ?? 1
+        return n > 1 ? buildInstallmentPayloads(base, n, crypto.randomUUID()) : [base]
+      })
       await expensesService.createBatch(payloads)
 
       const updated = await integrationsService.removeGmailPending(toImport.map((r) => r.rowId))
@@ -194,7 +201,7 @@ export function GmailImportModal({ isOpen, onClose, syncing = false }: Props): R
       setError((err as Error).message ?? 'Error al guardar los gastos')
       setSaving(false)
     }
-  }, [rows, selectedCardId, defaultCardId, qc, handleClose])
+  }, [rows, defaultCardId, qc, handleClose])
 
   if (!isOpen) return null
 
@@ -209,6 +216,7 @@ export function GmailImportModal({ isOpen, onClose, syncing = false }: Props): R
   const currencies = Object.keys(totals) as Currency[]
 
   return (
+    <>
     <Modal
       title={syncing ? 'Sincronizando Gmail' : 'Revisar gastos de Gmail'}
       onClose={handleClose}
@@ -244,26 +252,14 @@ export function GmailImportModal({ isOpen, onClose, syncing = false }: Props): R
           <>
             <div className={styles.reviewHeader}>
               <span className={styles.reviewTitle}>Revisá y editá los gastos antes de guardar</span>
-              <select
-                className={styles.select}
-                value={selectedCardId || defaultCardId}
-                onChange={(e) => {
-                  setSelectedCardId(e.target.value)
-                  setRows((prev) => prev.map((r) => ({ ...r, cardId: e.target.value })))
-                }}
-              >
-                <option value="">Sin tarjeta asignada</option>
-                {cards.map((c) => (
-                  <option key={c.id} value={c.id}>{cardLabel(c)}</option>
-                ))}
-              </select>
+              <span className={styles.reviewCount}>{importCount} de {rows.length} a importar</span>
             </div>
-            <span className={styles.reviewCount}>{importCount} de {rows.length} a importar</span>
 
             <ImportReviewTable
               rows={rows}
               categories={categories}
               places={places}
+              cards={cards}
               allSelected={allSelected}
               someSelected={someSelected}
               createCategoryPending={createCategory.isPending}
@@ -271,6 +267,8 @@ export function GmailImportModal({ isOpen, onClose, syncing = false }: Props): R
               onUpdateRow={updateRow}
               onRemoveRow={(rowId) => void discardRow(rowId)}
               onApplySuggestion={applySuggestion}
+              onCreateCategory={setCreatingCategoryFor}
+              onCreatePlace={setCreatingPlaceFor}
               removeTitle="Descartar (no crear gasto, no volver a mostrar)"
             />
           </>
@@ -311,5 +309,26 @@ export function GmailImportModal({ isOpen, onClose, syncing = false }: Props): R
         </div>
       )}
     </Modal>
+
+    {creatingCategoryFor && (
+      <NewCategoryModal
+        onClose={() => setCreatingCategoryFor(null)}
+        onCreated={(cat) => {
+          updateRow(creatingCategoryFor, { categoryId: cat.id })
+          setCreatingCategoryFor(null)
+        }}
+      />
+    )}
+
+    {creatingPlaceFor && (
+      <NewPlaceModal
+        onClose={() => setCreatingPlaceFor(null)}
+        onCreated={(place) => {
+          updateRow(creatingPlaceFor, { placeId: place.id })
+          setCreatingPlaceFor(null)
+        }}
+      />
+    )}
+    </>
   )
 }

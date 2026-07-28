@@ -40,6 +40,46 @@ export function useCreateExpense() {
   })
 }
 
+export function useCreateExpenseBatch() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payloads: CreateExpensePayload[]) => expensesService.createBatch(payloads),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: EXPENSE_KEYS.all })
+    },
+  })
+}
+
+/** Actualiza todas las cuotas de una serie. No propaga la fecha (cada cuota conserva su mes). */
+export function useUpdateInstallmentGroup() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ groupId, payload }: { groupId: string; payload: UpdateExpensePayload }) => {
+      const group = await expensesService.listInstallmentGroup(groupId)
+      const shared: UpdateExpensePayload = { ...payload }
+      delete shared.date
+      await Promise.all(group.map((e) => expensesService.update(e.id, shared)))
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: EXPENSE_KEYS.all })
+    },
+  })
+}
+
+/** Elimina todas las cuotas de una serie. */
+export function useDeleteInstallmentGroup() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (groupId: string) => {
+      const group = await expensesService.listInstallmentGroup(groupId)
+      await Promise.all(group.map((e) => expensesService.remove(e.id)))
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: EXPENSE_KEYS.all })
+    },
+  })
+}
+
 export function useUpdateExpense(id: string) {
   const qc = useQueryClient()
   return useMutation({

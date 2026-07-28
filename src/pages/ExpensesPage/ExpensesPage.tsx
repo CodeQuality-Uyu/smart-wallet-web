@@ -2,10 +2,21 @@
 
 import React, { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useExpenses, useUpdateExpense, useDeleteExpense } from '@/features/expenses/hooks/useExpenses'
+import {
+  useExpenses,
+  useUpdateExpense,
+  useDeleteExpense,
+  useUpdateInstallmentGroup,
+  useDeleteInstallmentGroup,
+} from '@/features/expenses/hooks/useExpenses'
 import { ReportOriginBadge } from '@/features/expenses/components/ReportOriginBadge'
 import { ExpenseForm } from '@/features/expenses/components/ExpenseForm'
+import {
+  InstallmentScopeChoice,
+  type InstallmentScope,
+} from '@/features/expenses/components/InstallmentScopeChoice'
 import type { ExpenseFormValues } from '@/features/expenses/schemas/expenseSchema'
+import type { UpdateExpensePayload } from '@/types/models'
 import { expensesService } from '@/services/expensesService'
 import { useCategories } from '@/features/categories/hooks/useCategories'
 import { useCards } from '@/features/cards/hooks/useCards'
@@ -62,9 +73,25 @@ function EditExpenseModal({
   onClose: () => void
 }): React.ReactElement {
   const { mutateAsync: updateExpense } = useUpdateExpense(expense.id)
+  const { mutateAsync: updateGroup } = useUpdateInstallmentGroup()
+  const isSeries = Boolean(expense.installmentGroupId)
+  const [scope, setScope] = useState<InstallmentScope>('all')
 
   async function handleSubmit(values: ExpenseFormValues): Promise<void> {
-    await updateExpense({ ...values, placeId: values.placeId || undefined })
+    const payload: UpdateExpensePayload = {
+      description: values.description,
+      amount: values.amount,
+      currency: values.currency,
+      cardId: values.cardId,
+      categoryIds: values.categoryIds,
+      placeId: values.placeId || undefined,
+      date: values.date,
+    }
+    if (isSeries && scope === 'all') {
+      await updateGroup({ groupId: expense.installmentGroupId!, payload })
+    } else {
+      await updateExpense(payload)
+    }
     if (values.receiptFile) {
       await expensesService.uploadReceipt(expense.id, values.receiptFile)
     }
@@ -84,12 +111,22 @@ function EditExpenseModal({
   return (
     <Modal title="Editar gasto" onClose={onClose} width={620}>
       <div className={styles.editModalBody}>
+        {isSeries && (
+          <InstallmentScopeChoice
+            scope={scope}
+            onChange={setScope}
+            count={expense.installmentCount ?? 0}
+            number={expense.installmentNumber}
+            action="edit"
+          />
+        )}
         <ExpenseForm
           initialValues={initialValues}
           onSubmit={handleSubmit}
           submitLabel="Guardar cambios"
           variant="desktop"
           onCancel={onClose}
+          allowInstallments={false}
         />
       </div>
     </Modal>
@@ -105,9 +142,16 @@ function DeleteExpenseModal({
   onClose: () => void
 }): React.ReactElement {
   const { mutateAsync: deleteExpense, isPending } = useDeleteExpense()
+  const { mutateAsync: deleteGroup, isPending: isDeletingGroup } = useDeleteInstallmentGroup()
+  const isSeries = Boolean(expense.installmentGroupId)
+  const [scope, setScope] = useState<InstallmentScope>('one')
 
   async function handleDelete(): Promise<void> {
-    await deleteExpense(expense.id)
+    if (isSeries && scope === 'all') {
+      await deleteGroup(expense.installmentGroupId!)
+    } else {
+      await deleteExpense(expense.id)
+    }
     onClose()
   }
 
@@ -117,18 +161,33 @@ function DeleteExpenseModal({
         ¿Seguro que querés eliminar <strong>{expense.description}</strong>? Esta acción no se puede
         deshacer.
       </p>
+      {isSeries && (
+        <InstallmentScopeChoice
+          scope={scope}
+          onChange={setScope}
+          count={expense.installmentCount ?? 0}
+          number={expense.installmentNumber}
+          action="delete"
+        />
+      )}
       <div className={styles.deleteActions}>
-        <Button type="button" variant="ghost" size="sm" onClick={onClose} disabled={isPending}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={onClose}
+          disabled={isPending || isDeletingGroup}
+        >
           Cancelar
         </Button>
         <Button
           type="button"
           variant="danger"
           size="sm"
-          loading={isPending}
+          loading={isPending || isDeletingGroup}
           onClick={() => void handleDelete()}
         >
-          Eliminar
+          {isSeries && scope === 'all' ? 'Eliminar serie' : 'Eliminar'}
         </Button>
       </div>
     </Modal>
@@ -466,6 +525,11 @@ export default function ExpensesPage(): React.ReactElement {
                                 {firstCat?.icon ?? '💸'}
                               </span>
                               {expense.description}
+                              {expense.installmentCount && expense.installmentCount > 1 && (
+                                <span className={styles.installmentBadge}>
+                                  💳 {expense.installmentNumber}/{expense.installmentCount}
+                                </span>
+                              )}
                               <ReportOriginBadge expense={expense} className={styles.reportBadgeInline} />
                             </td>
                             <td>
